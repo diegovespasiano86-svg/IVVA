@@ -1,18 +1,19 @@
 const GRAPH_API_VERSION = "v22.0";
 
+// Credenciais são por tenant (tabela whatsapp_accounts), nunca mais
+// globais — cada negócio tem seu próprio número e token.
+export type WhatsAppCreds = { phoneNumberId: string; token: string };
+
 // Envia uma mensagem de template via WhatsApp Cloud API. Usado pra primeiro
 // contato (fora da janela de 24h) — respostas dentro da janela podem usar
 // mensagem de texto livre.
 export async function sendWhatsAppTemplate(
+  creds: WhatsAppCreds,
   to: string,
   templateName: string,
   languageCode = "en_US",
 ) {
-  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
-  const token = process.env.WHATSAPP_ACCESS_TOKEN;
-  if (!phoneNumberId || !token) {
-    throw new Error("WhatsApp não configurado (faltam env vars)");
-  }
+  const { phoneNumberId, token } = creds;
 
   const res = await fetch(
     `https://graph.facebook.com/${GRAPH_API_VERSION}/${phoneNumberId}/messages`,
@@ -41,12 +42,12 @@ export async function sendWhatsAppTemplate(
 // Mensagem de texto livre — só funciona dentro da janela de 24h desde a
 // última mensagem do cliente (regra da própria Meta). Usada quando um
 // humano assume a conversa.
-export async function sendWhatsAppText(to: string, text: string) {
-  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
-  const token = process.env.WHATSAPP_ACCESS_TOKEN;
-  if (!phoneNumberId || !token) {
-    throw new Error("WhatsApp não configurado (faltam env vars)");
-  }
+export async function sendWhatsAppText(
+  creds: WhatsAppCreds,
+  to: string,
+  text: string,
+) {
+  const { phoneNumberId, token } = creds;
 
   const res = await fetch(
     `https://graph.facebook.com/${GRAPH_API_VERSION}/${phoneNumberId}/messages`,
