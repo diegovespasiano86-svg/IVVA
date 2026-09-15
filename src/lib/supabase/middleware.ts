@@ -29,15 +29,28 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isAuthRoute = request.nextUrl.pathname.startsWith("/login");
+  const { pathname } = request.nextUrl;
 
-  if (!user && !isAuthRoute) {
+  // Rotas de API (webhooks da Meta/Stripe) nunca têm sessão de usuário —
+  // são chamadas servidor-a-servidor, não visitas de navegador.
+  if (pathname.startsWith("/api/")) {
+    return response;
+  }
+
+  // /planos e /bem-vindo fazem parte do fluxo público de assinatura —
+  // negócio novo escolhe plano e paga antes de ter conta.
+  const isPublicRoute =
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/planos") ||
+    pathname.startsWith("/bem-vindo");
+
+  if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
 
-  if (user && isAuthRoute) {
+  if (user && pathname.startsWith("/login")) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
