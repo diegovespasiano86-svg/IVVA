@@ -1,0 +1,83 @@
+@import "tailwindcss";
+
+:root {
+  --teal: #2fbf9f;
+  --purple: #8b7fe8;
+  --coral: #ff6b5b;
+  --bg: #fbf6ee;
+  --surface: #ffffff;
+  --surface-soft: #f5efe4;
+  --ink: #241f2e;
+  --ink-soft: #6b6577;
+  --ink-faint: #a79fb4;
+  --border: rgba(36, 31, 46, 0.1);
+}
+
+@theme inline {
+  --color-teal: var(--teal);
+  --color-purple: var(--purple);
+  --color-coral: var(--coral);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-soft: var(--surface-soft);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-faint: var(--ink-faint);
+  --color-border: var(--border);
+  --font-display: var(--font-sora);
+  --font-sans: var(--font-manrope);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-manrope), system-ui, sans-serif;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-sora), system-ui, sans-serif;
+  letter-spacing: -0.01em;
+}
+
+label {
+  display: block;
+  margin-bottom: 7px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-manrope), sans-serif;
+  font-weight: 700;
+}
+
+.icon {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex-shrink: 0;
+}
