@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 
 export async function conectarWhatsApp(
@@ -88,6 +89,68 @@ export async function pedirAjudaWhatsApp(formData: FormData) {
     assunto: "Conectar WhatsApp Business",
     mensagem: mensagem || null,
   });
+
+  revalidatePath("/conta");
+}
+
+export async function criarConvite(
+  _prevState: { erro: string | null; link: string | null },
+  formData: FormData,
+) {
+  const nome = String(formData.get("nome") ?? "").trim();
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+
+  if (!nome || !email) {
+    return { erro: "Preencha nome e e-mail.", link: null };
+  }
+
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { erro: "Sessão expirada, faça login de novo.", link: null };
+
+  const { data: perfil } = await supabase
+    .from("users")
+    .select("tenant_id, role")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (!perfil || perfil.role !== "dono") {
+    return { erro: "Só o dono do negócio pode convidar profissionais.", link: null };
+  }
+
+  const { data: convite, error } = await supabase
+    .from("invites")
+    .insert({
+      tenant_id: perfil.tenant_id,
+      nome,
+      email,
+      created_by: user.id,
+    })
+    .select("token")
+    .single();
+
+  if (error || !convite) {
+    return { erro: "Não consegui criar o convite. Tenta de novo.", link: null };
+  }
+
+  const headerList = await headers();
+  const origin =
+    headerList.get("origin") ??
+    `https://${headerList.get("host") ?? "localhost:3000"}`;
+
+  revalidatePath("/conta");
+  return { erro: null, link: `${origin}/convite/${convite.token}` };
+}
+
+export async function revogarConvite(formData: FormData) {
+  const id = String(formData.get("id") ?? "");
+  if (!id) return;
+
+  const supabase = await createClient();
+  await supabase.from("invites").update({ status: "revogado" }).eq("id", id);
 
   revalidatePath("/conta");
 }

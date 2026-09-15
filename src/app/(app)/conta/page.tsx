@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import WhatsAppForm from "./whatsapp-form";
-import { desconectarWhatsApp } from "./actions";
+import InviteForm from "./invite-form";
+import { desconectarWhatsApp, revogarConvite } from "./actions";
 
 const PLANO_LABEL: Record<string, string> = {
   essencial: "Essencial",
@@ -26,7 +27,9 @@ export default async function ContaPage() {
     plano: string;
   } | null;
 
-  const [{ data: conta }, { data: equipe }, { data: chamados }] =
+  const isDono = perfil?.role === "dono";
+
+  const [{ data: conta }, { data: equipe }, { data: chamados }, { data: convites }] =
     await Promise.all([
       supabase
         .from("whatsapp_accounts")
@@ -38,6 +41,13 @@ export default async function ContaPage() {
         .select("id, assunto, status, created_at")
         .order("created_at", { ascending: false })
         .limit(5),
+      // RLS (invites_dono_all) já garante que só o dono enxerga algo aqui —
+      // pra profissional a consulta sempre volta vazia.
+      supabase
+        .from("invites")
+        .select("id, nome, email, status, created_at")
+        .eq("status", "pendente")
+        .order("created_at", { ascending: false }),
     ]);
 
   return (
@@ -113,10 +123,44 @@ export default async function ContaPage() {
                 </div>
               ))}
             </div>
-            <p className="mt-3 text-[11.5px] text-ink-faint">
-              Convite de novo profissional ainda não é self-service — fale
-              com quem implantou a ivva.
-            </p>
+            {isDono && (
+              <div className="mt-4 border-t border-border pt-4">
+                <p className="mb-3 text-[13px] font-bold">
+                  Convidar profissional
+                </p>
+                <InviteForm />
+
+                {convites && convites.length > 0 && (
+                  <div className="mt-4">
+                    <p className="mb-2 text-[11.5px] font-bold uppercase tracking-wide text-ink-faint">
+                      Convites pendentes
+                    </p>
+                    <div className="flex flex-col gap-2">
+                      {convites.map((c) => (
+                        <div
+                          key={c.id}
+                          className="flex items-center justify-between rounded-[10px] border border-border px-3.5 py-2.5"
+                        >
+                          <div>
+                            <p className="text-[13px] font-semibold">{c.nome}</p>
+                            <p className="text-[11.5px] text-ink-faint">{c.email}</p>
+                          </div>
+                          <form action={revogarConvite}>
+                            <input type="hidden" name="id" value={c.id} />
+                            <button
+                              type="submit"
+                              className="rounded-md border border-border px-2.5 py-1 text-[11px] font-semibold text-ink-faint hover:bg-surface-soft hover:text-coral"
+                            >
+                              Revogar
+                            </button>
+                          </form>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {chamados && chamados.length > 0 && (

@@ -59,5 +59,12 @@ export async function finalizarCadastro(
     return "Conta criada, mas houve um problema ao configurar seu negócio. Fale com a gente.";
   }
 
+  // Se o Supabase exige confirmação de e-mail, o signUp() acima não deixou
+  // sessão ativa (cookies não foram setados). O provision_tenant já
+  // confirmou o e-mail no banco, então um signIn explícito aqui resolve —
+  // sem isso o middleware manda o usuário de volta pro /login mesmo com
+  // tudo certo.
+  await supabase.auth.signInWithPassword({ email, password: senha });
+
   redirect("/dashboard");
 }
