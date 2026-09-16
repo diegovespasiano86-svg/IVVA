@@ -3,6 +3,7 @@ import WhatsAppForm from "./whatsapp-form";
 import InviteForm from "./invite-form";
 import AssistantForm from "./assistant-form";
 import BotSettingsForm from "./bot-settings-form";
+import BillingPortalButton from "./billing-portal-button";
 import { desconectarWhatsApp, revogarConvite } from "./actions";
 
 const PLANO_LABEL: Record<string, string> = {
@@ -10,6 +11,49 @@ const PLANO_LABEL: Record<string, string> = {
   profissional: "Profissional",
   completo: "Completo",
 };
+
+const PLANOS = [
+  {
+    key: "essencial",
+    nome: "Essencial",
+    preco: "R$ 297",
+    destaque: false,
+    beneficios: [
+      "Chatbot de agendamento no WhatsApp",
+      "CRM + 1 calendário",
+      "Dashboard simples",
+      "Acesso do dono",
+    ],
+  },
+  {
+    key: "profissional",
+    nome: "Profissional",
+    preco: "R$ 447",
+    destaque: true,
+    beneficios: [
+      "Tudo do Essencial",
+      "Calendário multi-profissional + comissão",
+      "Login por profissional",
+      "Dashboard de faturamento",
+      "CRM em funil + Tarefas de upsell",
+      "Avaliações + Checkout + SAC",
+    ],
+  },
+  {
+    key: "completo",
+    nome: "Completo",
+    preco: "R$ 597",
+    destaque: false,
+    beneficios: [
+      "Tudo do Profissional",
+      "Recibo do atendimento por WhatsApp",
+      "Controle de estoque de produtos",
+      "Sinal antecipado (anti no-show)",
+      "Fila de espera",
+      "Admin pelo WhatsApp + suporte prioritário",
+    ],
+  },
+] as const;
 
 export default async function ContaPage() {
   const supabase = await createClient();
@@ -74,6 +118,86 @@ export default async function ContaPage() {
           </span>
         </p>
       </div>
+
+      {isDono && (
+        <div className="card mb-4 px-5 py-5">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-[14px] font-bold">Planos e assinatura</p>
+              <p className="text-[12.5px] text-ink-soft">
+                Preço público, sem &ldquo;fale com vendas&rdquo;.
+              </p>
+            </div>
+            <div className="w-full sm:w-[200px]">
+              <BillingPortalButton label="Gerenciar assinatura" />
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-3">
+            {PLANOS.map((plano) => {
+              const atual = tenant?.plano === plano.key;
+              return (
+                <div
+                  key={plano.key}
+                  className={`rounded-[16px] border px-6 py-6 ${
+                    plano.destaque
+                      ? "border-transparent bg-ink text-white"
+                      : atual
+                        ? "border-2 border-ink"
+                        : "border-border"
+                  }`}
+                >
+                  {atual && (
+                    <span
+                      className={`text-[10.5px] font-extrabold uppercase tracking-wide ${
+                        plano.destaque ? "text-white/70" : "text-ink-faint"
+                      }`}
+                    >
+                      Plano atual
+                    </span>
+                  )}
+                  {!atual && plano.destaque && (
+                    <span className="text-[10.5px] font-extrabold uppercase tracking-wide text-white/70">
+                      Mais escolhido
+                    </span>
+                  )}
+                  <h3 className="mt-1.5 font-display text-[16.5px] font-bold">
+                    {plano.nome}
+                  </h3>
+                  <p className="mt-2 mb-4">
+                    <span className="font-display text-[28px] font-extrabold">
+                      {plano.preco}
+                    </span>
+                    <span
+                      className={`text-[13px] font-semibold ${
+                        plano.destaque ? "text-white/60" : "text-ink-faint"
+                      }`}
+                    >
+                      /mês
+                    </span>
+                  </p>
+                  <ul className="flex flex-col gap-2">
+                    {plano.beneficios.map((b) => (
+                      <li
+                        key={b}
+                        className={`text-[12.5px] ${
+                          plano.destaque ? "text-white/85" : "text-ink-soft"
+                        }`}
+                      >
+                        ✓ {b}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })}
+          </div>
+          <p className="mt-4 text-center text-[12px] text-ink-faint">
+            Pra trocar de plano, atualizar cartão ou Pix, use &ldquo;Gerenciar
+            assinatura&rdquo; acima — abre o portal seguro da Stripe.
+          </p>
+        </div>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="card px-5 py-5">

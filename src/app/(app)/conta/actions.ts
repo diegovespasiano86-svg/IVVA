@@ -2,8 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { hashPin } from "@/lib/pin";
+import { createBillingPortalSession } from "@/lib/stripe";
 
 export async function conectarWhatsApp(
   _prevState: string | undefined,
@@ -289,4 +291,54 @@ export async function desconectarWhatsApp() {
     .eq("tenant_id", perfil.tenant_id);
 
   revalidatePath("/conta");
+}
+
+// Manda o dono pro portal de cobrança hospedado pela própria Stripe — lá
+// ele troca de plano, atualiza cartão/Pix e vê faturas. A gente nunca
+// toca em dado de pagamento; só sabe o resultado quando ele volta.
+export async function abrirPortalCobranca(
+  _prevState: string | undefined,
+): Promise<string | undefined> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return "Sessão expirada, faça login de novo.";
+
+  const { data: perfil } = await supabase
+    .from("users")
+    .select("tenant_id, role")
+    .eq("id", user.id)
+    .maybeSingle();
+  if (!perfil || perfil.role !== "dono") {
+    return "Só o dono do negócio pode gerenciar a assinatura.";
+  }
+
+  const { data: assinatura } = await supabase
+    .from("subscriptions")
+    .select("stripe_customer_id")
+    .eq("tenant_id", perfil.tenant_id)
+    .maybeSingle();
+
+  if (!assinatura?.stripe_customer_id) {
+    return "Ainda não encontramos sua cobrança na Stripe. Fale com a gente.";
+  }
+
+  const headerList = await headers();
+  const origin =
+    headerList.get("origin") ??
+    `https://${headerList.get("host") ?? "localhost:3000"}`;
+
+  let session;
+  try {
+    session = await createBillingPortalSession({
+      customerId: assinatura.stripe_customer_id,
+      returnUrl: `${origin}/conta`,
+    });
+  } catch (err) {
+    return err instanceof Error ? err.message : "Falha ao abrir o portal de cobrança.";
+  }
+
+  redirect(session.url);
 }

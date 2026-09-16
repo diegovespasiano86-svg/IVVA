@@ -83,11 +83,42 @@ export async function createPixPaymentIntent(params: {
   };
 }
 
+// Portal de cobrança hospedado pela própria Stripe — é onde o dono troca
+// de plano, atualiza cartão ou Pix e vê faturas, sem a gente jamais tocar
+// em dado de pagamento. Precisa que o Portal esteja configurado no
+// dashboard da Stripe (Configurações > Billing > Customer portal) com os
+// 3 preços dos planos liberados pra troca — habilitação manual, não dá
+// pra ligar por API.
+export async function createBillingPortalSession(params: {
+  customerId: string;
+  returnUrl: string;
+}) {
+  const body = new URLSearchParams({
+    customer: params.customerId,
+    return_url: params.returnUrl,
+  });
+
+  const res = await fetch(`${STRIPE_API}/billing_portal/sessions`, {
+    method: "POST",
+    headers: stripeHeaders(),
+    body,
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data?.error?.message ?? "Falha ao abrir o portal de cobrança");
+  }
+  return data as { id: string; url: string };
+}
+
 export async function getCheckoutSession(sessionId: string) {
-  const res = await fetch(
-    `${STRIPE_API}/checkout/sessions/${sessionId}?expand[]=customer`,
-    { headers: stripeHeaders() },
-  );
+  // Sem expand: "customer" vem só como o id ("cus_...") mesmo, que é tudo
+  // que a gente guarda. Expandir devolveria o objeto Customer inteiro e
+  // faria esse id virar um JSON gigante em vez do texto simples que as
+  // colunas stripe_customer_id esperam.
+  const res = await fetch(`${STRIPE_API}/checkout/sessions/${sessionId}`, {
+    headers: stripeHeaders(),
+  });
   const data = await res.json();
   if (!res.ok) {
     throw new Error(data?.error?.message ?? "Falha ao ler checkout");
