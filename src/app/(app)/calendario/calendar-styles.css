@@ -1,0 +1,98 @@
+/* Reveste o react-big-calendar pra combinar com o resto do app — cantos
+   arredondados, cores e tipografia dos tokens em globals.css, em vez do
+   visual padrão da lib. */
+
+.rbc-calendar {
+  font-family: var(--font-manrope), system-ui, sans-serif;
+  color: var(--ink);
+}
+
+.rbc-toolbar {
+  margin-bottom: 14px;
+  gap: 10px;
+}
+
+.rbc-toolbar .rbc-toolbar-label {
+  font-family: var(--font-sora), system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  text-transform: capitalize;
+}
+
+.rbc-toolbar button {
+  color: var(--ink-soft);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 6px 12px;
+  font-size: 12.5px;
+  font-weight: 700;
+  background: var(--surface);
+}
+
+.rbc-toolbar button:hover {
+  background: var(--surface-soft);
+  color: var(--ink);
+}
+
+.rbc-toolbar button.rbc-active {
+  background: var(--ink);
+  color: #fff;
+  border-color: var(--ink);
+}
+
+.rbc-month-view,
+.rbc-time-view {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.rbc-header {
+  border-color: var(--border);
+  padding: 8px 4px;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--ink-soft);
+}
+
+.rbc-day-bg + .rbc-day-bg,
+.rbc-header + .rbc-header,
+.rbc-month-row + .rbc-month-row,
+.rbc-time-content > * + * > *,
+.rbc-timeslot-group,
+.rbc-time-header-content,
+.rbc-time-content {
+  border-color: var(--border);
+}
+
+.rbc-off-range-bg {
+  background: var(--surface-soft);
+}
+
+.rbc-today {
+  background: color-mix(in srgb, var(--purple) 8%, transparent);
+}
+
+.rbc-event {
+  border-radius: 6px;
+  border: none;
+  padding: 2px 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.rbc-event:focus {
+  outline: 2px solid var(--ink);
+}
+
+.rbc-show-more {
+  color: var(--purple);
+  font-weight: 700;
+  background: transparent;
+}
+
+.rbc-current-time-indicator {
+  background-color: var(--coral);
+}

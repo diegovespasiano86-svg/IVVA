@@ -7,6 +7,8 @@ export async function criarAgendamento(formData: FormData) {
   const contactId = String(formData.get("contact_id") ?? "");
   const professionalId = String(formData.get("professional_id") ?? "");
   const dataHora = String(formData.get("data_hora") ?? "");
+  const servico = String(formData.get("servico") ?? "").trim();
+  const duracaoMinutos = Number(formData.get("duracao_minutos") ?? 30) || 30;
 
   if (!contactId || !professionalId || !dataHora) return;
 
@@ -29,6 +31,9 @@ export async function criarAgendamento(formData: FormData) {
     contact_id: contactId,
     professional_id: professionalId,
     data_hora: new Date(dataHora).toISOString(),
+    servico: servico || null,
+    duracao_minutos: duracaoMinutos,
+    origem: "manual",
     status: "agendado",
   });
 
