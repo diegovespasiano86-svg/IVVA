@@ -34,6 +34,9 @@ export type ContextoConversa = {
 export type ResultadoIA = {
   resposta: string;
   handoffSolicitado: boolean;
+  /** horários oferecidos na última consulta de disponibilidade desse turno
+   * (pra mandar como lista clicável no WhatsApp, além do texto) */
+  opcoesHorario?: Slot[];
 };
 
 function headers() {
@@ -209,6 +212,8 @@ async function chamarClaude(system: string, messages: ClaudeMessage[]) {
   return data as { content: ClaudeContentBlock[]; stop_reason: string };
 }
 
+type Slot = { professional_id: string; professional_nome: string; data_hora: string };
+
 async function executarFerramenta(
   nome: string,
   input: Record<string, unknown>,
@@ -216,7 +221,7 @@ async function executarFerramenta(
   secret: string,
   supabaseUrl: string,
   anonKey: string,
-): Promise<{ resultado: string; handoff: boolean }> {
+): Promise<{ resultado: string; handoff: boolean; slots?: Slot[]; reservaFeita?: boolean }> {
   const { createClient } = await import("@supabase/supabase-js");
   const supabase = createClient(supabaseUrl, anonKey);
 
@@ -252,7 +257,15 @@ async function executarFerramenta(
       p_a_partir_de: input.a_partir_de ?? null,
     });
     if (error) return { resultado: JSON.stringify({ erro: error.message }), handoff: false };
-    return { resultado: JSON.stringify(data), handoff: false };
+    const slots = (data as { slots?: Slot[] } | null)?.slots ?? [];
+    // Essas opções também vão sair como lista clicável no WhatsApp (ver
+    // route.ts) — avisa o modelo pra não precisar enumerar cada uma em
+    // texto corrido, só confirmar que vai mandar as opções.
+    const resultadoComDica =
+      slots.length > 0
+        ? { ...(data as object), aviso_para_voce: "Essas opções também aparecerão como lista clicável pro cliente. Sua resposta em texto pode ser curta, tipo 'Encontrei esses horários, escolhe um aí 👇' — sem precisar listar cada um por escrito." }
+        : data;
+    return { resultado: JSON.stringify(resultadoComDica), handoff: false, slots };
   }
 
   if (nome === "criar_agendamento") {
@@ -266,7 +279,7 @@ async function executarFerramenta(
       p_duracao_minutos: input.duracao_minutos ?? 30,
     });
     if (error) return { resultado: JSON.stringify({ erro: error.message }), handoff: false };
-    return { resultado: JSON.stringify(data), handoff: false };
+    return { resultado: JSON.stringify(data), handoff: false, reservaFeita: Boolean((data as { ok?: boolean })?.ok) };
   }
 
   if (nome === "remarcar_ou_cancelar_agendamento") {
@@ -279,7 +292,7 @@ async function executarFerramenta(
       p_nova_data_hora: input.nova_data_hora ?? null,
     });
     if (error) return { resultado: JSON.stringify({ erro: error.message }), handoff: false };
-    return { resultado: JSON.stringify(data), handoff: false };
+    return { resultado: JSON.stringify(data), handoff: false, reservaFeita: Boolean((data as { ok?: boolean })?.ok) };
   }
 
   return { resultado: "ferramenta desconhecida", handoff: false };
@@ -302,6 +315,7 @@ export async function gerarRespostaWhatsApp(
   }));
 
   let handoffSolicitado = false;
+  let opcoesHorario: Slot[] | undefined;
 
   for (let turno = 0; turno < MAX_TOOL_TURNS; turno++) {
     const resposta = await chamarClaude(system, messages);
@@ -316,7 +330,7 @@ export async function gerarRespostaWhatsApp(
 
     if (blocosFerramenta.length === 0) {
       const texto = blocosTexto.map((b) => b.text).join("\n\n").trim();
-      return { resposta: texto || "Certo!", handoffSolicitado };
+      return { resposta: texto || "Certo!", handoffSolicitado, opcoesHorario };
     }
 
     messages.push({ role: "assistant", content: resposta.content });
@@ -325,7 +339,7 @@ export async function gerarRespostaWhatsApp(
     // formato tool_result que a Messages API exige na próxima rodada.
     const toolResults: { type: "tool_result"; tool_use_id: string; content: string }[] = [];
     for (const bloco of blocosFerramenta) {
-      const { resultado, handoff } = await executarFerramenta(
+      const { resultado, handoff, slots, reservaFeita } = await executarFerramenta(
         bloco.name,
         bloco.input,
         ctx,
@@ -334,6 +348,11 @@ export async function gerarRespostaWhatsApp(
         anonKey,
       );
       if (handoff) handoffSolicitado = true;
+      // Só guarda a última lista de horários oferecida; se depois disso o
+      // cliente já agendou/remarcou/cancelou, a lista velha não faz mais
+      // sentido de reenviar.
+      if (slots && slots.length > 0) opcoesHorario = slots;
+      if (reservaFeita) opcoesHorario = undefined;
       toolResults.push({ type: "tool_result", tool_use_id: bloco.id, content: resultado });
     }
 

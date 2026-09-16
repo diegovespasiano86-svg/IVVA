@@ -1,8 +1,12 @@
 import { createHmac, timingSafeEqual } from "crypto";
 import { type NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-import { sendWhatsAppText } from "@/lib/whatsapp";
-import { gerarRespostaWhatsApp, type ContextoConversa } from "@/lib/ai";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import {
+  sendWhatsAppText,
+  sendWhatsAppInteractiveList,
+  type WhatsAppCreds,
+} from "@/lib/whatsapp";
+import { gerarRespostaWhatsApp, type ContextoConversa, type ResultadoIA } from "@/lib/ai";
 
 // Verificação inicial do webhook — a Meta chama essa rota com um GET pra
 // confirmar que o endpoint é nosso antes de ativar o recebimento de eventos.
@@ -44,7 +48,17 @@ type WhatsAppWebhookBody = {
       value?: {
         metadata?: { phone_number_id?: string };
         contacts?: { profile?: { name?: string }; wa_id?: string }[];
-        messages?: { id?: string; from?: string; text?: { body?: string }; type?: string }[];
+        messages?: {
+          id?: string;
+          from?: string;
+          type?: string;
+          text?: { body?: string };
+          interactive?: {
+            type?: string;
+            list_reply?: { id?: string; title?: string };
+            button_reply?: { id?: string; title?: string };
+          };
+        }[];
       };
     }[];
   }[];
@@ -75,7 +89,24 @@ export async function POST(request: NextRequest) {
       if (!phoneNumberId) continue;
 
       for (const msg of value?.messages ?? []) {
-        if (msg.type !== "text" || !msg.from) continue;
+        if (!msg.from) continue;
+
+        // Mensagem de texto normal, ou uma lista/botão interativo que a
+        // pessoa clicou — nesse caso tratamos o título escolhido como se
+        // fosse o texto digitado, pra reaproveitar todo o fluxo da IA.
+        let content: string | null = null;
+        let botaoId: string | null = null;
+
+        if (msg.type === "text") {
+          content = msg.text?.body ?? "";
+        } else if (msg.type === "interactive") {
+          const reply = msg.interactive?.list_reply ?? msg.interactive?.button_reply;
+          if (reply?.title) content = `Escolho: ${reply.title}`;
+          botaoId = msg.interactive?.button_reply?.id ?? null;
+        }
+
+        if (content === null) continue;
+
         const contactName = value?.contacts?.find((c) => c.wa_id === msg.from)?.profile?.name;
 
         try {
@@ -87,7 +118,8 @@ export async function POST(request: NextRequest) {
             waId: msg.from,
             waMessageId: msg.id ?? null,
             contactName: contactName ?? null,
-            content: msg.text?.body ?? "",
+            content,
+            botaoId,
           });
         } catch (err) {
           // Uma falha (IA fora do ar, erro de rede) não pode derrubar o
@@ -101,97 +133,38 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({ received: true });
 }
 
-async function processarMensagem(params: {
-  supabaseUrl: string;
-  anonKey: string;
+type ResultadoInbound = {
+  erro?: string;
+  tenant_id: string;
+  tenant_nome: string;
+  identidade_assistente: ContextoConversa["identidadeAssistente"];
+  horario_abertura: string | null;
+  horario_fechamento: string | null;
+  conversation_id: string;
+  conversation_status: string;
+  contact_id: string;
+  contact_nome: string;
+  contact_is_novo: boolean;
+  whatsapp_phone_number_id: string;
+  whatsapp_access_token: string;
+  historico: { remetente: "contato" | "bot" | "humano"; conteudo: string }[];
+  profissionais: { id: string; nome: string }[];
+};
+
+// Manda a resposta (texto, e a lista de horários clicável quando fizer
+// sentido) e registra o resultado — usado tanto pela resposta normal da
+// IA quanto pelo atalho de confirmação de agendamento abaixo.
+async function enviarRespostaEregistrar(params: {
+  supabase: SupabaseClient;
   internalSecret: string;
-  phoneNumberId: string;
+  creds: WhatsAppCreds;
   waId: string;
-  waMessageId: string | null;
-  contactName: string | null;
-  content: string;
+  resposta: string;
+  resultado: ResultadoInbound;
+  opcoesHorario?: { professional_id: string; professional_nome: string; data_hora: string }[];
 }) {
-  const { supabaseUrl, anonKey, internalSecret, phoneNumberId, waId, waMessageId, contactName, content } = params;
-  const supabase = createClient(supabaseUrl, anonKey);
+  const { supabase, internalSecret, creds, waId, resposta, resultado, opcoesHorario } = params;
 
-  const { data, error } = await supabase.rpc("handle_inbound_whatsapp_message", {
-    p_secret: internalSecret,
-    p_phone_number_id: phoneNumberId,
-    p_wa_id: waId,
-    p_wa_message_id: waMessageId,
-    p_contact_name: contactName,
-    p_content: content,
-  });
-
-  if (error) {
-    console.error("[whatsapp webhook] erro no handle_inbound_whatsapp_message", error);
-    return;
-  }
-
-  const resultado = data as {
-    erro?: string;
-    tenant_id: string;
-    tenant_nome: string;
-    identidade_assistente: ContextoConversa["identidadeAssistente"];
-    horario_abertura: string | null;
-    horario_fechamento: string | null;
-    conversation_id: string;
-    conversation_status: string;
-    contact_id: string;
-    contact_nome: string;
-    contact_is_novo: boolean;
-    whatsapp_phone_number_id: string;
-    whatsapp_access_token: string;
-    historico: { remetente: "contato" | "bot" | "humano"; conteudo: string }[];
-    profissionais: { id: string; nome: string }[];
-  };
-
-  if (resultado?.erro) {
-    // "tenant_nao_encontrado": número não está conectado a nenhum negócio —
-    // "ja_processada": reentrega da Meta pro mesmo evento (idempotência).
-    return;
-  }
-
-  // Conversa já está com um humano — a IA não responde, o dono/equipe
-  // responde manualmente pelo /conversas.
-  if (resultado.conversation_status !== "bot") return;
-
-  const creds = { phoneNumberId: resultado.whatsapp_phone_number_id, token: resultado.whatsapp_access_token };
-
-  const ctx: ContextoConversa = {
-    tenantId: resultado.tenant_id,
-    tenantNome: resultado.tenant_nome,
-    identidadeAssistente: resultado.identidade_assistente,
-    conversationId: resultado.conversation_id,
-    contactId: resultado.contact_id,
-    contactNome: resultado.contact_nome,
-    contactIsNovo: resultado.contact_is_novo,
-    historico: resultado.historico,
-    profissionais: resultado.profissionais ?? [],
-    horarioAbertura: resultado.horario_abertura,
-    horarioFechamento: resultado.horario_fechamento,
-  };
-
-  let resposta: string;
-  try {
-    const resultadoIA = await gerarRespostaWhatsApp(ctx, internalSecret, supabaseUrl, anonKey);
-    resposta = resultadoIA.resposta;
-  } catch (err) {
-    console.error("[whatsapp webhook] falha na IA — caindo pra handoff automático", err);
-    resposta = "Peço desculpa, tive um probleminha aqui. Já chamei alguém da equipe pra te ajudar.";
-    await supabase.rpc("ia_solicitar_handoff", {
-      p_secret: internalSecret,
-      p_conversation_id: resultado.conversation_id,
-      p_tenant_id: resultado.tenant_id,
-      p_motivo: "Falha técnica ao gerar resposta da IA",
-    });
-  }
-
-  // Antes, uma falha aqui (token vencido, rate limit etc.) sumia sem
-  // ninguém saber — cliente sem resposta, dono sem aviso. Agora qualquer
-  // falha de envio abre um help_request pro dono e marca a conta em erro
-  // (visível no dashboard/sidebar); um envio bem-sucedido depois disso
-  // limpa esse estado sozinho.
   let envio: { messages?: { id?: string }[] } | undefined;
   try {
     envio = await sendWhatsAppText(creds, waId, resposta);
@@ -216,4 +189,129 @@ async function processarMensagem(params: {
     p_conteudo: resposta,
     p_wa_message_id: envio?.messages?.[0]?.id ?? null,
   });
+
+  // Lista clicável com os horários — mandada como mensagem separada, logo
+  // depois do texto. Falha aqui não é grave (o cliente já recebeu a
+  // resposta em texto, só não ganha os botões) — só loga.
+  if (opcoesHorario && opcoesHorario.length > 0) {
+    try {
+      const rows = opcoesHorario.map((s) => ({
+        id: `Escolho: ${formatarSlot(s)}`.slice(0, 200),
+        title: formatarSlot(s),
+      }));
+      await sendWhatsAppInteractiveList(creds, waId, "Toca pra escolher:", "Ver horários", rows);
+    } catch (err) {
+      console.error("[whatsapp webhook] falha ao mandar lista de horários", err);
+    }
+  }
+}
+
+function formatarSlot(slot: { professional_id: string; professional_nome: string; data_hora: string }): string {
+  const primeiroNome = slot.professional_nome.trim().split(/\s+/)[0] ?? slot.professional_nome;
+  const dataFmt = new Date(slot.data_hora).toLocaleString("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  return `${primeiroNome} ${dataFmt}`.slice(0, 24);
+}
+
+async function processarMensagem(params: {
+  supabaseUrl: string;
+  anonKey: string;
+  internalSecret: string;
+  phoneNumberId: string;
+  waId: string;
+  waMessageId: string | null;
+  contactName: string | null;
+  content: string;
+  botaoId: string | null;
+}) {
+  const { supabaseUrl, anonKey, internalSecret, phoneNumberId, waId, waMessageId, contactName, content, botaoId } =
+    params;
+  const supabase = createClient(supabaseUrl, anonKey);
+
+  const { data, error } = await supabase.rpc("handle_inbound_whatsapp_message", {
+    p_secret: internalSecret,
+    p_phone_number_id: phoneNumberId,
+    p_wa_id: waId,
+    p_wa_message_id: waMessageId,
+    p_contact_name: contactName,
+    p_content: content,
+  });
+
+  if (error) {
+    console.error("[whatsapp webhook] erro no handle_inbound_whatsapp_message", error);
+    return;
+  }
+
+  const resultado = data as ResultadoInbound;
+
+  if (resultado?.erro) {
+    // "tenant_nao_encontrado": número não está conectado a nenhum negócio —
+    // "ja_processada": reentrega da Meta pro mesmo evento (idempotência).
+    return;
+  }
+
+  // Conversa já está com um humano — a IA não responde, o dono/equipe
+  // responde manualmente pelo /conversas.
+  if (resultado.conversation_status !== "bot") return;
+
+  const creds = { phoneNumberId: resultado.whatsapp_phone_number_id, token: resultado.whatsapp_access_token };
+
+  // Atalho determinístico pro botão "Confirmar" do lembrete (cron de
+  // lembretes) — não precisa passar pela IA, é só marcar e responder.
+  if (botaoId?.startsWith("confirmar:")) {
+    const appointmentId = botaoId.slice("confirmar:".length);
+    const { data: confirmData } = await supabase.rpc("confirmar_agendamento", {
+      p_secret: internalSecret,
+      p_appointment_id: appointmentId,
+      p_telefone: waId,
+    });
+    const ok = Boolean((confirmData as { ok?: boolean } | null)?.ok);
+    const resposta = ok
+      ? "Prontinho, confirmado! Te esperamos ✅"
+      : "Não achei esse agendamento aqui — me chama que eu vejo com a equipe.";
+    await enviarRespostaEregistrar({ supabase, internalSecret, creds, waId, resposta, resultado });
+    return;
+  }
+  // "Preciso remarcar" cai direto no fluxo normal da IA (ela já sabe
+  // remarcar), então não precisa de atalho — só segue pro código abaixo.
+
+  const ctx: ContextoConversa = {
+    tenantId: resultado.tenant_id,
+    tenantNome: resultado.tenant_nome,
+    identidadeAssistente: resultado.identidade_assistente,
+    conversationId: resultado.conversation_id,
+    contactId: resultado.contact_id,
+    contactNome: resultado.contact_nome,
+    contactIsNovo: resultado.contact_is_novo,
+    historico: resultado.historico,
+    profissionais: resultado.profissionais ?? [],
+    horarioAbertura: resultado.horario_abertura,
+    horarioFechamento: resultado.horario_fechamento,
+  };
+
+  let resposta: string;
+  let opcoesHorario: ResultadoIA["opcoesHorario"];
+  try {
+    const resultadoIA = await gerarRespostaWhatsApp(ctx, internalSecret, supabaseUrl, anonKey);
+    resposta = resultadoIA.resposta;
+    opcoesHorario = resultadoIA.opcoesHorario;
+  } catch (err) {
+    console.error("[whatsapp webhook] falha na IA — caindo pra handoff automático", err);
+    resposta = "Peço desculpa, tive um probleminha aqui. Já chamei alguém da equipe pra te ajudar.";
+    await supabase.rpc("ia_solicitar_handoff", {
+      p_secret: internalSecret,
+      p_conversation_id: resultado.conversation_id,
+      p_tenant_id: resultado.tenant_id,
+      p_motivo: "Falha técnica ao gerar resposta da IA",
+    });
+  }
+
+  // Antes, uma falha de envio aqui sumia sem ninguém saber — cliente sem
+  // resposta, dono sem aviso. Isso é tratado dentro de enviarRespostaEregistrar.
+  await enviarRespostaEregistrar({ supabase, internalSecret, creds, waId, resposta, resultado, opcoesHorario });
 }
