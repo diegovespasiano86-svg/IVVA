@@ -7,6 +7,7 @@ import {
   Views,
   type View,
   type Event as RBCEvent,
+  type ToolbarProps,
 } from "react-big-calendar";
 import { format, parse, startOfWeek, getDay, startOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -35,6 +36,40 @@ const MENSAGENS = {
   noEventsInRange: "Nenhum agendamento nesse período.",
   showMore: (total: number) => `+${total} mais`,
 };
+
+// Toolbar própria — só navegação (hoje/anterior/próximo) e o rótulo do
+// período. Os botões de visão (Dia/Semana/Mês) já existem no cabeçalho
+// customizado acima, então a toolbar padrão da lib ficaria duplicada.
+function ToolbarCustomizada({ label, onNavigate }: ToolbarProps) {
+  return (
+    <div className="mb-3 flex items-center gap-2">
+      <div className="flex rounded-[10px] border border-border p-0.5">
+        <button
+          type="button"
+          onClick={() => onNavigate("TODAY")}
+          className="rounded-[8px] px-3 py-1.5 text-[12.5px] font-bold text-ink-soft hover:bg-surface-soft"
+        >
+          Hoje
+        </button>
+        <button
+          type="button"
+          onClick={() => onNavigate("PREV")}
+          className="rounded-[8px] px-3 py-1.5 text-[12.5px] font-bold text-ink-soft hover:bg-surface-soft"
+        >
+          Anterior
+        </button>
+        <button
+          type="button"
+          onClick={() => onNavigate("NEXT")}
+          className="rounded-[8px] px-3 py-1.5 text-[12.5px] font-bold text-ink-soft hover:bg-surface-soft"
+        >
+          Próximo
+        </button>
+      </div>
+      <p className="font-display text-[15px] font-bold capitalize">{label}</p>
+    </div>
+  );
+}
 
 export type EventoAgenda = {
   id: string;
@@ -143,6 +178,7 @@ export default function CalendarView({
               onSelectEvent={(e) => setSelecionado((e as { resource: EventoAgenda }).resource)}
               views={[Views.DAY, Views.WEEK, Views.MONTH]}
               messages={MENSAGENS}
+              components={{ toolbar: ToolbarCustomizada }}
               popup
               style={{ height: "100%" }}
               eventPropGetter={(e) => {
