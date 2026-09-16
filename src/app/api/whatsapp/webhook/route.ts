@@ -133,6 +133,8 @@ async function processarMensagem(params: {
     tenant_id: string;
     tenant_nome: string;
     identidade_assistente: ContextoConversa["identidadeAssistente"];
+    horario_abertura: string | null;
+    horario_fechamento: string | null;
     conversation_id: string;
     conversation_status: string;
     contact_id: string;
@@ -141,6 +143,7 @@ async function processarMensagem(params: {
     whatsapp_phone_number_id: string;
     whatsapp_access_token: string;
     historico: { remetente: "contato" | "bot" | "humano"; conteudo: string }[];
+    profissionais: { id: string; nome: string }[];
   };
 
   if (resultado?.erro) {
@@ -164,6 +167,9 @@ async function processarMensagem(params: {
     contactNome: resultado.contact_nome,
     contactIsNovo: resultado.contact_is_novo,
     historico: resultado.historico,
+    profissionais: resultado.profissionais ?? [],
+    horarioAbertura: resultado.horario_abertura,
+    horarioFechamento: resultado.horario_fechamento,
   };
 
   let resposta: string;
@@ -181,7 +187,28 @@ async function processarMensagem(params: {
     });
   }
 
-  const envio = await sendWhatsAppText(creds, waId, resposta);
+  // Antes, uma falha aqui (token vencido, rate limit etc.) sumia sem
+  // ninguém saber — cliente sem resposta, dono sem aviso. Agora qualquer
+  // falha de envio abre um help_request pro dono e marca a conta em erro
+  // (visível no dashboard/sidebar); um envio bem-sucedido depois disso
+  // limpa esse estado sozinho.
+  let envio: { messages?: { id?: string }[] } | undefined;
+  try {
+    envio = await sendWhatsAppText(creds, waId, resposta);
+  } catch (err) {
+    console.error("[whatsapp webhook] falha ao ENVIAR resposta pro WhatsApp", err);
+    await supabase.rpc("record_whatsapp_send_failure", {
+      p_secret: internalSecret,
+      p_tenant_id: resultado.tenant_id,
+      p_erro: err instanceof Error ? err.message : "Falha desconhecida ao enviar mensagem",
+    });
+    return;
+  }
+
+  await supabase.rpc("record_whatsapp_send_success", {
+    p_secret: internalSecret,
+    p_tenant_id: resultado.tenant_id,
+  });
 
   await supabase.rpc("record_bot_reply", {
     p_secret: internalSecret,
