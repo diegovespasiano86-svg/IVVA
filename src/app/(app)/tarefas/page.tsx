@@ -21,12 +21,28 @@ export default async function TarefasPage() {
 
   const pendentes = (tarefas ?? []).filter((t) => t.status === "pendente");
 
+  const inicioSemana = new Date();
+  inicioSemana.setDate(inicioSemana.getDate() - 6);
+  inicioSemana.setHours(0, 0, 0, 0);
+  const estaSemana = (tarefas ?? []).filter(
+    (t) => new Date(t.created_at) >= inicioSemana,
+  );
+  const responderam = estaSemana.filter(
+    (t) => t.status === "respondeu" || t.status === "agendado",
+  ).length;
+  const taxaResposta = estaSemana.length
+    ? Math.round((responderam / estaSemana.length) * 100)
+    : 0;
+  const agendamentosGerados = estaSemana.filter(
+    (t) => t.status === "agendado",
+  ).length;
+
   return (
     <div>
       <div className="mb-5 flex flex-wrap items-baseline justify-between gap-3">
         <div>
           <h1 className="font-display text-[22px] font-extrabold">
-            Tarefas
+            Tarefas — upsell &amp; cross-sell
           </h1>
           <p className="text-[13.5px] text-ink-soft">
             {pendentes.length} pendentes de {tarefas?.length ?? 0} no total.
@@ -91,6 +107,36 @@ export default async function TarefasPage() {
             + Nova tarefa
           </button>
         </form>
+      </div>
+
+      <div className="mb-5 grid grid-cols-1 gap-3.5 sm:grid-cols-3">
+        <div className="card px-5 py-4.5">
+          <p className="mb-2.5 text-[11.5px] font-bold uppercase tracking-wide text-ink-faint">
+            Contatos esta semana
+          </p>
+          <p className="font-display text-[26px] font-extrabold">
+            {estaSemana.length}
+          </p>
+        </div>
+        <div className="card px-5 py-4.5">
+          <p className="mb-2.5 text-[11.5px] font-bold uppercase tracking-wide text-ink-faint">
+            Responderam
+          </p>
+          <p className="font-display text-[26px] font-extrabold text-teal">
+            {responderam}{" "}
+            <span className="text-[15px] font-semibold text-ink-faint">
+              ({taxaResposta}%)
+            </span>
+          </p>
+        </div>
+        <div className="card px-5 py-4.5">
+          <p className="mb-2.5 text-[11.5px] font-bold uppercase tracking-wide text-ink-faint">
+            Agendamentos gerados
+          </p>
+          <p className="font-display text-[26px] font-extrabold text-purple">
+            {agendamentosGerados}
+          </p>
+        </div>
       </div>
 
       {!tarefas || tarefas.length === 0 ? (

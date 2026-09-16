@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { LineAreaChart, HBarList, VBarChart, StatusTile, CardVazio } from "./charts";
+import { LineAreaChart, HBarList, VBarChart, StatusTile, CardVazio } from "@/components/charts";
 
 function KpiCard({
   label,

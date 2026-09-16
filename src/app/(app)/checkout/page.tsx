@@ -8,24 +8,55 @@ const FORMAS: { key: string; label: string }[] = [
   { key: "dinheiro", label: "Dinheiro" },
 ];
 
-export default async function CheckoutPage() {
+export default async function CheckoutPage(props: {
+  searchParams: Promise<{
+    appointment_id?: string;
+    contact_id?: string;
+    professional_id?: string;
+    servico?: string;
+  }>;
+}) {
+  const prefill = await props.searchParams;
   const supabase = await createClient();
 
-  const [{ data: contatos }, { data: profissionais }, { data: pagamentos }] =
-    await Promise.all([
-      supabase.from("contacts").select("id, nome").order("nome"),
-      supabase
-        .from("professionals")
-        .select("id, nome, comissao_pct")
-        .order("nome"),
-      supabase
-        .from("payments")
-        .select(
-          "id, itens, valor_total, comissao_calculada, forma_pagamento, created_at, contacts(nome), professionals(nome)",
-        )
-        .order("created_at", { ascending: false })
-        .limit(15),
-    ]);
+  const inicioHoje = new Date();
+  inicioHoje.setHours(0, 0, 0, 0);
+  const fimHoje = new Date();
+  fimHoje.setHours(23, 59, 59, 999);
+
+  const [
+    { data: contatos },
+    { data: profissionais },
+    { data: pagamentos },
+    { data: agendamentosHoje },
+  ] = await Promise.all([
+    supabase.from("contacts").select("id, nome").order("nome"),
+    supabase
+      .from("professionals")
+      .select("id, nome, comissao_pct")
+      .order("nome"),
+    supabase
+      .from("payments")
+      .select(
+        "id, appointment_id, itens, valor_total, comissao_calculada, forma_pagamento, created_at, contacts(nome), professionals(nome)",
+      )
+      .order("created_at", { ascending: false })
+      .limit(15),
+    supabase
+      .from("appointments")
+      .select("id, data_hora, servico, contact_id, professional_id, contacts(nome), professionals(nome)")
+      .eq("status", "agendado")
+      .gte("data_hora", inicioHoje.toISOString())
+      .lte("data_hora", fimHoje.toISOString())
+      .order("data_hora", { ascending: true }),
+  ]);
+
+  const pagosAppointmentIds = new Set(
+    (pagamentos ?? []).map((p) => p.appointment_id).filter(Boolean),
+  );
+  const aguardandoCheckout = (agendamentosHoje ?? []).filter(
+    (a) => !pagosAppointmentIds.has(a.id),
+  );
 
   const money = new Intl.NumberFormat("pt-BR", {
     style: "currency",
@@ -72,10 +103,51 @@ export default async function CheckoutPage() {
         </div>
       </div>
 
+      {aguardandoCheckout.length > 0 && (
+        <div className="card mb-4 px-4 py-4">
+          <p className="mb-3 text-[13.5px] font-bold">
+            Atendimentos de hoje aguardando checkout
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {aguardandoCheckout.map((a) => {
+              const contato = a.contacts as unknown as { nome: string } | null;
+              const prof = a.professionals as unknown as { nome: string } | null;
+              const hora = new Date(a.data_hora).toLocaleTimeString("pt-BR", {
+                hour: "2-digit",
+                minute: "2-digit",
+              });
+              const params = new URLSearchParams({
+                appointment_id: a.id,
+                contact_id: a.contact_id,
+                professional_id: a.professional_id ?? "",
+                servico: a.servico ?? "",
+              });
+              const ativo = prefill.appointment_id === a.id;
+              return (
+                <a
+                  key={a.id}
+                  href={`/checkout?${params.toString()}`}
+                  className={`flex items-center gap-2 rounded-[10px] border px-3.5 py-2 text-[12.5px] font-bold ${
+                    ativo
+                      ? "border-purple bg-purple/5 text-purple"
+                      : "border-border bg-surface text-ink-soft hover:border-ink/25"
+                  }`}
+                >
+                  <span className="h-2 w-2 rounded-full bg-purple" />
+                  {contato?.nome ?? "Cliente"} · {hora}
+                  {prof?.nome ? ` · ${prof.nome}` : ""}
+                </a>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <form
         action={registrarPagamento}
         className="card mb-5 flex flex-wrap items-end gap-3 px-4 py-4"
       >
+        <input type="hidden" name="appointment_id" value={prefill.appointment_id ?? ""} />
         <div>
           <label htmlFor="contact_id" className="!mb-1">
             Cliente
@@ -84,6 +156,7 @@ export default async function CheckoutPage() {
             id="contact_id"
             name="contact_id"
             required
+            defaultValue={prefill.contact_id ?? ""}
             className="w-[150px] rounded-[10px] border border-border bg-surface px-2.5 py-2 text-[12.5px]"
           >
             <option value="">Selecione…</option>
@@ -103,6 +176,7 @@ export default async function CheckoutPage() {
             id="professional_id"
             name="professional_id"
             required
+            defaultValue={prefill.professional_id ?? ""}
             className="w-[150px] rounded-[10px] border border-border bg-surface px-2.5 py-2 text-[12.5px]"
           >
             <option value="">Selecione…</option>
@@ -122,6 +196,7 @@ export default async function CheckoutPage() {
             id="servico"
             name="servico"
             required
+            defaultValue={prefill.servico ?? ""}
             placeholder="Corte + barba"
             className="w-[150px] rounded-[10px] border border-border bg-surface px-2.5 py-2 text-[12.5px]"
           />

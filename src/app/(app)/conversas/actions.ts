@@ -61,6 +61,8 @@ export async function responderConversa(
     .eq("id", conversationId);
 
   revalidatePath("/conversas");
+  revalidatePath(`/conversas/${conversationId}`);
+  revalidatePath("/sac");
   return { erro: null };
 }
 
@@ -75,6 +77,8 @@ export async function encerrarConversa(formData: FormData) {
     .eq("id", conversationId);
 
   revalidatePath("/conversas");
+  revalidatePath(`/conversas/${conversationId}`);
+  revalidatePath("/sac");
 }
 
 // Devolve a conversa pro robô — usado quando a IA pediu handoff (ou um
@@ -91,4 +95,6 @@ export async function restaurarBot(formData: FormData) {
     .eq("id", conversationId);
 
   revalidatePath("/conversas");
+  revalidatePath(`/conversas/${conversationId}`);
+  revalidatePath("/sac");
 }
