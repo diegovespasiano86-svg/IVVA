@@ -113,7 +113,9 @@ export default function CalendarView({
 
   return (
     <div className={maximizado ? "fixed inset-0 z-50 flex flex-col bg-bg p-4" : ""}>
-      <div className="card flex flex-1 flex-col overflow-hidden px-4 py-4">
+      <div
+        className={`card px-4 py-4 ${maximizado ? "flex flex-1 flex-col overflow-hidden" : ""}`}
+      >
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap gap-3">
             {profissionais.map((p) => (
@@ -166,7 +168,10 @@ export default function CalendarView({
             }}
           />
         ) : (
-          <div className="min-h-0 flex-1" style={{ height: maximizado ? undefined : 640 }}>
+          <div
+            className={maximizado ? "min-h-0 flex-1" : ""}
+            style={maximizado ? undefined : { height: 640 }}
+          >
             <Calendar
               localizer={localizer}
               culture="pt-BR"
