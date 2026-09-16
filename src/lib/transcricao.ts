@@ -8,7 +8,15 @@ export async function transcreverAudio(base64: string, mimeType: string): Promis
   if (!key) return null;
 
   const buffer = Buffer.from(base64, "base64");
-  const extensao = mimeType.includes("ogg") ? "ogg" : mimeType.includes("mp4") ? "mp4" : "bin";
+  const extensao = mimeType.includes("ogg")
+    ? "ogg"
+    : mimeType.includes("mp4")
+      ? "mp4"
+      : mimeType.includes("webm")
+        ? "webm"
+        : mimeType.includes("wav")
+          ? "wav"
+          : "bin";
 
   const form = new FormData();
   form.append("file", new Blob([buffer], { type: mimeType }), `audio.${extensao}`);

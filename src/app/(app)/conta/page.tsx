@@ -76,6 +76,7 @@ export default async function ContaPage() {
       tom?: string;
       regras?: string[];
       horario_atendimento?: string;
+      voz?: string;
     } | null;
   } | null;
 

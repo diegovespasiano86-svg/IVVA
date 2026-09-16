@@ -8,7 +8,13 @@ type Identidade = {
   tom?: string;
   regras?: string[];
   horario_atendimento?: string;
+  voz?: string;
 } | null;
+
+const VOZES = [
+  { key: "feminina", label: "Feminina" },
+  { key: "masculina", label: "Masculina" },
+];
 
 export default function AssistantForm({ identidade }: { identidade: Identidade }) {
   const [error, formAction, pending] = useActionState(
@@ -55,6 +61,31 @@ export default function AssistantForm({ identidade }: { identidade: Identidade }
           placeholder="Ex: seg-sáb 9h-19h"
           className="w-full rounded-[10px] border border-border bg-surface px-3 py-2 text-[13px]"
         />
+      </div>
+
+      <div>
+        <label className="!mb-1">Voz do assistente (áudio, em breve)</label>
+        <div className="flex gap-2">
+          {VOZES.map((v) => (
+            <label
+              key={v.key}
+              className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-[10px] border border-border px-3 py-2.5 text-[12.5px] font-semibold has-[:checked]:border-purple has-[:checked]:bg-purple/5 has-[:checked]:text-purple"
+            >
+              <input
+                type="radio"
+                name="voz"
+                value={v.key}
+                defaultChecked={(identidade?.voz ?? "feminina") === v.key}
+                className="accent-[var(--purple)]"
+              />
+              {v.label}
+            </label>
+          ))}
+        </div>
+        <p className="mt-1.5 text-[11px] text-ink-faint">
+          Define qual voz a ivva vai usar quando o envio de áudio pro
+          cliente estiver disponível — hoje ela só responde por texto.
+        </p>
       </div>
 
       <div>

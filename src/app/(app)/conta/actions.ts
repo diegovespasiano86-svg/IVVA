@@ -163,6 +163,8 @@ export async function atualizarIdentidadeAssistente(
   const nomeAssistente = String(formData.get("nome_assistente") ?? "").trim();
   const tom = String(formData.get("tom") ?? "").trim();
   const horarioAtendimento = String(formData.get("horario_atendimento") ?? "").trim();
+  const vozInformada = String(formData.get("voz") ?? "").trim();
+  const voz = vozInformada === "masculina" ? "masculina" : "feminina";
   const regrasTexto = String(formData.get("regras") ?? "");
   const regras = regrasTexto
     .split("\n")
@@ -193,6 +195,7 @@ export async function atualizarIdentidadeAssistente(
         nome_assistente: nomeAssistente || undefined,
         tom: tom || undefined,
         horario_atendimento: horarioAtendimento || undefined,
+        voz,
         regras,
       },
     })

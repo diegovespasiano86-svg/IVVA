@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { criarEntrada, removerEntrada } from "./actions";
+import UploadArquivo from "./upload-arquivo";
+import EntrevistaAudio from "./entrevista-audio";
 
 export default async function BaseConhecimentoPage() {
   const supabase = await createClient();
@@ -37,6 +39,24 @@ export default async function BaseConhecimentoPage() {
           + Adicionar
         </button>
       </form>
+
+      <div className="mb-5 grid gap-4 lg:grid-cols-2">
+        <div className="card px-5 py-5">
+          <p className="mb-1 text-[14px] font-bold">Subir arquivo</p>
+          <p className="mb-3 text-[12px] text-ink-faint">
+            Planilha de preços (.csv) ou catálogo em PDF — a ivva lê e separa
+            os fatos importantes pra você revisar antes de salvar.
+          </p>
+          <UploadArquivo />
+        </div>
+        <div className="card px-5 py-5">
+          <p className="mb-1 text-[14px] font-bold">Entrevista por áudio</p>
+          <p className="mb-3 text-[12px] text-ink-faint">
+            Prefere falar a escrever? Grave contando sobre o negócio.
+          </p>
+          <EntrevistaAudio />
+        </div>
+      </div>
 
       {!entradas || entradas.length === 0 ? (
         <div className="card px-6 py-14 text-center text-[13px] text-ink-faint">
