@@ -4,11 +4,13 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import {
   sendWhatsAppText,
   sendWhatsAppInteractiveList,
+  baixarMidiaWhatsApp,
   type WhatsAppCreds,
 } from "@/lib/whatsapp";
 import { gerarRespostaWhatsApp, type ContextoConversa, type ResultadoIA } from "@/lib/ai";
 import { gerarRespostaAdmin } from "@/lib/admin-ai";
 import { verifyPin } from "@/lib/pin";
+import { transcreverAudio } from "@/lib/transcricao";
 
 // Verificação inicial do webhook — a Meta chama essa rota com um GET pra
 // confirmar que o endpoint é nosso antes de ativar o recebimento de eventos.
@@ -60,6 +62,8 @@ type WhatsAppWebhookBody = {
             list_reply?: { id?: string; title?: string };
             button_reply?: { id?: string; title?: string };
           };
+          image?: { id?: string; mime_type?: string; caption?: string };
+          audio?: { id?: string; mime_type?: string };
         }[];
       };
     }[];
@@ -93,11 +97,11 @@ export async function POST(request: NextRequest) {
       for (const msg of value?.messages ?? []) {
         if (!msg.from) continue;
 
-        // Mensagem de texto normal, ou uma lista/botão interativo que a
-        // pessoa clicou — nesse caso tratamos o título escolhido como se
-        // fosse o texto digitado, pra reaproveitar todo o fluxo da IA.
+        // Mensagem de texto normal, lista/botão interativo, áudio (vira
+        // texto transcrito) ou imagem (vai como anexo multimodal pra IA).
         let content: string | null = null;
         let botaoId: string | null = null;
+        let midia: { id: string; mimeType: string; tipo: "image" | "audio" } | null = null;
 
         if (msg.type === "text") {
           content = msg.text?.body ?? "";
@@ -105,6 +109,12 @@ export async function POST(request: NextRequest) {
           const reply = msg.interactive?.list_reply ?? msg.interactive?.button_reply;
           if (reply?.title) content = `Escolho: ${reply.title}`;
           botaoId = msg.interactive?.button_reply?.id ?? null;
+        } else if (msg.type === "image" && msg.image?.id) {
+          content = msg.image.caption?.trim() || "[imagem]";
+          midia = { id: msg.image.id, mimeType: msg.image.mime_type ?? "image/jpeg", tipo: "image" };
+        } else if (msg.type === "audio" && msg.audio?.id) {
+          content = ""; // resolvido depois de transcrever, dentro de processarMensagem
+          midia = { id: msg.audio.id, mimeType: msg.audio.mime_type ?? "audio/ogg", tipo: "audio" };
         }
 
         if (content === null) continue;
@@ -122,6 +132,7 @@ export async function POST(request: NextRequest) {
             contactName: contactName ?? null,
             content,
             botaoId,
+            midia,
           });
         } catch (err) {
           // Uma falha (IA fora do ar, erro de rede) não pode derrubar o
@@ -350,10 +361,43 @@ async function processarMensagem(params: {
   contactName: string | null;
   content: string;
   botaoId: string | null;
+  midia: { id: string; mimeType: string; tipo: "image" | "audio" } | null;
 }) {
-  const { supabaseUrl, anonKey, internalSecret, phoneNumberId, waId, waMessageId, contactName, content, botaoId } =
+  const { supabaseUrl, anonKey, internalSecret, phoneNumberId, waId, waMessageId, contactName, botaoId, midia } =
     params;
+  let content = params.content;
   const supabase = createClient(supabaseUrl, anonKey);
+
+  // Áudio/imagem precisam do token do tenant ANTES de decidir o texto a
+  // logar (transcrição vira o próprio "content"; imagem some armazenada
+  // como base64 à parte, só passada direto pra IA, nunca gravada na
+  // tabela messages — ficaria enorme).
+  let imagemAnexada: { base64: string; mediaType: string } | undefined;
+  if (midia) {
+    const { data: token } = await supabase.rpc("whatsapp_token_para_numero", {
+      p_secret: internalSecret,
+      p_phone_number_id: phoneNumberId,
+    });
+    if (typeof token === "string" && token) {
+      try {
+        const arquivo = await baixarMidiaWhatsApp(midia.id, token);
+        if (midia.tipo === "image") {
+          imagemAnexada = { base64: arquivo.base64, mediaType: arquivo.mimeType };
+        } else {
+          const transcricao = await transcreverAudio(arquivo.base64, arquivo.mimeType);
+          content = transcricao ?? "";
+        }
+      } catch (err) {
+        console.error("[whatsapp webhook] falha ao baixar/processar mídia", err);
+      }
+    }
+    // Sem transcrição (sem provedor configurado, ou falhou o download) —
+    // segue um texto sintético pela IA em vez de mandar mensagem vazia;
+    // o system prompt sabe reconhecer isso e pedir pro cliente escrever.
+    if (midia.tipo === "audio" && !content) {
+      content = "[Cliente mandou um áudio, mas não consegui converter pra texto ainda]";
+    }
+  }
 
   // Verifica ANTES de tudo se quem mandou é o número admin cadastrado —
   // nesse caso nunca cria contato/conversa de CRM, vai direto pro canal
@@ -439,7 +483,7 @@ async function processarMensagem(params: {
   let resposta: string;
   let opcoesHorario: ResultadoIA["opcoesHorario"];
   try {
-    const resultadoIA = await gerarRespostaWhatsApp(ctx, internalSecret, supabaseUrl, anonKey);
+    const resultadoIA = await gerarRespostaWhatsApp(ctx, internalSecret, supabaseUrl, anonKey, imagemAnexada);
     resposta = resultadoIA.resposta;
     opcoesHorario = resultadoIA.opcoesHorario;
   } catch (err) {

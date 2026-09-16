@@ -1,6 +1,8 @@
 // Cliente da IA generativa (Claude) que responde pelo WhatsApp. Sem SDK —
 // fetch direto na Messages API, no mesmo espírito do lib/stripe.ts.
 
+import { createPixPaymentIntent } from "@/lib/stripe";
+
 const ANTHROPIC_API = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_VERSION = "2023-06-01";
 const MODEL = process.env.ANTHROPIC_MODEL ?? "claude-sonnet-5";
@@ -102,6 +104,8 @@ function montarSystemPrompt(ctx: ContextoConversa) {
     horario ? `Horário de atendimento humano: ${horario}.` : "",
     regras ? `Regras específicas desse negócio:\n${regras}` : "",
     `Se o cliente pedir claramente pra falar com uma pessoa, reclamar de algo sério, ou se você não souber responder com segurança, chame a ferramenta solicitar_atendimento_humano explicando o motivo — não invente informação que você não tem.`,
+    `Se a mensagem do cliente for literalmente "[Cliente mandou um áudio, mas não consegui converter pra texto ainda]", isso significa que a transcrição de voz não está disponível agora — peça educadamente pra ele escrever a mensagem, sem fingir que ouviu algo.`,
+    `Se vier uma imagem anexada, ela é real (uma foto que o cliente mandou) — descreva o que vê com naturalidade e responda ao que ele quis dizer com a foto (referência de corte, foto de um problema, etc.), sem inventar detalhes que não dá pra ver.`,
     `Responda sempre em português do Brasil, em mensagens curtas como quem digita no WhatsApp de verdade — não em blocos longos de texto.`,
   ]
     .filter(Boolean)
@@ -188,11 +192,33 @@ const TOOLS = [
       "Verifica se há promoção, feriado ou ausência de profissional cadastrados pro dono que estejam valendo hoje. Chame isso quando o assunto for agendamento, preço ou disponibilidade — se algo valendo afetar o que o cliente quer, avise proativamente antes de seguir.",
     input_schema: { type: "object", properties: {} },
   },
+  {
+    name: "consultar_catalogo",
+    description: "Busca produtos e informações da base de conhecimento do negócio por palavra-chave (preços, serviços, políticas). Use quando o cliente perguntar sobre algo que você não tem certeza.",
+    input_schema: {
+      type: "object",
+      properties: { busca: { type: "string", description: "Palavra-chave a buscar" } },
+      required: ["busca"],
+    },
+  },
+  {
+    name: "solicitar_pagamento_pix",
+    description: "Gera uma cobrança Pix (código copia-e-cola) pra sinal de um serviço de ticket alto. Só use depois que o cliente já confirmou o serviço/valor e concordou em pagar o sinal.",
+    input_schema: {
+      type: "object",
+      properties: {
+        valor_reais: { type: "number", description: "Valor do sinal em reais (ex: 50 pra R$50,00)" },
+        descricao: { type: "string", description: "O que é a cobrança (ex: 'Sinal - coloração')" },
+      },
+      required: ["valor_reais", "descricao"],
+    },
+  },
 ] as const;
 
 type ClaudeContentBlock =
   | { type: "text"; text: string }
-  | { type: "tool_use"; id: string; name: string; input: Record<string, unknown> };
+  | { type: "tool_use"; id: string; name: string; input: Record<string, unknown> }
+  | { type: "image"; source: { type: "base64"; media_type: string; data: string } };
 
 type ClaudeMessage = {
   role: "user" | "assistant";
@@ -310,6 +336,44 @@ async function executarFerramenta(
     return { resultado: JSON.stringify(data), handoff: false };
   }
 
+  if (nome === "consultar_catalogo") {
+    const { data, error } = await supabase.rpc("ia_consultar_catalogo", {
+      p_secret: secret,
+      p_tenant_id: ctx.tenantId,
+      p_busca: input.busca,
+    });
+    if (error) return { resultado: JSON.stringify({ erro: error.message }), handoff: false };
+    return { resultado: JSON.stringify(data), handoff: false };
+  }
+
+  if (nome === "solicitar_pagamento_pix") {
+    try {
+      const valorReais = Number(input.valor_reais);
+      const pix = await createPixPaymentIntent({
+        valorCentavos: Math.round(valorReais * 100),
+        descricao: String(input.descricao ?? "Sinal"),
+      });
+      return {
+        resultado: JSON.stringify({
+          ok: true,
+          pix_copia_e_cola: pix.pixCopiaECola,
+          aviso_para_voce: "Manda esse código pro cliente exatamente como veio, dizendo pra colar no Pix Copia e Cola do banco dele.",
+        }),
+        handoff: false,
+      };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Falha ao gerar Pix";
+      return {
+        resultado: JSON.stringify({
+          erro: "pix_indisponivel",
+          detalhe: msg,
+          aviso_para_voce: "Pix ainda não está habilitado pro negócio. Explique ao cliente que o pagamento online não está disponível ainda e ofereça alternativa (pagar no local, ou chamar um humano).",
+        }),
+        handoff: false,
+      };
+    }
+  }
+
   return { resultado: "ferramenta desconhecida", handoff: false };
 }
 
@@ -321,6 +385,7 @@ export async function gerarRespostaWhatsApp(
   secret: string,
   supabaseUrl: string,
   anonKey: string,
+  imagemAnexada?: { base64: string; mediaType: string },
 ): Promise<ResultadoIA> {
   const system = montarSystemPrompt(ctx);
 
@@ -328,6 +393,21 @@ export async function gerarRespostaWhatsApp(
     role: m.remetente === "contato" ? "user" : "assistant",
     content: m.conteudo,
   }));
+
+  // A mensagem atual do cliente é sempre a última do histórico (foi
+  // inserida antes desse RPC devolver). Se veio com imagem, troca o
+  // conteúdo dela por um bloco multimodal — Claude recebe imagem nativo,
+  // ao contrário de áudio (que precisa de transcrição antes de chegar aqui).
+  if (imagemAnexada) {
+    const ultima = messages[messages.length - 1];
+    if (ultima?.role === "user") {
+      const textoOriginal = typeof ultima.content === "string" ? ultima.content : "";
+      ultima.content = [
+        { type: "image", source: { type: "base64", media_type: imagemAnexada.mediaType, data: imagemAnexada.base64 } },
+        ...(textoOriginal ? ([{ type: "text", text: textoOriginal }] as const) : []),
+      ] as ClaudeContentBlock[];
+    }
+  }
 
   let handoffSolicitado = false;
   let opcoesHorario: Slot[] | undefined;

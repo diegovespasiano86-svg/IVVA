@@ -86,5 +86,29 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  return NextResponse.json({ ok: true, total: pendentes.length, enviados, forDaJanela, falhas });
+  // Reengajamento + recall por ciclo de serviço entram aqui também — o
+  // Hobby da Vercel só libera 2 crons, os dois já usados (pós-venda e
+  // lembretes), então isso não vira uma chamada de mensagem direta: só
+  // cria a tarefa em outreach_tasks, pro time trabalhar por /tarefas.
+  const { data: tarefasData, error: tarefasError } = await supabase.rpc(
+    "gerar_tarefas_reengajamento_e_recall",
+    { p_secret: secret },
+  );
+  if (tarefasError) {
+    console.error("[cron pos-venda] erro ao gerar tarefas de reengajamento/recall", tarefasError);
+  }
+  const tarefas = (tarefasData ?? { reengajamento_criadas: 0, recall_criadas: 0 }) as {
+    reengajamento_criadas: number;
+    recall_criadas: number;
+  };
+
+  return NextResponse.json({
+    ok: true,
+    total: pendentes.length,
+    enviados,
+    forDaJanela,
+    falhas,
+    reengajamentoCriadas: tarefas.reengajamento_criadas,
+    recallCriadas: tarefas.recall_criadas,
+  });
 }

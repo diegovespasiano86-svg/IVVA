@@ -42,6 +42,47 @@ export async function createCheckoutSession(params: {
   return data as { id: string; url: string };
 }
 
+// Pix pra cobrar sinal de serviço de ticket alto direto na conversa do
+// WhatsApp. PRECISA que Pix esteja ativado no dashboard da Stripe
+// (Configurações > Pagamentos) — não é algo que dá pra ligar por API,
+// é uma habilitação manual da conta. Sem isso, a Stripe recusa com
+// "payment method type pix is invalid".
+export async function createPixPaymentIntent(params: {
+  valorCentavos: number;
+  descricao: string;
+}) {
+  const body = new URLSearchParams({
+    amount: String(params.valorCentavos),
+    currency: "brl",
+    "payment_method_types[]": "pix",
+    "payment_method_data[type]": "pix",
+    confirm: "true",
+    description: params.descricao,
+  });
+
+  const res = await fetch(`${STRIPE_API}/payment_intents`, {
+    method: "POST",
+    headers: stripeHeaders(),
+    body,
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data?.error?.message ?? "Falha ao gerar cobrança Pix");
+  }
+
+  const qr = data?.next_action?.pix_display_qr_code;
+  if (!qr?.data) {
+    throw new Error("Stripe não devolveu o código Pix — confere se Pix está ativado no dashboard");
+  }
+
+  return {
+    paymentIntentId: data.id as string,
+    pixCopiaECola: qr.data as string,
+    expiresAt: qr.expires_at as number | undefined,
+  };
+}
+
 export async function getCheckoutSession(sessionId: string) {
   const res = await fetch(
     `${STRIPE_API}/checkout/sessions/${sessionId}?expand[]=customer`,

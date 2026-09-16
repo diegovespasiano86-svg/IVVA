@@ -4,6 +4,30 @@ const GRAPH_API_VERSION = "v22.0";
 // globais — cada negócio tem seu próprio número e token.
 export type WhatsAppCreds = { phoneNumberId: string; token: string };
 
+// Baixa uma mídia recebida (áudio, imagem) — a Meta manda só o ID no
+// webhook, o conteúdo em si precisa de 2 passos: pega a URL temporária,
+// depois baixa de lá (a URL sozinha não funciona sem o token de novo).
+export async function baixarMidiaWhatsApp(
+  mediaId: string,
+  token: string,
+): Promise<{ base64: string; mimeType: string }> {
+  const resInfo = await fetch(`https://graph.facebook.com/${GRAPH_API_VERSION}/${mediaId}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const info = await resInfo.json();
+  if (!resInfo.ok || !info?.url) {
+    throw new Error(info?.error?.message ?? "Falha ao obter URL da mídia do WhatsApp");
+  }
+
+  const resArquivo = await fetch(info.url, { headers: { Authorization: `Bearer ${token}` } });
+  if (!resArquivo.ok) {
+    throw new Error("Falha ao baixar mídia do WhatsApp");
+  }
+  const buffer = Buffer.from(await resArquivo.arrayBuffer());
+
+  return { base64: buffer.toString("base64"), mimeType: info.mime_type ?? "application/octet-stream" };
+}
+
 // Envia uma mensagem de template via WhatsApp Cloud API. Usado pra primeiro
 // contato (fora da janela de 24h) — respostas dentro da janela podem usar
 // mensagem de texto livre.
