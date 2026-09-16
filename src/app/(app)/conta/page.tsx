@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import WhatsAppForm from "./whatsapp-form";
 import InviteForm from "./invite-form";
+import AssistantForm from "./assistant-form";
 import { desconectarWhatsApp, revogarConvite } from "./actions";
 
 const PLANO_LABEL: Record<string, string> = {
@@ -18,13 +19,19 @@ export default async function ContaPage() {
 
   const { data: perfil } = await supabase
     .from("users")
-    .select("tenant_id, role, tenants(nome, plano)")
+    .select("tenant_id, role, tenants(nome, plano, identidade_assistente)")
     .eq("id", user?.id ?? "")
     .maybeSingle();
 
   const tenant = perfil?.tenants as unknown as {
     nome: string;
     plano: string;
+    identidade_assistente: {
+      nome_assistente?: string;
+      tom?: string;
+      regras?: string[];
+      horario_atendimento?: string;
+    } | null;
   } | null;
 
   const isDono = perfil?.role === "dono";
@@ -101,6 +108,19 @@ export default async function ContaPage() {
               </p>
               <WhatsAppForm />
             </>
+          )}
+
+          {isDono && conta && (
+            <div className="mt-4 border-t border-border pt-4">
+              <p className="mb-1 text-[13px] font-bold">
+                Personalidade do atendimento
+              </p>
+              <p className="mb-3 text-[12px] text-ink-faint">
+                Como a ivva se apresenta e conversa com seus clientes no
+                WhatsApp.
+              </p>
+              <AssistantForm identidade={tenant?.identidade_assistente ?? null} />
+            </div>
           )}
         </div>
 

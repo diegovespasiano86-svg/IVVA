@@ -52,15 +52,13 @@ export async function conectarWhatsApp(
     );
 
   if (upsertError) {
+    // unique_violation no phone_number_id: esse número já está conectado
+    // em outro negócio na ivva — não pode roteirar pra dois tenants.
+    if (upsertError.code === "23505") {
+      return "Esse Phone Number ID já está conectado em outro negócio na ivva.";
+    }
     return "Não consegui salvar. Confere os dados e tenta de novo.";
   }
-
-  // Mantém tenants.whatsapp_number_id em sincronia — é essa coluna que
-  // o webhook usa pra descobrir de qual negócio é a mensagem recebida.
-  await supabase
-    .from("tenants")
-    .update({ whatsapp_number_id: phoneNumberId })
-    .eq("id", perfil.tenant_id);
 
   revalidatePath("/conta");
   return undefined;
@@ -155,6 +153,56 @@ export async function revogarConvite(formData: FormData) {
   revalidatePath("/conta");
 }
 
+export async function atualizarIdentidadeAssistente(
+  _prevState: string | undefined,
+  formData: FormData,
+) {
+  const nomeAssistente = String(formData.get("nome_assistente") ?? "").trim();
+  const tom = String(formData.get("tom") ?? "").trim();
+  const horarioAtendimento = String(formData.get("horario_atendimento") ?? "").trim();
+  const regrasTexto = String(formData.get("regras") ?? "");
+  const regras = regrasTexto
+    .split("\n")
+    .map((r) => r.trim())
+    .filter(Boolean);
+
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return "Sessão expirada, faça login de novo.";
+
+  const { data: perfil } = await supabase
+    .from("users")
+    .select("tenant_id, role")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (!perfil || perfil.role !== "dono") {
+    return "Só o dono do negócio pode configurar o atendimento.";
+  }
+
+  const { error } = await supabase
+    .from("tenants")
+    .update({
+      identidade_assistente: {
+        nome_assistente: nomeAssistente || undefined,
+        tom: tom || undefined,
+        horario_atendimento: horarioAtendimento || undefined,
+        regras,
+      },
+    })
+    .eq("id", perfil.tenant_id);
+
+  if (error) {
+    return "Não consegui salvar. Tenta de novo.";
+  }
+
+  revalidatePath("/conta");
+  return undefined;
+}
+
 export async function desconectarWhatsApp() {
   const supabase = await createClient();
 
@@ -174,11 +222,6 @@ export async function desconectarWhatsApp() {
     .from("whatsapp_accounts")
     .delete()
     .eq("tenant_id", perfil.tenant_id);
-
-  await supabase
-    .from("tenants")
-    .update({ whatsapp_number_id: null })
-    .eq("id", perfil.tenant_id);
 
   revalidatePath("/conta");
 }
