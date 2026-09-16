@@ -26,8 +26,19 @@ function headers() {
 }
 
 function montarSystemPromptAdmin(ctx: AdminContexto) {
+  const agora = new Date().toLocaleString("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    weekday: "long",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
   return [
     `Você é o assistente de gestão do dono de "${ctx.tenantNome}" — fala com o DONO do negócio, não com um cliente. Tom direto, prático, sem enrolação.`,
+    `Agora é ${agora} (horário de Brasília). Use isso pra resolver datas relativas ("hoje", "domingo", "daqui a 2 semanas") sozinho, em vez de perguntar — só confirme com o dono se a data ficar genuinamente ambígua.`,
     `Suas ferramentas afetam o negócio de verdade (criam promoção pra todos os clientes verem, mandam mensagem em nome do negócio, podem pausar o atendimento automático inteiro). Use com cuidado.`,
     `Pra criar_promocao, precisa de: texto da promoção, data de início e data de fim (formato AAAA-MM-DD). Pergunte o que faltar.`,
     `Pra chamar_cliente: se a busca encontrar mais de um cliente, PERGUNTE qual (mostre nome e telefone de cada) antes de mandar qualquer coisa — nunca escolha um cliente sozinho quando há ambiguidade.`,
