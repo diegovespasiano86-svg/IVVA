@@ -46,17 +46,28 @@ export default async function AppLayout({
     (perfil.tenants as unknown as { nome: string } | null)?.nome ?? "ivva";
   const items = navForRole(role);
 
-  // Só o dono pode agir sobre isso (reconectar em /conta) — não vale a
-  // pena mostrar/consultar pra profissional, que não tem o que fazer com o aviso.
+  // Só o dono pode agir sobre isso (reconectar em /conta, ver chamados) —
+  // não vale a pena mostrar/consultar pra profissional, que não tem o que
+  // fazer com o aviso.
   let whatsappEmErro = false;
+  let chamadosAbertos = 0;
   if (role === "dono") {
-    const { data: conta } = await supabase
-      .from("whatsapp_accounts")
-      .select("status")
-      .eq("tenant_id", perfil.tenant_id)
-      .maybeSingle();
+    const [{ data: conta }, { count }] = await Promise.all([
+      supabase
+        .from("whatsapp_accounts")
+        .select("status")
+        .eq("tenant_id", perfil.tenant_id)
+        .maybeSingle(),
+      supabase
+        .from("help_requests")
+        .select("id", { count: "exact", head: true })
+        .eq("tenant_id", perfil.tenant_id)
+        .neq("status", "resolvido"),
+    ]);
     whatsappEmErro = conta?.status === "erro";
+    chamadosAbertos = count ?? 0;
   }
+  const alertHrefs = chamadosAbertos > 0 ? ["/conta"] : [];
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
@@ -65,6 +76,7 @@ export default async function AppLayout({
         negocio={tenantNome}
         nome={perfil.nome}
         role={role}
+        alertHrefs={alertHrefs}
       />
       <main className="flex-1 overflow-x-hidden px-4 py-6 md:px-8 md:py-8">
         {whatsappEmErro && (

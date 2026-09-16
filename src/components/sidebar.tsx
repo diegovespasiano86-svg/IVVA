@@ -18,11 +18,14 @@ export default function Sidebar({
   negocio,
   nome,
   role,
+  alertHrefs = [],
 }: {
   items: NavItem[];
   negocio: string;
   nome: string;
   role: Role;
+  /** hrefs que devem mostrar um ponto vermelho (ex: chamado aberto) */
+  alertHrefs?: string[];
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -62,6 +65,7 @@ export default function Sidebar({
 
         {items.map((item) => {
           const active = pathname.startsWith(item.href);
+          const emAlerta = alertHrefs.includes(item.href);
           return (
             <Link
               key={item.href}
@@ -72,7 +76,12 @@ export default function Sidebar({
                   : "text-ink-soft hover:bg-surface-soft hover:text-ink"
               }`}
             >
-              <Icon d={item.icon} />
+              <span className="relative flex">
+                <Icon d={item.icon} />
+                {emAlerta && (
+                  <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-coral" />
+                )}
+              </span>
               {item.label}
             </Link>
           );

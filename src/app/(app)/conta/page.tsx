@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import WhatsAppForm from "./whatsapp-form";
 import InviteForm from "./invite-form";
 import AssistantForm from "./assistant-form";
+import BotSettingsForm from "./bot-settings-form";
 import { desconectarWhatsApp, revogarConvite } from "./actions";
 
 const PLANO_LABEL: Record<string, string> = {
@@ -36,7 +37,7 @@ export default async function ContaPage() {
 
   const isDono = perfil?.role === "dono";
 
-  const [{ data: conta }, { data: equipe }, { data: chamados }, { data: convites }] =
+  const [{ data: conta }, { data: equipe }, { data: chamados }, { data: convites }, { data: botSettings }] =
     await Promise.all([
       supabase
         .from("whatsapp_accounts")
@@ -55,6 +56,9 @@ export default async function ContaPage() {
         .select("id, nome, email, status, created_at")
         .eq("status", "pendente")
         .order("created_at", { ascending: false }),
+      // Ainda não existe linha pra todo tenant (só é criada quando o dono
+      // salva pela primeira vez) — maybeSingle cobre o caso de não existir.
+      supabase.from("bot_settings").select("*").maybeSingle(),
     ]);
 
   return (
@@ -197,7 +201,7 @@ export default async function ContaPage() {
                       className={`rounded-full px-2 py-0.5 text-[10.5px] font-bold ${
                         c.status === "resolvido"
                           ? "bg-teal/10 text-teal"
-                          : "bg-surface-soft text-ink-soft"
+                          : "bg-coral/10 text-coral"
                       }`}
                     >
                       {c.status === "resolvido" ? "Resolvido" : "Aberto"}
@@ -209,6 +213,17 @@ export default async function ContaPage() {
           )}
         </div>
       </div>
+
+      {isDono && (
+        <div className="card mt-4 px-5 py-5">
+          <p className="mb-1 text-[14px] font-bold">Configurações do robô</p>
+          <p className="mb-4 text-[12px] text-ink-faint">
+            Pós-venda, reengajamento, aniversário e o canal de comandos que
+            você usa pra falar com o robô como dono.
+          </p>
+          <BotSettingsForm settings={botSettings} />
+        </div>
+      )}
     </div>
   );
 }

@@ -76,3 +76,19 @@ export async function encerrarConversa(formData: FormData) {
 
   revalidatePath("/conversas");
 }
+
+// Devolve a conversa pro robô — usado quando a IA pediu handoff (ou um
+// humano assumiu) e o dono quer que o bot volte a responder sozinho, sem
+// precisar mexer no banco na mão.
+export async function restaurarBot(formData: FormData) {
+  const conversationId = String(formData.get("conversation_id") ?? "");
+  if (!conversationId) return;
+
+  const supabase = await createClient();
+  await supabase
+    .from("conversations")
+    .update({ status: "bot", handoff_motivo: null })
+    .eq("id", conversationId);
+
+  revalidatePath("/conversas");
+}

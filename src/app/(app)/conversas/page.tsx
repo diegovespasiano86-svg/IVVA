@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import ReplyForm from "./reply-form";
-import { encerrarConversa } from "./actions";
+import { encerrarConversa, restaurarBot } from "./actions";
 
 const STATUS_LABEL: Record<string, string> = {
   bot: "Com o robô",
@@ -70,6 +70,21 @@ export default async function ConversasPage() {
                     >
                       {STATUS_LABEL[c.status] ?? c.status}
                     </span>
+                    {c.status === "humano" && (
+                      <form action={restaurarBot}>
+                        <input
+                          type="hidden"
+                          name="conversation_id"
+                          value={c.id}
+                        />
+                        <button
+                          type="submit"
+                          className="rounded-full border border-teal px-2.5 py-0.5 text-[11px] font-semibold text-teal hover:bg-teal/10"
+                        >
+                          Restaurar bot
+                        </button>
+                      </form>
+                    )}
                     {c.status !== "encerrada" && (
                       <form action={encerrarConversa}>
                         <input
