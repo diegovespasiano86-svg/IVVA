@@ -182,6 +182,12 @@ const TOOLS = [
       required: ["acao"],
     },
   },
+  {
+    name: "consultar_avisos_ativos",
+    description:
+      "Verifica se há promoção, feriado ou ausência de profissional cadastrados pro dono que estejam valendo hoje. Chame isso quando o assunto for agendamento, preço ou disponibilidade — se algo valendo afetar o que o cliente quer, avise proativamente antes de seguir.",
+    input_schema: { type: "object", properties: {} },
+  },
 ] as const;
 
 type ClaudeContentBlock =
@@ -293,6 +299,15 @@ async function executarFerramenta(
     });
     if (error) return { resultado: JSON.stringify({ erro: error.message }), handoff: false };
     return { resultado: JSON.stringify(data), handoff: false, reservaFeita: Boolean((data as { ok?: boolean })?.ok) };
+  }
+
+  if (nome === "consultar_avisos_ativos") {
+    const { data, error } = await supabase.rpc("ia_consultar_avisos_ativos", {
+      p_secret: secret,
+      p_tenant_id: ctx.tenantId,
+    });
+    if (error) return { resultado: JSON.stringify({ erro: error.message }), handoff: false };
+    return { resultado: JSON.stringify(data), handoff: false };
   }
 
   return { resultado: "ferramenta desconhecida", handoff: false };

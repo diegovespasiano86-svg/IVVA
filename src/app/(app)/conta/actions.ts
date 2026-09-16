@@ -246,6 +246,7 @@ export async function atualizarBotSettings(
     aniversario_dias_antecedencia: Number(formData.get("aniversario_dias_antecedencia") ?? 0) || 0,
     aniversario_mensagem: String(formData.get("aniversario_mensagem") ?? "").trim() || null,
     admin_whatsapp_numero: String(formData.get("admin_whatsapp_numero") ?? "").trim() || null,
+    upsell_template_nome: String(formData.get("upsell_template_nome") ?? "").trim() || null,
     updated_at: new Date().toISOString(),
   };
 

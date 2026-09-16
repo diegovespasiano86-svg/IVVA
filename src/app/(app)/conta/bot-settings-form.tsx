@@ -17,6 +17,8 @@ type BotSettings = {
   aniversario_mensagem: string | null;
   admin_whatsapp_numero: string | null;
   admin_pin_hash: string | null;
+  upsell_template_nome: string | null;
+  bot_pausado: boolean;
 } | null;
 
 export default function BotSettingsForm({ settings }: { settings: BotSettings }) {
@@ -206,6 +208,31 @@ export default function BotSettingsForm({ settings }: { settings: BotSettings })
               className="w-full rounded-[10px] border border-border bg-surface px-3 py-2 text-[13px]"
             />
           </div>
+        </div>
+        {s?.bot_pausado && (
+          <p className="mt-2.5 text-[12px] font-semibold text-coral">
+            ⚠️ O robô está pausado agora (você pausou pelo canal do dono). Toda
+            conversa nova está indo direto pra atendimento humano.
+          </p>
+        )}
+        <div className="mt-3">
+          <label htmlFor="upsell_template_nome" className="!mb-1">
+            Nome do template aprovado pra disparo em massa (opcional)
+          </label>
+          <input
+            id="upsell_template_nome"
+            name="upsell_template_nome"
+            placeholder="ex: promocao_mensal"
+            defaultValue={s?.upsell_template_nome ?? ""}
+            className="w-full rounded-[10px] border border-border bg-surface px-3 py-2 text-[13px]"
+          />
+          <p className="mt-1 text-[11.5px] text-ink-faint">
+            Sem isso, o comando &quot;disparar oferta em massa&quot; pelo canal do
+            dono não funciona — a Meta só deixa o negócio iniciar conversa com
+            quem não falou nas últimas 24h usando um template de mensagem
+            aprovado por eles (não é algo que a ivva resolve sozinha, precisa
+            ser submetido e aprovado no Meta Business).
+          </p>
         </div>
       </section>
 

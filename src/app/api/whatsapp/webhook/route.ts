@@ -7,6 +7,8 @@ import {
   type WhatsAppCreds,
 } from "@/lib/whatsapp";
 import { gerarRespostaWhatsApp, type ContextoConversa, type ResultadoIA } from "@/lib/ai";
+import { gerarRespostaAdmin } from "@/lib/admin-ai";
+import { verifyPin } from "@/lib/pin";
 
 // Verificação inicial do webhook — a Meta chama essa rota com um GET pra
 // confirmar que o endpoint é nosso antes de ativar o recebimento de eventos.
@@ -218,6 +220,126 @@ function formatarSlot(slot: { professional_id: string; professional_nome: string
   return `${primeiroNome} ${dataFmt}`.slice(0, 24);
 }
 
+type AdminIdentificado = {
+  eh_admin: true;
+  tenant_id: string;
+  tenant_nome: string;
+  access_token: string;
+  admin_pin_hash: string;
+  autenticado_em: string | null;
+  tentativas_falhas: number;
+  bloqueado_ate: string | null;
+  bot_pausado: boolean;
+  upsell_template_nome: string | null;
+};
+
+// Canal de gestão: o dono manda comando pro robô de um número cadastrado
+// como admin em Conta > Configurações do robô. Nunca vira contato/
+// conversa de CRM — é um fluxo totalmente à parte, com PIN pra confirmar
+// identidade (senha não serve: ficaria gravada pra sempre naquele chat).
+async function processarMensagemAdmin(params: {
+  supabase: SupabaseClient;
+  internalSecret: string;
+  admin: AdminIdentificado;
+  phoneNumberId: string;
+  waId: string;
+  content: string;
+}) {
+  const { supabase, internalSecret, admin, phoneNumberId, waId, content } = params;
+  const creds: WhatsAppCreds = { phoneNumberId, token: admin.access_token };
+
+  const enviar = async (texto: string) => {
+    try {
+      await sendWhatsAppText(creds, waId, texto);
+      await supabase.rpc("record_whatsapp_send_success", { p_secret: internalSecret, p_tenant_id: admin.tenant_id });
+    } catch (err) {
+      console.error("[whatsapp webhook][admin] falha ao enviar", err);
+      await supabase.rpc("record_whatsapp_send_failure", {
+        p_secret: internalSecret,
+        p_tenant_id: admin.tenant_id,
+        p_erro: err instanceof Error ? err.message : "Falha ao enviar mensagem no canal do dono",
+      });
+    }
+  };
+
+  if (admin.bloqueado_ate && new Date(admin.bloqueado_ate) > new Date()) {
+    const horario = new Date(admin.bloqueado_ate).toLocaleString("pt-BR", {
+      timeZone: "America/Sao_Paulo",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    await enviar(`Canal bloqueado por tentativas erradas de PIN. Tenta de novo às ${horario}.`);
+    return;
+  }
+
+  const autenticado =
+    admin.autenticado_em !== null && Date.now() - new Date(admin.autenticado_em).getTime() < 15 * 60 * 1000;
+
+  if (!autenticado) {
+    const pinDigitado = content.trim();
+    if (!/^\d{4,6}$/.test(pinDigitado)) {
+      await enviar("Oi! Pra usar os comandos de gestão, manda seu PIN.");
+      return;
+    }
+    if (!verifyPin(pinDigitado, admin.admin_pin_hash)) {
+      const { data: falhaData } = await supabase.rpc("admin_registrar_falha_pin", {
+        p_secret: internalSecret,
+        p_tenant_id: admin.tenant_id,
+      });
+      const bloqueado = Boolean((falhaData as { bloqueado?: boolean } | null)?.bloqueado);
+      await enviar(
+        bloqueado
+          ? "PIN incorreto 3x seguidas — canal bloqueado por 1h por segurança."
+          : "PIN incorreto, tenta de novo.",
+      );
+      return;
+    }
+    await supabase.rpc("admin_marcar_autenticado", { p_secret: internalSecret, p_tenant_id: admin.tenant_id });
+    await enviar(
+      "Autenticado! O que você quer fazer? Posso: criar promoção, chamar um cliente, disparar oferta em massa, mostrar o resumo do dia, ou pausar/retomar o robô.",
+    );
+    return;
+  }
+
+  await supabase.rpc("admin_registrar_mensagem", {
+    p_secret: internalSecret,
+    p_tenant_id: admin.tenant_id,
+    p_remetente: "admin",
+    p_conteudo: content,
+  });
+  await supabase.rpc("admin_renovar_sessao", { p_secret: internalSecret, p_tenant_id: admin.tenant_id });
+
+  const { data: historicoData } = await supabase.rpc("admin_historico_recente", {
+    p_secret: internalSecret,
+    p_tenant_id: admin.tenant_id,
+  });
+  const historico = (historicoData ?? []) as { remetente: "admin" | "bot"; conteudo: string }[];
+
+  let resposta: string;
+  try {
+    const resultado = await gerarRespostaAdmin(
+      { tenantId: admin.tenant_id, tenantNome: admin.tenant_nome, upsellTemplateNome: admin.upsell_template_nome },
+      internalSecret,
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      creds,
+      historico,
+    );
+    resposta = resultado.resposta;
+  } catch (err) {
+    console.error("[whatsapp webhook][admin] falha na IA admin", err);
+    resposta = "Deu ruim aqui pra processar seu comando — tenta de novo em instantinho.";
+  }
+
+  await supabase.rpc("admin_registrar_mensagem", {
+    p_secret: internalSecret,
+    p_tenant_id: admin.tenant_id,
+    p_remetente: "bot",
+    p_conteudo: resposta,
+  });
+  await enviar(resposta);
+}
+
 async function processarMensagem(params: {
   supabaseUrl: string;
   anonKey: string;
@@ -232,6 +354,26 @@ async function processarMensagem(params: {
   const { supabaseUrl, anonKey, internalSecret, phoneNumberId, waId, waMessageId, contactName, content, botaoId } =
     params;
   const supabase = createClient(supabaseUrl, anonKey);
+
+  // Verifica ANTES de tudo se quem mandou é o número admin cadastrado —
+  // nesse caso nunca cria contato/conversa de CRM, vai direto pro canal
+  // de comandos.
+  const { data: adminData } = await supabase.rpc("admin_identificar", {
+    p_secret: internalSecret,
+    p_phone_number_id: phoneNumberId,
+    p_wa_id: waId,
+  });
+  if ((adminData as { eh_admin?: boolean } | null)?.eh_admin) {
+    await processarMensagemAdmin({
+      supabase,
+      internalSecret,
+      admin: adminData as AdminIdentificado,
+      phoneNumberId,
+      waId,
+      content,
+    });
+    return;
+  }
 
   const { data, error } = await supabase.rpc("handle_inbound_whatsapp_message", {
     p_secret: internalSecret,
