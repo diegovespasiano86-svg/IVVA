@@ -3,14 +3,30 @@ import { criarEntrada } from "./actions";
 import UploadArquivo from "./upload-arquivo";
 import EntrevistaAudio from "./entrevista-audio";
 import EntradaItem from "./entrada-item";
+import ArquivoItem from "./arquivo-item";
 
 export default async function BaseConhecimentoPage() {
   const supabase = await createClient();
 
-  const { data: entradas } = await supabase
-    .from("knowledge_base")
-    .select("id, conteudo, created_at")
-    .order("created_at", { ascending: false });
+  const [{ data: entradas }, { data: arquivos }] = await Promise.all([
+    supabase
+      .from("knowledge_base")
+      .select("id, conteudo, created_at")
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("knowledge_files")
+      .select("id, nome_arquivo, storage_path, tamanho_bytes, status, erro, entradas_geradas, created_at")
+      .order("created_at", { ascending: false }),
+  ]);
+
+  const arquivosComUrl = await Promise.all(
+    (arquivos ?? []).map(async (a) => {
+      const { data } = await supabase.storage
+        .from("base-conhecimento")
+        .createSignedUrl(a.storage_path, 60 * 10);
+      return { ...a, urlDownload: data?.signedUrl ?? null };
+    }),
+  );
 
   return (
     <div>
@@ -60,6 +76,34 @@ export default async function BaseConhecimentoPage() {
         </div>
       </div>
 
+      {arquivosComUrl.length > 0 && (
+        <div className="mb-5">
+          <p className="mb-2 text-[13px] font-bold text-ink-soft">
+            Arquivos enviados
+          </p>
+          <div className="flex flex-col gap-2">
+            {arquivosComUrl.map((a) => (
+              <ArquivoItem
+                key={a.id}
+                id={a.id}
+                nomeArquivo={a.nome_arquivo}
+                tamanhoBytes={a.tamanho_bytes}
+                status={a.status}
+                erro={a.erro}
+                entradasGeradas={a.entradas_geradas}
+                createdAt={a.created_at}
+                urlDownload={a.urlDownload}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {arquivosComUrl.length > 0 && (
+        <p className="mb-2 text-[13px] font-bold text-ink-soft">
+          Fatos na base de conhecimento
+        </p>
+      )}
       {!entradas || entradas.length === 0 ? (
         <div className="card px-6 py-14 text-center text-[13px] text-ink-faint">
           Nenhum item ainda. Comece adicionando os serviços e preços do

@@ -8,9 +8,11 @@ type Item = { id: number; texto: string; incluir: boolean };
 export default function RevisarEntradas({
   entradas,
   tipo,
+  arquivoId,
 }: {
   entradas: string[];
   tipo: string;
+  arquivoId: string | null;
 }) {
   const [itens, setItens] = useState<Item[]>(
     entradas.map((texto, id) => ({ id, texto, incluir: true })),
@@ -25,6 +27,7 @@ export default function RevisarEntradas({
     setSalvando(true);
     const fd = new FormData();
     fd.set("tipo", tipo);
+    if (arquivoId) fd.set("arquivo_id", arquivoId);
     for (const item of itens) {
       if (item.incluir && item.texto.trim()) fd.append("entrada", item.texto.trim());
     }

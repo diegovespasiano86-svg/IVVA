@@ -4,7 +4,7 @@ import { useActionState, useRef, useState } from "react";
 import { processarAudio, type ExtracaoState } from "./actions";
 import RevisarEntradas from "./revisar-entradas";
 
-const initialState: ExtracaoState = { entradas: [], erro: null };
+const initialState: ExtracaoState = { entradas: [], erro: null, arquivoId: null };
 
 export default function EntrevistaAudio() {
   const [state, formAction, pending] = useActionState(
@@ -129,6 +129,7 @@ export default function EntrevistaAudio() {
         key={state.entradas.join("|")}
         entradas={state.entradas}
         tipo="audio"
+        arquivoId={null}
       />
     </div>
   );

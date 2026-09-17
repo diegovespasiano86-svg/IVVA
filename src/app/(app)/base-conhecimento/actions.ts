@@ -9,26 +9,32 @@ import { transcreverAudio } from "@/lib/transcricao";
 // deixar um upload gigante travar a function na Vercel.
 const TAMANHO_MAX = 8 * 1024 * 1024;
 
-export async function criarEntrada(formData: FormData) {
-  const conteudo = String(formData.get("conteudo") ?? "").trim();
-  if (!conteudo) return;
+type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
-  const supabase = await createClient();
-
+async function obterTenantId(supabase: SupabaseServerClient): Promise<string | null> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return;
+  if (!user) return null;
 
   const { data: perfil } = await supabase
     .from("users")
     .select("tenant_id")
     .eq("id", user.id)
     .maybeSingle();
-  if (!perfil) return;
+  return perfil?.tenant_id ?? null;
+}
+
+export async function criarEntrada(formData: FormData) {
+  const conteudo = String(formData.get("conteudo") ?? "").trim();
+  if (!conteudo) return;
+
+  const supabase = await createClient();
+  const tenantId = await obterTenantId(supabase);
+  if (!tenantId) return;
 
   await supabase.from("knowledge_base").insert({
-    tenant_id: perfil.tenant_id,
+    tenant_id: tenantId,
     tipo: "texto",
     conteudo,
   });
@@ -57,7 +63,35 @@ export async function editarEntrada(formData: FormData) {
   revalidatePath("/base-conhecimento");
 }
 
-export type ExtracaoState = { entradas: string[]; erro: string | null };
+// Apaga o arquivo enviado (do Storage e do registro) — não mexe nos itens
+// da base de conhecimento já salvos a partir dele, pra não sumir com algo
+// que o dono já revisou e aprovou.
+export async function removerArquivo(formData: FormData) {
+  const id = String(formData.get("id") ?? "");
+  if (!id) return;
+
+  const supabase = await createClient();
+
+  const { data: arquivo } = await supabase
+    .from("knowledge_files")
+    .select("storage_path")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (arquivo?.storage_path) {
+    await supabase.storage.from("base-conhecimento").remove([arquivo.storage_path]);
+  }
+
+  await supabase.from("knowledge_files").delete().eq("id", id);
+
+  revalidatePath("/base-conhecimento");
+}
+
+export type ExtracaoState = {
+  entradas: string[];
+  erro: string | null;
+  arquivoId: string | null;
+};
 
 export async function processarArquivo(
   _prevState: ExtracaoState,
@@ -65,10 +99,16 @@ export async function processarArquivo(
 ): Promise<ExtracaoState> {
   const arquivo = formData.get("arquivo");
   if (!(arquivo instanceof File) || arquivo.size === 0) {
-    return { entradas: [], erro: "Selecione um arquivo." };
+    return { entradas: [], erro: "Selecione um arquivo.", arquivoId: null };
   }
   if (arquivo.size > TAMANHO_MAX) {
-    return { entradas: [], erro: "Arquivo grande demais (máx. 8MB)." };
+    return { entradas: [], erro: "Arquivo grande demais (máx. 8MB).", arquivoId: null };
+  }
+
+  const supabase = await createClient();
+  const tenantId = await obterTenantId(supabase);
+  if (!tenantId) {
+    return { entradas: [], erro: "Sessão expirada — recarregue a página.", arquivoId: null };
   }
 
   const buffer = Buffer.from(await arquivo.arrayBuffer());
@@ -80,12 +120,39 @@ export async function processarArquivo(
     nome.endsWith(".docx");
   const ehDocAntigo = nome.endsWith(".doc") && !ehDocx;
 
+  // Sempre sobe o arquivo original pro Storage primeiro — assim ele fica
+  // visível na lista mesmo se a extração falhar ou não achar nada, e o
+  // dono consegue ver o que foi enviado e apagar/reenviar se precisar.
+  const storagePath = `${tenantId}/${crypto.randomUUID()}-${arquivo.name}`;
+  await supabase.storage
+    .from("base-conhecimento")
+    .upload(storagePath, buffer, { contentType: arquivo.type || "application/octet-stream" });
+
+  async function registrarArquivo(
+    status: "processado" | "sem_fatos" | "erro",
+    erro: string | null,
+  ): Promise<string | null> {
+    const { data } = await supabase
+      .from("knowledge_files")
+      .insert({
+        tenant_id: tenantId,
+        nome_arquivo: arquivo instanceof File ? arquivo.name : "arquivo",
+        storage_path: storagePath,
+        tamanho_bytes: arquivo instanceof File ? arquivo.size : 0,
+        status,
+        erro,
+      })
+      .select("id")
+      .single();
+    return data?.id ?? null;
+  }
+
   if (ehDocAntigo) {
-    return {
-      entradas: [],
-      erro:
-        "Arquivo .doc (Word antigo) não é suportado — salva como .docx ou PDF no Word (Arquivo > Salvar como) e sobe de novo.",
-    };
+    const erro =
+      "Arquivo .doc (Word antigo) não é suportado — salva como .docx ou PDF no Word (Arquivo > Salvar como) e sobe de novo.";
+    const arquivoId = await registrarArquivo("erro", erro);
+    revalidatePath("/base-conhecimento");
+    return { entradas: [], erro, arquivoId };
   }
 
   try {
@@ -106,17 +173,21 @@ export async function processarArquivo(
         });
 
     if (entradas.length === 0) {
-      return {
-        entradas: [],
-        erro: "Não encontrei fatos claros nesse arquivo — tenta outro ou cole o texto direto acima.",
-      };
+      const erro =
+        "Não encontrei fatos claros nesse arquivo — tenta outro ou cole o texto direto acima.";
+      const arquivoId = await registrarArquivo("sem_fatos", erro);
+      revalidatePath("/base-conhecimento");
+      return { entradas: [], erro, arquivoId };
     }
-    return { entradas, erro: null };
+
+    const arquivoId = await registrarArquivo("processado", null);
+    revalidatePath("/base-conhecimento");
+    return { entradas, erro: null, arquivoId };
   } catch (err) {
-    return {
-      entradas: [],
-      erro: err instanceof Error ? err.message : "Falha ao processar o arquivo.",
-    };
+    const erro = err instanceof Error ? err.message : "Falha ao processar o arquivo.";
+    const arquivoId = await registrarArquivo("erro", erro);
+    revalidatePath("/base-conhecimento");
+    return { entradas: [], erro, arquivoId };
   }
 }
 
@@ -126,10 +197,10 @@ export async function processarAudio(
 ): Promise<ExtracaoState> {
   const audio = formData.get("audio");
   if (!(audio instanceof File) || audio.size === 0) {
-    return { entradas: [], erro: "Grave um áudio antes de enviar." };
+    return { entradas: [], erro: "Grave um áudio antes de enviar.", arquivoId: null };
   }
   if (audio.size > TAMANHO_MAX) {
-    return { entradas: [], erro: "Áudio grande demais." };
+    return { entradas: [], erro: "Áudio grande demais.", arquivoId: null };
   }
 
   const buffer = Buffer.from(await audio.arrayBuffer());
@@ -141,6 +212,7 @@ export async function processarAudio(
       entradas: [],
       erro:
         "Não consegui transcrever esse áudio — a transcrição por voz ainda não está configurada nesse negócio. Fale com a gente.",
+      arquivoId: null,
     };
   }
 
@@ -150,19 +222,22 @@ export async function processarAudio(
       return {
         entradas: [],
         erro: `Transcrevi, mas não encontrei fatos claros: "${transcricao}"`,
+        arquivoId: null,
       };
     }
-    return { entradas, erro: null };
+    return { entradas, erro: null, arquivoId: null };
   } catch (err) {
     return {
       entradas: [],
       erro: err instanceof Error ? err.message : "Falha ao interpretar o áudio.",
+      arquivoId: null,
     };
   }
 }
 
 export async function salvarEntradas(formData: FormData) {
   const tipo = String(formData.get("tipo") ?? "texto");
+  const arquivoId = String(formData.get("arquivo_id") ?? "").trim() || null;
   const entradas = formData
     .getAll("entrada")
     .map((e) => String(e).trim())
@@ -170,26 +245,23 @@ export async function salvarEntradas(formData: FormData) {
   if (entradas.length === 0) return;
 
   const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return;
-
-  const { data: perfil } = await supabase
-    .from("users")
-    .select("tenant_id")
-    .eq("id", user.id)
-    .maybeSingle();
-  if (!perfil) return;
+  const tenantId = await obterTenantId(supabase);
+  if (!tenantId) return;
 
   await supabase.from("knowledge_base").insert(
     entradas.map((conteudo) => ({
-      tenant_id: perfil.tenant_id,
+      tenant_id: tenantId,
       tipo,
       conteudo,
     })),
   );
+
+  if (arquivoId) {
+    await supabase
+      .from("knowledge_files")
+      .update({ entradas_geradas: entradas.length })
+      .eq("id", arquivoId);
+  }
 
   revalidatePath("/base-conhecimento");
 }

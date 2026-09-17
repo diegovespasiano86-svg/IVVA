@@ -4,7 +4,7 @@ import { useActionState, useState } from "react";
 import { processarArquivo, type ExtracaoState } from "./actions";
 import RevisarEntradas from "./revisar-entradas";
 
-const initialState: ExtracaoState = { entradas: [], erro: null };
+const initialState: ExtracaoState = { entradas: [], erro: null, arquivoId: null };
 
 export default function UploadArquivo() {
   const [state, formAction, pending] = useActionState(
@@ -60,6 +60,7 @@ export default function UploadArquivo() {
         key={state.entradas.join("|")}
         entradas={state.entradas}
         tipo="arquivo"
+        arquivoId={state.arquivoId}
       />
     </div>
   );
