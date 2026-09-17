@@ -46,7 +46,13 @@ export async function finalizarCadastro(
 
   const plano = session.metadata?.plano ?? "essencial";
 
+  const secret = process.env.WHATSAPP_WEBHOOK_INTERNAL_SECRET;
+  if (!secret) {
+    return "Configuração do servidor incompleta. Fale com a gente.";
+  }
+
   const { error: rpcError } = await supabase.rpc("provision_tenant", {
+    p_secret: secret,
     p_nome: nomeNegocio,
     p_plano: plano,
     p_stripe_customer_id: session.customer ?? null,
