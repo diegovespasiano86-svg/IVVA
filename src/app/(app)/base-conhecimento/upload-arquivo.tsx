@@ -4,7 +4,7 @@ import { useActionState, useState } from "react";
 import { processarArquivo, type ExtracaoState } from "./actions";
 import RevisarEntradas from "./revisar-entradas";
 
-const initialState: ExtracaoState = { entradas: [], erro: null, arquivoId: null };
+const initialState: ExtracaoState = { entradas: [], erro: null, aviso: null, arquivoId: null };
 
 export default function UploadArquivo() {
   const [state, formAction, pending] = useActionState(
@@ -53,7 +53,26 @@ export default function UploadArquivo() {
       </form>
 
       {state.erro && (
-        <p className="mt-2 text-[12px] font-semibold text-coral">{state.erro}</p>
+        <div className="mt-3 rounded-[10px] border border-coral/30 bg-coral/5 px-3.5 py-2.5">
+          <p className="text-[12.5px] font-semibold text-coral">{state.erro}</p>
+        </div>
+      )}
+
+      {!state.erro && state.entradas.length > 0 && (
+        <div className="mt-3 flex items-center gap-2 rounded-[10px] border border-teal/30 bg-teal/5 px-3.5 py-2.5">
+          <svg className="icon shrink-0 text-teal" viewBox="0 0 24 24" width="16" height="16">
+            <path d="M20 6 9 17l-5-5" />
+          </svg>
+          <p className="text-[12.5px] font-semibold text-teal">
+            Arquivo lido com sucesso — revise os itens abaixo antes de salvar.
+          </p>
+        </div>
+      )}
+
+      {state.aviso && (
+        <div className="mt-3 rounded-[10px] border border-purple/30 bg-purple/5 px-3.5 py-2.5">
+          <p className="text-[12.5px] font-semibold text-purple">{state.aviso}</p>
+        </div>
       )}
 
       <RevisarEntradas

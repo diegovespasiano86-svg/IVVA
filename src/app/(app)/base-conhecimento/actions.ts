@@ -90,6 +90,7 @@ export async function removerArquivo(formData: FormData) {
 export type ExtracaoState = {
   entradas: string[];
   erro: string | null;
+  aviso: string | null;
   arquivoId: string | null;
 };
 
@@ -99,16 +100,26 @@ export async function processarArquivo(
 ): Promise<ExtracaoState> {
   const arquivo = formData.get("arquivo");
   if (!(arquivo instanceof File) || arquivo.size === 0) {
-    return { entradas: [], erro: "Selecione um arquivo.", arquivoId: null };
+    return { entradas: [], erro: "Selecione um arquivo.", aviso: null, arquivoId: null };
   }
   if (arquivo.size > TAMANHO_MAX) {
-    return { entradas: [], erro: "Arquivo grande demais (máx. 8MB).", arquivoId: null };
+    return {
+      entradas: [],
+      erro: "Arquivo grande demais (máx. 8MB).",
+      aviso: null,
+      arquivoId: null,
+    };
   }
 
   const supabase = await createClient();
   const tenantId = await obterTenantId(supabase);
   if (!tenantId) {
-    return { entradas: [], erro: "Sessão expirada — recarregue a página.", arquivoId: null };
+    return {
+      entradas: [],
+      erro: "Sessão expirada — recarregue a página.",
+      aviso: null,
+      arquivoId: null,
+    };
   }
 
   const buffer = Buffer.from(await arquivo.arrayBuffer());
@@ -152,7 +163,7 @@ export async function processarArquivo(
       "Arquivo .doc (Word antigo) não é suportado — salva como .docx ou PDF no Word (Arquivo > Salvar como) e sobe de novo.";
     const arquivoId = await registrarArquivo("erro", erro);
     revalidatePath("/base-conhecimento");
-    return { entradas: [], erro, arquivoId };
+    return { entradas: [], erro, aviso: null, arquivoId };
   }
 
   try {
@@ -163,7 +174,7 @@ export async function processarArquivo(
       texto = resultado.value;
     }
 
-    const entradas = ehPdf
+    const { entradas, truncado } = ehPdf
       ? await extrairEntradasConhecimento({
           documentoBase64: buffer.toString("base64"),
           documentoMediaType: "application/pdf",
@@ -173,21 +184,25 @@ export async function processarArquivo(
         });
 
     if (entradas.length === 0) {
-      const erro =
-        "Não encontrei fatos claros nesse arquivo — tenta outro ou cole o texto direto acima.";
+      const erro = truncado
+        ? "Esse arquivo é grande demais pra IA processar de uma vez — tenta dividir em partes menores ou colar o texto direto acima."
+        : "Não encontrei fatos claros nesse arquivo — tenta outro ou cole o texto direto acima.";
       const arquivoId = await registrarArquivo("sem_fatos", erro);
       revalidatePath("/base-conhecimento");
-      return { entradas: [], erro, arquivoId };
+      return { entradas: [], erro, aviso: null, arquivoId };
     }
 
+    const aviso = truncado
+      ? "Arquivo grande — a IA parou no meio. Estes são os fatos que ela conseguiu extrair antes de cortar; revise e considere subir o restante do conteúdo separado."
+      : null;
     const arquivoId = await registrarArquivo("processado", null);
     revalidatePath("/base-conhecimento");
-    return { entradas, erro: null, arquivoId };
+    return { entradas, erro: null, aviso, arquivoId };
   } catch (err) {
     const erro = err instanceof Error ? err.message : "Falha ao processar o arquivo.";
     const arquivoId = await registrarArquivo("erro", erro);
     revalidatePath("/base-conhecimento");
-    return { entradas: [], erro, arquivoId };
+    return { entradas: [], erro, aviso: null, arquivoId };
   }
 }
 
@@ -197,10 +212,10 @@ export async function processarAudio(
 ): Promise<ExtracaoState> {
   const audio = formData.get("audio");
   if (!(audio instanceof File) || audio.size === 0) {
-    return { entradas: [], erro: "Grave um áudio antes de enviar.", arquivoId: null };
+    return { entradas: [], erro: "Grave um áudio antes de enviar.", aviso: null, arquivoId: null };
   }
   if (audio.size > TAMANHO_MAX) {
-    return { entradas: [], erro: "Áudio grande demais.", arquivoId: null };
+    return { entradas: [], erro: "Áudio grande demais.", aviso: null, arquivoId: null };
   }
 
   const buffer = Buffer.from(await audio.arrayBuffer());
@@ -212,24 +227,34 @@ export async function processarAudio(
       entradas: [],
       erro:
         "Não consegui transcrever esse áudio — a transcrição por voz ainda não está configurada nesse negócio. Fale com a gente.",
+      aviso: null,
       arquivoId: null,
     };
   }
 
   try {
-    const entradas = await extrairEntradasConhecimento({ texto: transcricao });
+    const { entradas, truncado } = await extrairEntradasConhecimento({ texto: transcricao });
     if (entradas.length === 0) {
       return {
         entradas: [],
         erro: `Transcrevi, mas não encontrei fatos claros: "${transcricao}"`,
+        aviso: null,
         arquivoId: null,
       };
     }
-    return { entradas, erro: null, arquivoId: null };
+    return {
+      entradas,
+      erro: null,
+      aviso: truncado
+        ? "O áudio era longo e a IA parou no meio — revise, alguns trechos podem ter ficado de fora."
+        : null,
+      arquivoId: null,
+    };
   } catch (err) {
     return {
       entradas: [],
       erro: err instanceof Error ? err.message : "Falha ao interpretar o áudio.",
+      aviso: null,
       arquivoId: null,
     };
   }

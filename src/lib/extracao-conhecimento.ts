@@ -32,11 +32,13 @@ type ClaudeContentBlock =
       source: { type: "base64"; media_type: string; data: string };
     };
 
+export type ResultadoExtracao = { entradas: string[]; truncado: boolean };
+
 export async function extrairEntradasConhecimento(params: {
   texto?: string;
   documentoBase64?: string;
   documentoMediaType?: string;
-}): Promise<string[]> {
+}): Promise<ResultadoExtracao> {
   const content: ClaudeContentBlock[] = [];
   if (params.documentoBase64 && params.documentoMediaType) {
     content.push({
@@ -51,14 +53,19 @@ export async function extrairEntradasConhecimento(params: {
   if (params.texto?.trim()) {
     content.push({ type: "text", text: params.texto.trim() });
   }
-  if (content.length === 0) return [];
+  if (content.length === 0) return { entradas: [], truncado: false };
 
   const res = await fetch(ANTHROPIC_API, {
     method: "POST",
     headers: headers(),
     body: JSON.stringify({
       model: MODEL,
-      max_tokens: 2048,
+      // Documentos grandes (catálogo completo, política, FAQ...) podem
+      // gerar dezenas de fatos atômicos — 2048 cortava a resposta no meio
+      // de documentos maiores, o JSON nunca fechava, e tudo era
+      // descartado como "não encontrei fatos" (era truncamento, não falta
+      // de conteúdo).
+      max_tokens: 8192,
       system: SYSTEM_PROMPT,
       messages: [{ role: "user", content }],
     }),
@@ -76,15 +83,34 @@ export async function extrairEntradasConhecimento(params: {
     .filter((b) => b.type === "text")
     .map((b) => b.text ?? "")
     .join("");
+  const truncado = data.stop_reason === "max_tokens";
 
   try {
     const match = textoResposta.match(/\[[\s\S]*\]/);
     const parsed = JSON.parse(match ? match[0] : textoResposta);
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter(
-      (x): x is string => typeof x === "string" && x.trim().length > 0,
-    );
+    if (!Array.isArray(parsed)) return { entradas: [], truncado: false };
+    return {
+      entradas: parsed.filter(
+        (x): x is string => typeof x === "string" && x.trim().length > 0,
+      ),
+      truncado: false,
+    };
   } catch (err) {
+    if (truncado) {
+      // A resposta foi cortada no meio do array (documento grande demais
+      // pro limite de saída) — em vez de descartar tudo, recupera as
+      // strings que já vieram completas antes do corte.
+      const entradas = [...textoResposta.matchAll(/"((?:[^"\\]|\\.)*)"/g)].map(
+        (m) => m[1].replace(/\\"/g, '"').replace(/\\n/g, "\n"),
+      );
+      console.error(
+        "[extracao-conhecimento] resposta cortada (max_tokens) — recuperando",
+        entradas.length,
+        "fatos parciais",
+      );
+      return { entradas: entradas.filter((x) => x.trim().length > 0), truncado: true };
+    }
+
     // Isso não deveria acontecer com o prompt atual (pede JSON puro), mas
     // se a IA responder algo fora do formato, melhor deixar rastro no log
     // da Vercel do que devolver silenciosamente "não encontrei fatos" —
@@ -95,6 +121,6 @@ export async function extrairEntradasConhecimento(params: {
       "| resposta bruta:",
       textoResposta.slice(0, 500),
     );
-    return [];
+    return { entradas: [], truncado: false };
   }
 }
