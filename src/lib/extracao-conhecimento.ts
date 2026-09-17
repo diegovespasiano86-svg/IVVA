@@ -84,7 +84,17 @@ export async function extrairEntradasConhecimento(params: {
     return parsed.filter(
       (x): x is string => typeof x === "string" && x.trim().length > 0,
     );
-  } catch {
+  } catch (err) {
+    // Isso não deveria acontecer com o prompt atual (pede JSON puro), mas
+    // se a IA responder algo fora do formato, melhor deixar rastro no log
+    // da Vercel do que devolver silenciosamente "não encontrei fatos" —
+    // as duas causas parecem idênticas pro usuário, mas são bem diferentes.
+    console.error(
+      "[extracao-conhecimento] resposta da IA não é JSON válido:",
+      err,
+      "| resposta bruta:",
+      textoResposta.slice(0, 500),
+    );
     return [];
   }
 }
