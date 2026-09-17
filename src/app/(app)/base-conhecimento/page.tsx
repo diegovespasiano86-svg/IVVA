@@ -1,7 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
-import { criarEntrada, removerEntrada } from "./actions";
+import { criarEntrada } from "./actions";
 import UploadArquivo from "./upload-arquivo";
 import EntrevistaAudio from "./entrevista-audio";
+import EntradaItem from "./entrada-item";
 
 export default async function BaseConhecimentoPage() {
   const supabase = await createClient();
@@ -44,8 +45,9 @@ export default async function BaseConhecimentoPage() {
         <div className="card px-5 py-5">
           <p className="mb-1 text-[14px] font-bold">Subir arquivo</p>
           <p className="mb-3 text-[12px] text-ink-faint">
-            Planilha de preços (.csv) ou catálogo em PDF — a ivva lê e separa
-            os fatos importantes pra você revisar antes de salvar.
+            Planilha de preços (.csv), catálogo em PDF ou documento Word
+            (.docx) — a ivva lê e separa os fatos importantes pra você
+            revisar antes de salvar.
           </p>
           <UploadArquivo />
         </div>
@@ -66,24 +68,7 @@ export default async function BaseConhecimentoPage() {
       ) : (
         <div className="flex flex-col gap-2">
           {entradas.map((e) => (
-            <div
-              key={e.id}
-              className="card flex items-start justify-between gap-3 px-4 py-3.5"
-            >
-              <p className="text-[13.5px] leading-relaxed">{e.conteudo}</p>
-              <form action={removerEntrada}>
-                <input type="hidden" name="id" value={e.id} />
-                <button
-                  type="submit"
-                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-ink-faint hover:bg-surface-soft hover:text-coral"
-                  title="Remover"
-                >
-                  <svg className="icon" viewBox="0 0 24 24" width="15" height="15">
-                    <path d="M6 6l12 12M18 6L6 18" />
-                  </svg>
-                </button>
-              </form>
-            </div>
+            <EntradaItem key={e.id} id={e.id} conteudo={e.conteudo} />
           ))}
         </div>
       )}

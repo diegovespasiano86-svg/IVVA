@@ -46,6 +46,17 @@ export async function removerEntrada(formData: FormData) {
   revalidatePath("/base-conhecimento");
 }
 
+export async function editarEntrada(formData: FormData) {
+  const id = String(formData.get("id") ?? "");
+  const conteudo = String(formData.get("conteudo") ?? "").trim();
+  if (!id || !conteudo) return;
+
+  const supabase = await createClient();
+  await supabase.from("knowledge_base").update({ conteudo }).eq("id", id);
+
+  revalidatePath("/base-conhecimento");
+}
+
 export type ExtracaoState = { entradas: string[]; erro: string | null };
 
 export async function processarArquivo(
@@ -63,15 +74,35 @@ export async function processarArquivo(
   const buffer = Buffer.from(await arquivo.arrayBuffer());
   const nome = arquivo.name.toLowerCase();
   const ehPdf = arquivo.type === "application/pdf" || nome.endsWith(".pdf");
+  const ehDocx =
+    arquivo.type ===
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+    nome.endsWith(".docx");
+  const ehDocAntigo = nome.endsWith(".doc") && !ehDocx;
+
+  if (ehDocAntigo) {
+    return {
+      entradas: [],
+      erro:
+        "Arquivo .doc (Word antigo) não é suportado — salva como .docx ou PDF no Word (Arquivo > Salvar como) e sobe de novo.",
+    };
+  }
 
   try {
+    let texto: string | undefined;
+    if (ehDocx) {
+      const mammoth = await import("mammoth");
+      const resultado = await mammoth.extractRawText({ buffer });
+      texto = resultado.value;
+    }
+
     const entradas = ehPdf
       ? await extrairEntradasConhecimento({
           documentoBase64: buffer.toString("base64"),
           documentoMediaType: "application/pdf",
         })
       : await extrairEntradasConhecimento({
-          texto: buffer.toString("utf-8"),
+          texto: texto ?? buffer.toString("utf-8"),
         });
 
     if (entradas.length === 0) {

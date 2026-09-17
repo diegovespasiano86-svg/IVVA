@@ -24,7 +24,7 @@ export default function UploadArquivo() {
             id="arquivo"
             name="arquivo"
             type="file"
-            accept=".pdf,.csv,.txt,application/pdf,text/csv,text/plain"
+            accept=".pdf,.docx,.csv,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/csv,text/plain"
             className="hidden"
             onChange={(e) => setNomeArquivo(e.target.files?.[0]?.name ?? "")}
           />
@@ -40,7 +40,7 @@ export default function UploadArquivo() {
           </svg>
           <p className="text-[13px] text-ink-soft">
             {nomeArquivo ||
-              "Arraste sua planilha de preços (.csv) ou catálogo em PDF, ou clique pra escolher"}
+              "Arraste sua planilha de preços (.csv), catálogo em PDF ou documento Word (.docx), ou clique pra escolher"}
           </p>
         </label>
         <button
