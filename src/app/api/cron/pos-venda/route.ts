@@ -102,6 +102,82 @@ export async function GET(request: NextRequest) {
     recall_criadas: number;
   };
 
+  // Lista de espera: quem foi avisado de uma vaga e não confirmou em 6h
+  // expira, e a vaga passa pro próximo da fila — mesma lógica de 2
+  // crons/dia, então quem entra na lista de espera às vezes só vê a vaga
+  // no dia seguinte (aceitável no plano Hobby; o primeiro aviso, esse sim,
+  // já sai na hora, direto do cancelamento — ver ai.ts).
+  const { data: listaEsperaData, error: listaEsperaError } = await supabase.rpc(
+    "ia_expirar_avisados_lista_espera",
+    { p_secret: secret },
+  );
+  if (listaEsperaError) {
+    console.error("[cron pos-venda] erro ao expirar lista de espera", listaEsperaError);
+  }
+  const listaEspera = (listaEsperaData ?? { expirados: 0, avisar: [] }) as {
+    expirados: number;
+    avisar: {
+      waitlist_id: string;
+      contact_nome: string | null;
+      contact_telefone: string;
+      preferencia_horario: string | null;
+      phone_number_id: string;
+      access_token: string;
+    }[];
+  };
+
+  let listaEsperaAvisados = 0;
+  for (const item of listaEspera.avisar) {
+    const primeiroNome = item.contact_nome?.trim().split(/\s+/)[0] ?? "";
+    const texto = `Oi${primeiroNome ? " " + primeiroNome : ""}! Abriu uma vaga${
+      item.preferencia_horario ? ` (${item.preferencia_horario})` : ""
+    } — quer confirmar? Responde aqui que eu já deixo marcado.`;
+    try {
+      await sendWhatsAppText(
+        { phoneNumberId: item.phone_number_id, token: item.access_token },
+        item.contact_telefone,
+        texto,
+      );
+      listaEsperaAvisados++;
+    } catch (err) {
+      console.error("[cron pos-venda] falha ao avisar próximo da lista de espera", item.waitlist_id, err);
+    }
+  }
+
+  // Recuperação de conversa esfriada: 1º/2º toque de quem recebeu uma
+  // proposta de horário e nunca confirmou, e fecha (outreach_task) quem
+  // não respondeu aos dois toques.
+  const { data: recuperacaoData, error: recuperacaoError } = await supabase.rpc(
+    "ia_recuperar_conversas_esfriadas",
+    { p_secret: secret },
+  );
+  if (recuperacaoError) {
+    console.error("[cron pos-venda] erro ao recuperar conversas esfriadas", recuperacaoError);
+  }
+  const recuperacao = (recuperacaoData ?? { esfriadas: 0, avisar: [] }) as {
+    esfriadas: number;
+    avisar: {
+      contact_telefone: string;
+      texto: string;
+      phone_number_id: string;
+      access_token: string;
+    }[];
+  };
+
+  let recuperacaoTocada = 0;
+  for (const item of recuperacao.avisar) {
+    try {
+      await sendWhatsAppText(
+        { phoneNumberId: item.phone_number_id, token: item.access_token },
+        item.contact_telefone,
+        item.texto,
+      );
+      recuperacaoTocada++;
+    } catch (err) {
+      console.error("[cron pos-venda] falha ao mandar toque de recuperação", err);
+    }
+  }
+
   return NextResponse.json({
     ok: true,
     total: pendentes.length,
@@ -110,5 +186,9 @@ export async function GET(request: NextRequest) {
     falhas,
     reengajamentoCriadas: tarefas.reengajamento_criadas,
     recallCriadas: tarefas.recall_criadas,
+    listaEsperaExpirados: listaEspera.expirados,
+    listaEsperaAvisados,
+    recuperacaoEsfriadas: recuperacao.esfriadas,
+    recuperacaoTocada,
   });
 }

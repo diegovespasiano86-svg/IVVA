@@ -252,6 +252,13 @@ export async function atualizarBotSettings(
     aniversario_mensagem: String(formData.get("aniversario_mensagem") ?? "").trim() || null,
     admin_whatsapp_numero: String(formData.get("admin_whatsapp_numero") ?? "").trim() || null,
     upsell_template_nome: String(formData.get("upsell_template_nome") ?? "").trim() || null,
+    lista_espera_ativo: formData.get("lista_espera_ativo") === "on",
+    recuperar_conversa_ativo: formData.get("recuperar_conversa_ativo") === "on",
+    recuperar_conversa_primeiro_toque_min:
+      Number(formData.get("recuperar_conversa_primeiro_toque_min") ?? 45) || 45,
+    indicacao_recompensa_ativo: formData.get("indicacao_recompensa_ativo") === "on",
+    indicacao_recompensa_texto:
+      String(formData.get("indicacao_recompensa_texto") ?? "").trim() || null,
     updated_at: new Date().toISOString(),
   };
 

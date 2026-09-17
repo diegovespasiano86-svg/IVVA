@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useMemo, useState } from "react";
 import { atualizarIdentidadeAssistente } from "./actions";
 
 type Identidade = {
@@ -16,10 +16,51 @@ const VOZES = [
   { key: "masculina", label: "Masculina" },
 ];
 
+const PRESETS_TOM = [
+  {
+    key: "descontraido",
+    label: "Descontraído",
+    tom: "descontraído e animado, com emojis moderados — como um amigo que trabalha ali",
+    exemplo: "Oi! Tudo certo? Bora marcar esse corte? 😄",
+  },
+  {
+    key: "premium",
+    label: "Premium / sofisticado",
+    tom: "elegante, formal e atencioso, sem gírias — trata o cliente com cerimônia",
+    exemplo: "Olá, seja bem-vindo(a). Será um prazer recebê-lo(a). Qual horário lhe atende melhor?",
+  },
+  {
+    key: "direto",
+    label: "Direto ao ponto",
+    tom: "direto e objetivo, sem enrolação — poucas palavras, resolve rápido",
+    exemplo: "Oi! Qual serviço e que horário você quer?",
+  },
+  {
+    key: "acolhedor",
+    label: "Acolhedor / cuidadoso",
+    tom: "acolhedor e paciente, sem pressa — bom pra clínica, estética ou saúde",
+    exemplo: "Oi, tudo bem? Estou aqui pra te ajudar com o que precisar, sem pressa.",
+  },
+] as const;
+
+const TOM_PADRAO = "cordial, direto e natural — nada robótico";
+const EXEMPLO_PADRAO = "Oi! Tudo bem? Me conta o que você precisa que eu já vejo os horários 🙂";
+
 export default function AssistantForm({ identidade }: { identidade: Identidade }) {
   const [error, formAction, pending] = useActionState(
     atualizarIdentidadeAssistente,
     undefined,
+  );
+
+  const [tom, setTom] = useState(identidade?.tom ?? "");
+
+  // O preview mostra o exemplo do preset cujo texto de tom bate com o que
+  // está no campo agora — assim ele acompanha tanto o clique num preset
+  // quanto uma edição manual que volte a coincidir com um deles. Sem
+  // preset batendo, cai no exemplo padrão (sempre tem algo pra mostrar).
+  const presetAtivo = useMemo(
+    () => PRESETS_TOM.find((p) => p.tom === tom),
+    [tom],
   );
 
   return (
@@ -38,16 +79,53 @@ export default function AssistantForm({ identidade }: { identidade: Identidade }
       </div>
 
       <div>
-        <label htmlFor="tom" className="!mb-1">
-          Tom de voz
-        </label>
-        <input
+        <label className="!mb-1">Tom de voz</label>
+        <div className="grid grid-cols-2 gap-2">
+          {PRESETS_TOM.map((p) => (
+            <button
+              key={p.key}
+              type="button"
+              onClick={() => setTom(p.tom)}
+              className={`rounded-[10px] border px-3 py-2.5 text-left transition-colors ${
+                presetAtivo?.key === p.key
+                  ? "border-purple bg-purple/5"
+                  : "border-border hover:border-ink/25"
+              }`}
+            >
+              <p
+                className={`text-[12.5px] font-bold ${presetAtivo?.key === p.key ? "text-purple" : "text-ink"}`}
+              >
+                {p.label}
+              </p>
+              <p className="mt-1 text-[11.5px] italic leading-snug text-ink-faint">
+                &ldquo;{p.exemplo}&rdquo;
+              </p>
+            </button>
+          ))}
+        </div>
+
+        <textarea
           id="tom"
           name="tom"
-          defaultValue={identidade?.tom ?? ""}
-          placeholder="Ex: caloroso e direto, com emoji com moderação"
-          className="w-full rounded-[10px] border border-border bg-surface px-3 py-2 text-[13px]"
+          rows={2}
+          value={tom}
+          onChange={(e) => setTom(e.target.value)}
+          placeholder={TOM_PADRAO}
+          className="mt-2 w-full resize-none rounded-[10px] border border-border bg-surface px-3 py-2 text-[13px]"
         />
+        <p className="mt-1 text-[11px] text-ink-faint">
+          Escolher um card só preenche o campo — pode editar o texto
+          livremente depois.
+        </p>
+
+        <div className="mt-2 rounded-[10px] bg-surface-soft px-3.5 py-3">
+          <p className="mb-1 text-[10.5px] font-bold uppercase tracking-wide text-ink-faint">
+            Assim vai soar:
+          </p>
+          <p className="text-[13px] italic text-ink-soft">
+            &ldquo;{presetAtivo?.exemplo ?? EXEMPLO_PADRAO}&rdquo;
+          </p>
+        </div>
       </div>
 
       <div>

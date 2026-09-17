@@ -162,6 +162,8 @@ type ResultadoInbound = {
   whatsapp_access_token: string;
   historico: { remetente: "contato" | "bot" | "humano"; conteudo: string }[];
   profissionais: { id: string; nome: string }[];
+  indicacao_recompensa_ativo: boolean;
+  indicacao_recompensa_texto: string | null;
 };
 
 // Manda a resposta (texto, e a lista de horários clicável quando fizer
@@ -478,6 +480,8 @@ async function processarMensagem(params: {
     profissionais: resultado.profissionais ?? [],
     horarioAbertura: resultado.horario_abertura,
     horarioFechamento: resultado.horario_fechamento,
+    indicacaoRecompensaAtiva: resultado.indicacao_recompensa_ativo,
+    indicacaoRecompensaTexto: resultado.indicacao_recompensa_texto,
   };
 
   let resposta: string;
@@ -486,6 +490,21 @@ async function processarMensagem(params: {
     const resultadoIA = await gerarRespostaWhatsApp(ctx, internalSecret, supabaseUrl, anonKey, imagemAnexada);
     resposta = resultadoIA.resposta;
     opcoesHorario = resultadoIA.opcoesHorario;
+
+    // Ofereceu horário e o cliente ainda não confirmou — guarda pra
+    // recuperação de conversa esfriada tentar retomar depois (ver cron
+    // de pós-venda). Aguarda (função serverless pode ser encerrada assim
+    // que a resposta volta), mas falha aqui não pode travar o envio.
+    if (resultadoIA.propostaPendente) {
+      const { error } = await supabase.rpc("ia_marcar_proposta_pendente", {
+        p_secret: internalSecret,
+        p_conversation_id: resultado.conversation_id,
+        p_tenant_id: resultado.tenant_id,
+        p_pendente: true,
+        p_resumo: resposta.slice(0, 300),
+      });
+      if (error) console.error("[whatsapp webhook] falha ao marcar proposta pendente", error);
+    }
   } catch (err) {
     console.error("[whatsapp webhook] falha na IA — caindo pra handoff automático", err);
     resposta = "Peço desculpa, tive um probleminha aqui. Já chamei alguém da equipe pra te ajudar.";

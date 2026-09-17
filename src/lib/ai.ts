@@ -2,6 +2,7 @@
 // fetch direto na Messages API, no mesmo espírito do lib/stripe.ts.
 
 import { createPixPaymentIntent } from "@/lib/stripe";
+import { sendWhatsAppText } from "@/lib/whatsapp";
 
 const ANTHROPIC_API = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_VERSION = "2023-06-01";
@@ -31,6 +32,8 @@ export type ContextoConversa = {
   profissionais: Profissional[];
   horarioAbertura: string | null;
   horarioFechamento: string | null;
+  indicacaoRecompensaAtiva: boolean;
+  indicacaoRecompensaTexto: string | null;
 };
 
 export type ResultadoIA = {
@@ -39,6 +42,9 @@ export type ResultadoIA = {
   /** horários oferecidos na última consulta de disponibilidade desse turno
    * (pra mandar como lista clicável no WhatsApp, além do texto) */
   opcoesHorario?: Slot[];
+  /** true quando a IA ofereceu horário(s) nessa resposta mas o cliente
+   * ainda não confirmou — usado pra recuperação de conversa esfriada. */
+  propostaPendente: boolean;
 };
 
 function headers() {
@@ -90,10 +96,21 @@ function montarSystemPrompt(ctx: ContextoConversa) {
     `2. Ofereça 2-3 opções reais (data + hora + profissional, se houver mais de um) e espere o cliente escolher/confirmar.`,
     `3. Só depois da confirmação explícita do cliente, chame criar_agendamento (ou remarcar_ou_cancelar_agendamento pra mudar algo já marcado).`,
     `4. NUNCA diga algo como "vou confirmar com a equipe e te retorno" — você tem acesso direto à agenda, então ou você resolve na hora chamando as ferramentas, ou explica o que falta pro cliente decidir. Depois de criar/remarcar/cancelar um agendamento, sua resposta final SEMPRE repete o horário exato marcado (dia, hora e profissional) — nunca deixa a confirmação implícita.`,
-    `Se não achar nenhum horário livre nos critérios pedidos, diga isso claramente e ofereça alternativas (outro dia, outro profissional) em vez de inventar disponibilidade.`,
+    `Se não achar nenhum horário livre nos critérios pedidos, diga isso claramente e ofereça duas coisas: outro dia/profissional, E entrar na lista de espera (ferramenta entrar_lista_espera) daquele profissional específico — explique que avisamos automaticamente assim que uma vaga abrir. Só chame a ferramenta depois que o cliente topar.`,
   ]
     .filter(Boolean)
     .join("\n\n");
+
+  const linhasVenda = [
+    `Depois que o cliente confirmar qual serviço quer, e antes de fechar o agendamento, veja se faz sentido sugerir UM complemento relacionado (ex: quem marca corte pode gostar de barba junto, quem marca coloração pode gostar de hidratação) — use consultar_catalogo pra saber o que existe e quanto custa. Enquadre como entrega extra pelo mesmo tipo de visita, não como venda adicional: prefira "com esse horário você já consegue incluir X, fica R$Y a mais" em vez de "quer levar mais um?" — soa como cuidado, não como empurrar produto. Ofereça isso no máximo uma vez, e siga em frente sem insistir se a pessoa não topar ou não comentar sobre isso. Nunca ofereça complemento pra quem já disse que está com pressa ou já recusou algo antes na mesma conversa.`,
+    `Se o cliente reclamar do preço ou pedir desconto, nunca invente um desconto por conta própria — explique com naturalidade o que está incluso e, se ele insistir, chame solicitar_atendimento_humano explicando que o cliente pediu desconto, pra o dono decidir. Só ofereça desconto se ele já estiver numa promoção ativa (consultar_avisos_ativos) ou registrado na base de conhecimento.`,
+    `Se o cliente ficar em dúvida ou disser que vai pensar, aceite com naturalidade e sem insistir — não prometa um follow-up específico (isso já é cuidado automaticamente pelo negócio depois). Se ainda não sabe o nome dela, essa é uma boa hora de perguntar.`,
+    `Quando perceber que o cliente já decidiu mas está sendo repetitivo ou vago, ajude a fechar com uma pergunta direta e assumida (ex: "posso já deixar reservado nesse horário?") em vez de ficar perguntando de forma aberta várias vezes.`,
+    `Se o cliente mencionar que foi indicado por alguém e você ainda não sabe o nome de quem indicou, pergunte — e assim que souber, chame atualizar_contato com indicado_por preenchido.` +
+      (ctx.indicacaoRecompensaAtiva && ctx.indicacaoRecompensaTexto
+        ? ` Esse negócio tem recompensa por indicação: ${ctx.indicacaoRecompensaTexto}. Conte isso pro cliente de forma natural assim que registrar quem indicou.`
+        : ""),
+  ].join("\n\n");
 
   return [
     `Você é ${nomeAssistente}, quem atende o WhatsApp de ${ctx.tenantNome} — um negócio de serviços.`,
@@ -101,6 +118,7 @@ function montarSystemPrompt(ctx: ContextoConversa) {
     `Nunca use uma saudação decorada ou genérica — responda como uma pessoa real do time responderia, adaptando ao que foi dito.`,
     linhasQualificacao,
     linhasAgenda,
+    linhasVenda,
     horario ? `Horário de atendimento humano: ${horario}.` : "",
     regras ? `Regras específicas desse negócio:\n${regras}` : "",
     `Se o cliente pedir claramente pra falar com uma pessoa, reclamar de algo sério, ou se você não souber responder com segurança, chame a ferramenta solicitar_atendimento_humano explicando o motivo — não invente informação que você não tem.`,
@@ -129,6 +147,7 @@ const TOOLS = [
             "cliente = já é cliente do negócio; primeiro_contato = primeira vez que fala com eles; sem_contato = interessado mas nunca teve contato antes",
         },
         como_conheceu: { type: "string", description: "Como a pessoa chegou até o negócio" },
+        indicado_por: { type: "string", description: "Nome de quem indicou, se o cliente disse que veio por indicação de alguém" },
       },
     },
   },
@@ -184,6 +203,19 @@ const TOOLS = [
         nova_data_hora: { type: "string", description: "Nova data/hora ISO confirmada pelo cliente (obrigatório se acao=remarcar)" },
       },
       required: ["acao"],
+    },
+  },
+  {
+    name: "entrar_lista_espera",
+    description:
+      "Coloca o cliente na lista de espera de um profissional (ou de qualquer um, se ele topar com qualquer profissional) quando consultar_disponibilidade não achou nenhum horário que sirva. Assim que uma vaga daquele profissional abrir (alguém cancelar), o sistema avisa esse cliente automaticamente. Use só depois de oferecer e o cliente topar entrar na fila — nunca sem perguntar antes.",
+    input_schema: {
+      type: "object",
+      properties: {
+        profissional_id: { type: "string", description: "ID do profissional desejado, se o cliente tiver preferência" },
+        preferencia_horario: { type: "string", description: "O que o cliente quer, em texto (ex: 'sábado de manhã', 'qualquer dia depois das 18h')" },
+      },
+      required: ["preferencia_horario"],
     },
   },
   {
@@ -266,6 +298,7 @@ async function executarFerramenta(
       p_email: input.email ?? null,
       p_tipo_relacionamento: input.tipo_relacionamento ?? null,
       p_como_conheceu: input.como_conheceu ?? null,
+      p_indicado_por: input.indicado_por ?? null,
     });
     return { resultado: "ok", handoff: false };
   }
@@ -324,7 +357,61 @@ async function executarFerramenta(
       p_nova_data_hora: input.nova_data_hora ?? null,
     });
     if (error) return { resultado: JSON.stringify({ erro: error.message }), handoff: false };
-    return { resultado: JSON.stringify(data), handoff: false, reservaFeita: Boolean((data as { ok?: boolean })?.ok) };
+
+    const resultado = data as {
+      ok?: boolean;
+      status?: string;
+      professional_id?: string;
+    } | null;
+
+    // Vaga acabou de abrir — avisa quem estiver na lista de espera desse
+    // profissional, sem esperar o cron (que só roda 1x/dia). Falha aqui
+    // nunca deve quebrar a resposta pro cliente que cancelou.
+    if (resultado?.ok && resultado.status === "cancelado" && resultado.professional_id) {
+      try {
+        const { data: aviso } = await supabase.rpc("ia_notificar_proximo_lista_espera", {
+          p_secret: secret,
+          p_tenant_id: ctx.tenantId,
+          p_professional_id: resultado.professional_id,
+        });
+        const item = aviso as {
+          ok?: boolean;
+          contact_nome?: string;
+          contact_telefone?: string;
+          preferencia_horario?: string;
+          professional_nome?: string;
+          phone_number_id?: string;
+          access_token?: string;
+        } | null;
+        if (item?.ok && item.contact_telefone && item.phone_number_id && item.access_token) {
+          const primeiroNome = item.contact_nome?.trim().split(/\s+/)[0] ?? "";
+          const texto = `Oi${primeiroNome ? " " + primeiroNome : ""}! Abriu uma vaga com ${item.professional_nome ?? "a gente"}${
+            item.preferencia_horario ? ` (${item.preferencia_horario})` : ""
+          } — quer confirmar? Responde aqui que eu já deixo marcado.`;
+          await sendWhatsAppText(
+            { phoneNumberId: item.phone_number_id, token: item.access_token },
+            item.contact_telefone,
+            texto,
+          );
+        }
+      } catch (err) {
+        console.error("[ai] falha ao avisar lista de espera", err);
+      }
+    }
+
+    return { resultado: JSON.stringify(data), handoff: false, reservaFeita: Boolean(resultado?.ok) };
+  }
+
+  if (nome === "entrar_lista_espera") {
+    const { data, error } = await supabase.rpc("ia_entrar_lista_espera", {
+      p_secret: secret,
+      p_tenant_id: ctx.tenantId,
+      p_contact_id: ctx.contactId,
+      p_professional_id: input.profissional_id ?? null,
+      p_preferencia_horario: input.preferencia_horario ?? null,
+    });
+    if (error) return { resultado: JSON.stringify({ erro: error.message }), handoff: false };
+    return { resultado: JSON.stringify(data), handoff: false };
   }
 
   if (nome === "consultar_avisos_ativos") {
@@ -425,7 +512,12 @@ export async function gerarRespostaWhatsApp(
 
     if (blocosFerramenta.length === 0) {
       const texto = blocosTexto.map((b) => b.text).join("\n\n").trim();
-      return { resposta: texto || "Certo!", handoffSolicitado, opcoesHorario };
+      return {
+        resposta: texto || "Certo!",
+        handoffSolicitado,
+        opcoesHorario,
+        propostaPendente: Boolean(opcoesHorario && opcoesHorario.length > 0),
+      };
     }
 
     messages.push({ role: "assistant", content: resposta.content });
@@ -457,5 +549,6 @@ export async function gerarRespostaWhatsApp(
   return {
     resposta: "Só um instante que já te retorno.",
     handoffSolicitado: true, // não convergiu em MAX_TOOL_TURNS — melhor jogar pra humano do que ficar em loop
+    propostaPendente: false,
   };
 }

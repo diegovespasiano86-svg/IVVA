@@ -19,6 +19,11 @@ type BotSettings = {
   admin_pin_hash: string | null;
   upsell_template_nome: string | null;
   bot_pausado: boolean;
+  lista_espera_ativo: boolean;
+  recuperar_conversa_ativo: boolean;
+  recuperar_conversa_primeiro_toque_min: number;
+  indicacao_recompensa_ativo: boolean;
+  indicacao_recompensa_texto: string | null;
 } | null;
 
 export default function BotSettingsForm({ settings }: { settings: BotSettings }) {
@@ -31,7 +36,104 @@ export default function BotSettingsForm({ settings }: { settings: BotSettings })
 
   return (
     <form action={formAction} className="flex flex-col gap-5">
-      <section>
+      <section className="rounded-[14px] border border-teal/30 bg-teal/5 px-4 py-4">
+        <div className="mb-3 flex items-center gap-2">
+          <svg
+            className="icon"
+            viewBox="0 0 24 24"
+            width="18"
+            height="18"
+            style={{ color: "var(--teal)" }}
+          >
+            <path d="M3 12l9-9 9 9M5 10v10h14V10" />
+            <path d="M9 14v3M12 12v5M15 15v2" />
+          </svg>
+          <p className="text-[14px] font-bold">Vendas e receita</p>
+        </div>
+        <p className="mb-4 text-[12px] text-ink-soft">
+          Mecanismos que recuperam venda que normalmente se perde — sem
+          você precisar lembrar de ninguém.
+        </p>
+
+        <div className="flex flex-col gap-4">
+          <div>
+            <label className="mb-2 flex items-center gap-2 text-[12.5px] font-semibold">
+              <input
+                type="checkbox"
+                name="recuperar_conversa_ativo"
+                defaultChecked={s?.recuperar_conversa_ativo ?? true}
+              />
+              Recuperar conversa esfriada
+            </label>
+            <p className="mb-2 text-[11.5px] text-ink-faint">
+              Cliente pergunta preço/horário e some sem confirmar — a ivva
+              manda um toque leve depois de um tempo e, se ainda assim não
+              responder, um segundo toque mais suave 24h depois. Sem
+              resposta nos dois, vira tarefa pra você em Tarefas.
+            </p>
+            <label htmlFor="recuperar_conversa_primeiro_toque_min" className="!mb-1">
+              1º toque depois de quantos minutos
+            </label>
+            <input
+              id="recuperar_conversa_primeiro_toque_min"
+              name="recuperar_conversa_primeiro_toque_min"
+              type="number"
+              min={5}
+              defaultValue={s?.recuperar_conversa_primeiro_toque_min ?? 45}
+              className="w-32 rounded-[10px] border border-border bg-surface px-3 py-2 text-[13px]"
+            />
+          </div>
+
+          <div className="border-t border-teal/20 pt-4">
+            <label className="mb-2 flex items-center gap-2 text-[12.5px] font-semibold">
+              <input
+                type="checkbox"
+                name="lista_espera_ativo"
+                defaultChecked={s?.lista_espera_ativo ?? true}
+              />
+              Lista de espera automática
+            </label>
+            <p className="text-[11.5px] text-ink-faint">
+              Quando não há vaga no horário que o cliente quer, a ivva
+              oferece entrar na lista de espera daquele profissional.
+              Assim que alguém cancela, ela avisa automaticamente o
+              próximo da fila — sem essa vaga ficar perdida.
+            </p>
+          </div>
+
+          <div className="border-t border-teal/20 pt-4">
+            <label className="mb-2 flex items-center gap-2 text-[12.5px] font-semibold">
+              <input
+                type="checkbox"
+                name="indicacao_recompensa_ativo"
+                defaultChecked={s?.indicacao_recompensa_ativo ?? false}
+              />
+              Recompensa por indicação
+            </label>
+            <p className="mb-2 text-[11.5px] text-ink-faint">
+              Quando um cliente diz que foi indicado por alguém, a ivva
+              pergunta o nome de quem indicou e registra no CRM. Se
+              ativado, ela também conta a recompensa pro novo cliente na
+              hora — a recompensa de quem indicou fica registrada no CRM
+              pra você conferir e aplicar (por segurança, a ivva não manda
+              mensagem automática pra quem indicou, já que o nome sozinho
+              pode ser ambíguo).
+            </p>
+            <label htmlFor="indicacao_recompensa_texto" className="!mb-1">
+              Texto da recompensa (mostrado pro novo cliente)
+            </label>
+            <input
+              id="indicacao_recompensa_texto"
+              name="indicacao_recompensa_texto"
+              placeholder="Ex: 10% de desconto pra quem indicou e pra quem foi indicado"
+              defaultValue={s?.indicacao_recompensa_texto ?? ""}
+              className="w-full rounded-[10px] border border-border bg-surface px-3 py-2 text-[13px]"
+            />
+          </div>
+        </div>
+      </section>
+
+      <section className="border-t border-border pt-4">
         <p className="mb-2.5 text-[13px] font-bold">Pós-venda</p>
         <label className="mb-2 flex items-center gap-2 text-[12.5px] font-semibold">
           <input
