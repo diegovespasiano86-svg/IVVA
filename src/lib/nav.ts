@@ -51,6 +51,12 @@ export const NAV_ITEMS: NavItem[] = [
     icon: "M4 19V6a2 2 0 0 1 2-2h9l5 5v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z",
   },
   {
+    href: "/robo",
+    label: "Configuração do robô",
+    roles: ["dono"],
+    icon: "M12 2v3M8 9h8a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2ZM9 13h.01M15 13h.01M9 17h6",
+  },
+  {
     href: "/calendario",
     label: "Calendário",
     roles: ["dono", "profissional"],

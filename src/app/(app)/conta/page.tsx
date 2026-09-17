@@ -1,8 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import WhatsAppForm from "./whatsapp-form";
 import InviteForm from "./invite-form";
-import AssistantForm from "./assistant-form";
-import BotSettingsForm from "./bot-settings-form";
 import BillingPortalButton from "./billing-portal-button";
 import { desconectarWhatsApp, revogarConvite } from "./actions";
 
@@ -64,25 +62,18 @@ export default async function ContaPage() {
 
   const { data: perfil } = await supabase
     .from("users")
-    .select("tenant_id, role, tenants(nome, plano, identidade_assistente)")
+    .select("tenant_id, role, tenants(nome, plano)")
     .eq("id", user?.id ?? "")
     .maybeSingle();
 
   const tenant = perfil?.tenants as unknown as {
     nome: string;
     plano: string;
-    identidade_assistente: {
-      nome_assistente?: string;
-      tom?: string;
-      regras?: string[];
-      horario_atendimento?: string;
-      voz?: string;
-    } | null;
   } | null;
 
   const isDono = perfil?.role === "dono";
 
-  const [{ data: conta }, { data: equipe }, { data: chamados }, { data: convites }, { data: botSettings }] =
+  const [{ data: conta }, { data: equipe }, { data: chamados }, { data: convites }] =
     await Promise.all([
       supabase
         .from("whatsapp_accounts")
@@ -101,9 +92,6 @@ export default async function ContaPage() {
         .select("id, nome, email, status, created_at")
         .eq("status", "pendente")
         .order("created_at", { ascending: false }),
-      // Ainda não existe linha pra todo tenant (só é criada quando o dono
-      // salva pela primeira vez) — maybeSingle cobre o caso de não existir.
-      supabase.from("bot_settings").select("*").maybeSingle(),
     ]);
 
   return (
@@ -241,14 +229,14 @@ export default async function ContaPage() {
 
           {isDono && conta && (
             <div className="mt-4 border-t border-border pt-4">
-              <p className="mb-1 text-[13px] font-bold">
-                Personalidade do atendimento
-              </p>
-              <p className="mb-3 text-[12px] text-ink-faint">
-                Como a ivva se apresenta e conversa com seus clientes no
-                WhatsApp.
-              </p>
-              <AssistantForm identidade={tenant?.identidade_assistente ?? null} />
+              <a
+                href="/robo"
+                className="flex items-center justify-between rounded-[10px] bg-surface-soft px-3.5 py-2.5 text-[12.5px] font-semibold text-ink-soft hover:text-ink"
+              >
+                Personalidade, tom e automações do robô ficam em
+                Configuração do robô
+                <span aria-hidden>→</span>
+              </a>
             </div>
           )}
         </div>
@@ -339,16 +327,6 @@ export default async function ContaPage() {
         </div>
       </div>
 
-      {isDono && (
-        <div className="card mt-4 px-5 py-5">
-          <p className="mb-1 text-[14px] font-bold">Configurações do robô</p>
-          <p className="mb-4 text-[12px] text-ink-faint">
-            Pós-venda, reengajamento, aniversário e o canal de comandos que
-            você usa pra falar com o robô como dono.
-          </p>
-          <BotSettingsForm settings={botSettings} />
-        </div>
-      )}
     </div>
   );
 }
