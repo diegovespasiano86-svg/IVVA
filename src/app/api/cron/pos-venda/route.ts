@@ -1,11 +1,16 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { sendWhatsAppText } from "@/lib/whatsapp";
+import { processarResumosPendentes } from "@/lib/resumo-conversas";
 
 // Roda 1x por dia (limite do plano Hobby da Vercel — ver vercel.json).
 // Isso significa que os prazos "1h"/"2h" na prática viram "dentro do
 // mesmo dia" em vez de exatos; "1d"/"5d" continuam precisos. Precisa de
 // plano Pro pra rodar de hora em hora de verdade.
+// 60s pra caber o lote de resumos de conversa por IA no fim do run,
+// além do resto (Hobby aceita maxDuration configurado até 60s).
+export const maxDuration = 60;
+
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -178,6 +183,10 @@ export async function GET(request: NextRequest) {
     }
   }
 
+  // Resumo de conversas por IA: roda por último, pra não atrasar os
+  // envios de WhatsApp acima se a API do Claude estiver lenta.
+  const resumos = await processarResumosPendentes(supabase, secret);
+
   return NextResponse.json({
     ok: true,
     total: pendentes.length,
@@ -190,5 +199,7 @@ export async function GET(request: NextRequest) {
     listaEsperaAvisados,
     recuperacaoEsfriadas: recuperacao.esfriadas,
     recuperacaoTocada,
+    resumosGerados: resumos.resumidas,
+    resumosFalhas: resumos.falhas,
   });
 }

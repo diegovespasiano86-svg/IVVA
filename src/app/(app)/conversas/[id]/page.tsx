@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import ReplyForm from "../reply-form";
 import { encerrarConversa, restaurarBot } from "../actions";
+import { CATEGORIA_LABEL, type CategoriaResumo } from "@/lib/resumo-conversas";
 
 const STATUS_LABEL: Record<string, string> = {
   bot: "Com o robô",
@@ -31,6 +32,12 @@ export default async function ConversaDetalhePage({
     .select("id, remetente, conteudo, created_at")
     .eq("conversation_id", id)
     .order("created_at", { ascending: true });
+
+  const { data: resumo } = await supabase
+    .from("conversation_summaries")
+    .select("resumo, categoria, desfecho, perguntas_principais")
+    .eq("conversation_id", id)
+    .maybeSingle();
 
   const contato = conversa.contacts as unknown as {
     nome: string;
@@ -106,6 +113,39 @@ export default async function ConversaDetalhePage({
             <p className="mt-0.5 text-[12.5px] text-ink-soft">
               {conversa.handoff_motivo}
             </p>
+          </div>
+        )}
+
+        {resumo && (
+          <div className="mb-3 rounded-[10px] border border-border bg-surface-soft px-3.5 py-3">
+            <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
+              <p className="text-[11px] font-bold uppercase tracking-wide text-ink-faint">
+                Resumo da conversa
+              </p>
+              <span className="rounded-full bg-purple/10 px-2 py-0.5 text-[10.5px] font-bold text-purple">
+                {CATEGORIA_LABEL[resumo.categoria as CategoriaResumo] ?? resumo.categoria}
+              </span>
+              <span
+                className={`rounded-full px-2 py-0.5 text-[10.5px] font-bold ${
+                  resumo.desfecho === "fechou"
+                    ? "bg-teal/10 text-teal"
+                    : "bg-coral/10 text-coral"
+                }`}
+              >
+                {resumo.desfecho === "fechou" ? "Fechou" : "Não fechou"}
+              </span>
+            </div>
+            <p className="text-[12.5px] text-ink-soft">{resumo.resumo}</p>
+            {Array.isArray(resumo.perguntas_principais) &&
+              resumo.perguntas_principais.length > 0 && (
+                <ul className="mt-2 flex flex-col gap-0.5">
+                  {(resumo.perguntas_principais as string[]).map((p, i) => (
+                    <li key={i} className="text-[12px] text-ink-faint">
+                      • {p}
+                    </li>
+                  ))}
+                </ul>
+              )}
           </div>
         )}
 
