@@ -251,7 +251,8 @@ export default async function CheckoutPage(props: {
         </div>
       ) : (
         <div className="card overflow-hidden">
-          <table className="w-full text-[13px]">
+          <div className="overflow-x-auto">
+          <table className="w-full min-w-[560px] text-[13px]">
             <thead>
               <tr className="border-b border-border text-left text-[11px] font-bold uppercase tracking-wide text-ink-faint">
                 <th className="px-4 py-3">Cliente</th>
@@ -294,6 +295,7 @@ export default async function CheckoutPage(props: {
               })}
             </tbody>
           </table>
+          </div>
         </div>
       )}
     </div>

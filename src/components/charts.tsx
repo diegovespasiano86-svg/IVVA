@@ -20,7 +20,10 @@ export function LineAreaChart({
   pontos: { rotulo: string; valor: number }[];
   cor?: string;
 }) {
-  if (pontos.length === 0) return <CardVazio texto="Sem dados nesse período ainda." />;
+  // Uma linha reta em zero não informa nada — melhor mostrar o vazio.
+  if (pontos.length === 0 || pontos.every((p) => p.valor === 0)) {
+    return <CardVazio texto="Sem dados nesse período ainda." />;
+  }
 
   const W = 640;
   const H = 170;

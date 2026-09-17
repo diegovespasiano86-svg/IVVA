@@ -65,7 +65,8 @@ export default async function CrmPage({
         <div>
           <h1 className="font-display text-[22px] font-extrabold">CRM</h1>
           <p className="text-[13.5px] text-ink-soft">
-            Funil de clientes — {listaContatos.length} contatos no total.
+            Funil de clientes — {listaContatos.length}{" "}
+            {listaContatos.length === 1 ? "contato" : "contatos"} no total.
           </p>
         </div>
 

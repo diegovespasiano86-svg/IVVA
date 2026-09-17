@@ -22,6 +22,11 @@ const localizer = dateFnsLocalizer({
   locales: { "pt-BR": ptBR },
 });
 
+// Sem isso a visão Dia/Semana abre rolada pra 00:00 — ninguém tem
+// agendamento de madrugada, então começa já perto do horário comercial.
+const ROLAR_PARA = new Date();
+ROLAR_PARA.setHours(8, 0, 0, 0);
+
 const MENSAGENS = {
   next: "Próximo",
   previous: "Anterior",
@@ -182,6 +187,7 @@ export default function CalendarView({
               onNavigate={(d) => setData(d)}
               onSelectEvent={(e) => setSelecionado((e as { resource: EventoAgenda }).resource)}
               views={[Views.DAY, Views.WEEK, Views.MONTH]}
+              scrollToTime={ROLAR_PARA}
               messages={MENSAGENS}
               components={{ toolbar: ToolbarCustomizada }}
               popup

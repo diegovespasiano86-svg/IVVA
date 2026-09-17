@@ -237,7 +237,9 @@ export default async function DashboardPage() {
         </div>
         <div className="card px-5 py-4.5">
           <StatusTile label="Satisfação média" valor={mediaNotas === "—" ? "—" : `${mediaNotas} ★`} tom="neutro" />
-          <p className="mt-1.5 text-[11.5px] text-ink-faint">{notas.length} avaliações recebidas</p>
+          <p className="mt-1.5 text-[11.5px] text-ink-faint">
+            {notas.length} {notas.length === 1 ? "avaliação recebida" : "avaliações recebidas"}
+          </p>
         </div>
         <div className="card px-5 py-4.5">
           <StatusTile label="Faturamento do mês" valor={money.format(faturamentoMes)} tom="bom" />
