@@ -45,7 +45,6 @@ export async function conectarWhatsApp(
         tenant_id: perfil.tenant_id,
         phone_number_id: phoneNumberId,
         business_account_id: businessAccountId || null,
-        access_token: accessToken,
         display_phone_number: displayNumber || null,
         status: "ativo",
         updated_at: new Date().toISOString(),
@@ -60,6 +59,21 @@ export async function conectarWhatsApp(
       return "Esse Phone Number ID já está conectado em outro negócio na ivva.";
     }
     return "Não consegui salvar. Confere os dados e tenta de novo.";
+  }
+
+  // Token fica cifrado no Vault, nunca em texto puro na tabela — ver
+  // migração encrypt_whatsapp_access_token.
+  const internalSecret = process.env.WHATSAPP_WEBHOOK_INTERNAL_SECRET;
+  if (!internalSecret) {
+    return "Configuração interna ausente — fale com o suporte.";
+  }
+  const { error: tokenError } = await supabase.rpc("whatsapp_set_token", {
+    p_secret: internalSecret,
+    p_tenant_id: perfil.tenant_id,
+    p_access_token: accessToken,
+  });
+  if (tokenError) {
+    return "Não consegui salvar o token com segurança. Tenta de novo.";
   }
 
   revalidatePath("/conta");
