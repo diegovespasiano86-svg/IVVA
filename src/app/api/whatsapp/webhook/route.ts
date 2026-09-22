@@ -49,6 +49,7 @@ function assinaturaValida(rawBody: string, assinaturaHeader: string | null): boo
 type WhatsAppWebhookBody = {
   entry?: {
     changes?: {
+      field?: string;
       value?: {
         metadata?: { phone_number_id?: string };
         contacts?: { profile?: { name?: string }; wa_id?: string }[];
@@ -65,6 +66,11 @@ type WhatsAppWebhookBody = {
           image?: { id?: string; mime_type?: string; caption?: string };
           audio?: { id?: string; mime_type?: string };
         }[];
+        // account_update (Coexistência): evento de conexão/desconexão da
+        // conta — não tem metadata.phone_number_id, o número vem direto
+        // no campo phone_number.
+        event?: string;
+        phone_number?: string;
       };
     }[];
   }[];
@@ -91,6 +97,34 @@ export async function POST(request: NextRequest) {
   for (const entry of body.entry ?? []) {
     for (const change of entry.changes ?? []) {
       const value = change.value;
+
+      // Coexistência: conexão/desconexão da conta (ex: dono desliga pelo
+      // próprio app do WhatsApp Business) e sincronização de contatos e
+      // histórico. Cada um tem formato próprio — trata à parte e não cai
+      // no fluxo de mensagem normal abaixo.
+      if (change.field === "account_update") {
+        await processarAccountUpdate({ supabaseUrl, anonKey, internalSecret, value: value ?? {} });
+        continue;
+      }
+      if (
+        change.field === "history" ||
+        change.field === "smb_app_state_sync" ||
+        change.field === "smb_message_echoes"
+      ) {
+        const phoneNumberIdSync = value?.metadata?.phone_number_id;
+        if (phoneNumberIdSync) {
+          await registrarSyncEvent({
+            supabaseUrl,
+            anonKey,
+            internalSecret,
+            phoneNumberId: phoneNumberIdSync,
+            field: change.field,
+            payload: value,
+          });
+        }
+        continue;
+      }
+
       const phoneNumberId = value?.metadata?.phone_number_id;
       if (!phoneNumberId) continue;
 
@@ -144,6 +178,54 @@ export async function POST(request: NextRequest) {
   }
 
   return NextResponse.json({ received: true });
+}
+
+// Evento de conexão/desconexão da Coexistência. O mais importante pra
+// tratar agora é PARTNER_REMOVED: o dono desconectou pelo próprio app do
+// WhatsApp Business (não tem como usar o Deregister API nesse caso), então
+// a gente precisa saber marcar a conta como desconectada aqui também.
+async function processarAccountUpdate(params: {
+  supabaseUrl: string;
+  anonKey: string;
+  internalSecret: string;
+  value: { event?: string; phone_number?: string };
+}) {
+  const { supabaseUrl, anonKey, internalSecret, value } = params;
+  if (value.event !== "PARTNER_REMOVED" || !value.phone_number) return;
+
+  const supabase = createClient(supabaseUrl, anonKey);
+  const { error } = await supabase.rpc("whatsapp_marcar_status", {
+    p_secret: internalSecret,
+    p_phone_number_id: value.phone_number,
+    p_status: "desconectado",
+  });
+  if (error) {
+    console.error("[whatsapp webhook] falha ao marcar conta desconectada (account_update)", error);
+  }
+}
+
+// Guarda os webhooks de sincronização (histórico de mensagens, contatos,
+// eco de mensagens do app) pra processar depois — ainda não temos a
+// importação pro CRM/conversas pronta, mas nada se perde enquanto isso.
+async function registrarSyncEvent(params: {
+  supabaseUrl: string;
+  anonKey: string;
+  internalSecret: string;
+  phoneNumberId: string;
+  field: string;
+  payload: unknown;
+}) {
+  const { supabaseUrl, anonKey, internalSecret, phoneNumberId, field, payload } = params;
+  const supabase = createClient(supabaseUrl, anonKey);
+  const { error } = await supabase.rpc("whatsapp_registrar_sync_event", {
+    p_secret: internalSecret,
+    p_phone_number_id: phoneNumberId,
+    p_field: field,
+    p_payload: payload,
+  });
+  if (error) {
+    console.error(`[whatsapp webhook] falha ao registrar sync event (${field})`, error);
+  }
 }
 
 type ResultadoInbound = {

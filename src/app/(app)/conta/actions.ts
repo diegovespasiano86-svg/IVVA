@@ -5,6 +5,12 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createBillingPortalSession } from "@/lib/stripe";
+import {
+  exchangeEmbeddedSignupCode,
+  buscarDetalhesNumero,
+  solicitarSincronizacaoCoexistencia,
+  WhatsAppEmbeddedSignupError,
+} from "@/lib/whatsapp-embedded-signup";
 
 export async function conectarWhatsApp(
   _prevState: string | undefined,
@@ -78,6 +84,100 @@ export async function conectarWhatsApp(
 
   revalidatePath("/conta");
   return undefined;
+}
+
+// Fluxo novo (Embedded Signup / Coexistência): o dono loga pelo popup da
+// Meta com o número que já usa no WhatsApp Business app — sem precisar
+// criar conta de desenvolvedor, copiar Phone Number ID nem gerar token na
+// mão. O front manda o código do login + os IDs que a Meta devolveu pelo
+// evento da janela; aqui só troca o código pelo token e salva.
+export async function conectarWhatsAppEmbedded(params: {
+  code: string;
+  phoneNumberId: string;
+  wabaId: string;
+  isCoexistence: boolean;
+}): Promise<{ erro: string | null }> {
+  const { code, phoneNumberId, wabaId, isCoexistence } = params;
+
+  if (!code || !phoneNumberId || !wabaId) {
+    return { erro: "Dados incompletos vindos do login com a Meta. Tenta de novo." };
+  }
+
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { erro: "Sessão expirada, faça login de novo." };
+
+  const { data: perfil } = await supabase
+    .from("users")
+    .select("tenant_id, role")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (!perfil || perfil.role !== "dono") {
+    return { erro: "Só o dono do negócio pode conectar o WhatsApp." };
+  }
+
+  let accessToken: string;
+  try {
+    accessToken = await exchangeEmbeddedSignupCode(code);
+  } catch (err) {
+    return {
+      erro:
+        err instanceof WhatsAppEmbeddedSignupError
+          ? err.message
+          : "Falha ao concluir o login com a Meta. Tenta de novo.",
+    };
+  }
+
+  const { displayPhoneNumber } = await buscarDetalhesNumero(phoneNumberId, accessToken);
+
+  const { error: upsertError } = await supabase
+    .from("whatsapp_accounts")
+    .upsert(
+      {
+        tenant_id: perfil.tenant_id,
+        phone_number_id: phoneNumberId,
+        business_account_id: wabaId,
+        display_phone_number: displayPhoneNumber,
+        status: "ativo",
+        is_coexistence: isCoexistence,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "tenant_id" },
+    );
+
+  if (upsertError) {
+    if (upsertError.code === "23505") {
+      return { erro: "Esse número já está conectado em outro negócio na ivva." };
+    }
+    return { erro: "Não consegui salvar. Tenta de novo." };
+  }
+
+  const internalSecret = process.env.WHATSAPP_WEBHOOK_INTERNAL_SECRET;
+  if (!internalSecret) {
+    return { erro: "Configuração interna ausente — fale com o suporte." };
+  }
+  const { error: tokenError } = await supabase.rpc("whatsapp_set_token", {
+    p_secret: internalSecret,
+    p_tenant_id: perfil.tenant_id,
+    p_access_token: accessToken,
+  });
+  if (tokenError) {
+    return { erro: "Não consegui salvar o token com segurança. Tenta de novo." };
+  }
+
+  // Só faz sentido pedir sincronização de histórico quando o número já
+  // existia no WhatsApp Business app (Coexistência) — número novo não tem
+  // o que sincronizar.
+  if (isCoexistence) {
+    await solicitarSincronizacaoCoexistencia(phoneNumberId, accessToken);
+  }
+
+  revalidatePath("/conta");
+  return { erro: null };
 }
 
 export async function pedirAjudaWhatsApp(formData: FormData) {

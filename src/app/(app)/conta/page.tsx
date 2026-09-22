@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import WhatsAppForm from "./whatsapp-form";
+import EmbeddedSignupButton from "./embedded-signup-button";
 import InviteForm from "./invite-form";
 import BillingPortalButton from "./billing-portal-button";
 import { desconectarWhatsApp, revogarConvite } from "./actions";
@@ -223,7 +224,16 @@ export default async function ContaPage() {
                 Conecte o WhatsApp Business do seu negócio pra ivva começar
                 a atender seus clientes.
               </p>
-              <WhatsAppForm />
+              <EmbeddedSignupButton />
+              <details className="mt-4 border-t border-border pt-4">
+                <summary className="cursor-pointer text-[12.5px] font-bold text-ink-soft hover:text-ink">
+                  Prefiro conectar manualmente com meus próprios dados de
+                  desenvolvedor
+                </summary>
+                <div className="mt-3">
+                  <WhatsAppForm />
+                </div>
+              </details>
             </>
           )}
 
