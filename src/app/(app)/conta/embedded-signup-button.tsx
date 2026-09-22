@@ -1,7 +1,35 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { conectarWhatsAppEmbedded } from "./actions";
+import { conectarWhatsAppEmbedded, pedirAjudaWhatsApp } from "./actions";
+
+const PASSOS = [
+  {
+    titulo: "Baixe o WhatsApp Business",
+    detalhe:
+      "No celular que vai atender pelo negócio, instale o app \"WhatsApp Business\" (Play Store ou App Store) — é diferente do WhatsApp comum.",
+  },
+  {
+    titulo: "Ative um número dedicado",
+    detalhe:
+      "Abra o WhatsApp Business e cadastre um número que NÃO esteja em uso no WhatsApp pessoal. Pode ser um chip novo ou um fixo com confirmação por ligação.",
+  },
+  {
+    titulo: "Clique em \"Conectar com um clique\" abaixo",
+    detalhe:
+      "Vai abrir uma janela da Meta (dona do WhatsApp). Faça login com uma conta do Facebook — pode ser a sua pessoal, só precisa existir.",
+  },
+  {
+    titulo: "Escolha \"conectar seu número existente\"",
+    detalhe:
+      "Quando a Meta reconhecer que o número já está ativo no WhatsApp Business, ela oferece a opção de conectar esse número (em vez de criar um novo). Escolha essa opção e confirme.",
+  },
+  {
+    titulo: "Pronto",
+    detalhe:
+      "A tela volta pra \"Conectado\" automaticamente. O app do WhatsApp Business continua funcionando normal no celular, em paralelo com a ivva.",
+  },
+];
 
 declare global {
   interface Window {
@@ -43,6 +71,9 @@ export default function EmbeddedSignupButton() {
   const [sdkPronto, setSdkPronto] = useState(false);
   const [status, setStatus] = useState<"idle" | "aguardando" | "salvando" | "erro">("idle");
   const [erro, setErro] = useState<string | null>(null);
+  const [mostrarPasso, setMostrarPasso] = useState(true);
+  const [pedindoAjuda, setPedindoAjuda] = useState(false);
+  const [ajudaEnviada, setAjudaEnviada] = useState(false);
   const sessaoRef = useRef<SessaoEmbedded>({
     phoneNumberId: null,
     wabaId: null,
@@ -186,6 +217,44 @@ export default function EmbeddedSignupButton() {
     <div>
       <button
         type="button"
+        onClick={() => setMostrarPasso((v) => !v)}
+        className="mb-3 flex items-center gap-1.5 text-[12.5px] font-bold text-purple"
+      >
+        {mostrarPasso ? "Esconder" : "Ver"} passo a passo
+        <svg
+          className="icon"
+          viewBox="0 0 24 24"
+          width="13"
+          height="13"
+          style={{
+            transform: mostrarPasso ? "rotate(180deg)" : "none",
+            transition: "transform .15s",
+          }}
+        >
+          <path d="M6 9l6 6 6-6" />
+        </svg>
+      </button>
+
+      {mostrarPasso && (
+        <ol className="mb-5 flex flex-col gap-3">
+          {PASSOS.map((p, i) => (
+            <li key={p.titulo} className="flex gap-3">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-surface-soft text-[12px] font-bold text-ink-soft">
+                {i + 1}
+              </span>
+              <div>
+                <p className="text-[13px] font-bold">{p.titulo}</p>
+                <p className="text-[12.5px] leading-relaxed text-ink-soft">
+                  {p.detalhe}
+                </p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      )}
+
+      <button
+        type="button"
         onClick={iniciar}
         disabled={!sdkPronto || status === "aguardando" || status === "salvando"}
         className="btn w-full justify-center bg-[#1877f2] py-2.5 text-[13.5px] text-white disabled:opacity-60"
@@ -207,6 +276,54 @@ export default function EmbeddedSignupButton() {
           <p className="text-[12.5px] font-semibold text-coral">{erro}</p>
         </div>
       )}
+
+      <div className="mt-4 border-t border-border pt-4">
+        {ajudaEnviada ? (
+          <div className="flex items-center gap-2 rounded-[10px] border border-teal/30 bg-teal/5 px-3.5 py-2.5">
+            <svg className="icon shrink-0 text-teal" viewBox="0 0 24 24" width="16" height="16">
+              <path d="M20 6 9 17l-5-5" />
+            </svg>
+            <p className="text-[12.5px] font-semibold text-teal">
+              Chamado aberto! Alguém da equipe vai entrar em contato pra te ajudar a conectar.
+            </p>
+          </div>
+        ) : !pedindoAjuda ? (
+          <button
+            type="button"
+            onClick={() => setPedindoAjuda(true)}
+            className="flex items-center gap-1.5 text-[12.5px] font-bold text-coral hover:text-coral"
+          >
+            <svg className="icon" viewBox="0 0 24 24" width="15" height="15">
+              <path d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
+            </svg>
+            Travei aqui — chamar suporte agora
+          </button>
+        ) : (
+          <form
+            action={async (formData) => {
+              await pedirAjudaWhatsApp(formData);
+              setAjudaEnviada(true);
+            }}
+            className="flex flex-col gap-2"
+          >
+            <p className="text-[12px] text-ink-soft">
+              Isso abre um chamado que cai direto pra quem está implantando a ivva pra você.
+            </p>
+            <textarea
+              name="mensagem"
+              rows={2}
+              placeholder="O que aconteceu? (opcional)"
+              className="resize-none rounded-[10px] border border-border bg-surface px-3 py-2 text-[13px]"
+            />
+            <button
+              type="submit"
+              className="btn justify-center bg-coral py-2.5 text-[13px] text-white"
+            >
+              Enviar chamado de emergência
+            </button>
+          </form>
+        )}
+      </div>
     </div>
   );
 }
