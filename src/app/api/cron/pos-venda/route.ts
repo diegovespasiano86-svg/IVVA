@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { sendWhatsAppText } from "@/lib/whatsapp";
 import { processarResumosPendentes } from "@/lib/resumo-conversas";
 import { podeEnviarAutomatico } from "@/lib/automacao";
+import { processarResumosHistoricoPendentes } from "@/lib/whatsapp-historico";
 
 // Roda 1x por dia (limite do plano Hobby da Vercel — ver vercel.json).
 // Isso significa que os prazos "1h"/"2h" na prática viram "dentro do
@@ -208,6 +209,10 @@ export async function GET(request: NextRequest) {
   // envios de WhatsApp acima se a API do Claude estiver lenta.
   const resumos = await processarResumosPendentes(supabase, secret);
 
+  // Resumo do histórico antigo de WhatsApp (Coexistência) — mesma lógica,
+  // também por último e em lote pequeno.
+  const resumosHistorico = await processarResumosHistoricoPendentes(supabase, secret);
+
   return NextResponse.json({
     ok: true,
     total: pendentes.length,
@@ -225,5 +230,7 @@ export async function GET(request: NextRequest) {
     recuperacaoPausada,
     resumosGerados: resumos.resumidas,
     resumosFalhas: resumos.falhas,
+    historicoResumido: resumosHistorico.resumidos,
+    historicoFalhas: resumosHistorico.falhas,
   });
 }

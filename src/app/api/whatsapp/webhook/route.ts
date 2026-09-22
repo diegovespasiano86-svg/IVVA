@@ -11,6 +11,7 @@ import { gerarRespostaWhatsApp, type ContextoConversa, type ResultadoIA } from "
 import { gerarRespostaAdmin } from "@/lib/admin-ai";
 import { verifyPin } from "@/lib/pin";
 import { transcreverAudio } from "@/lib/transcricao";
+import { parseHistoricoPayload, parseContatoSyncPayload } from "@/lib/whatsapp-historico";
 
 // Verificação inicial do webhook — a Meta chama essa rota com um GET pra
 // confirmar que o endpoint é nosso antes de ativar o recebimento de eventos.
@@ -81,6 +82,9 @@ type WhatsAppWebhookBody = {
         // phone_number_quality_update
         display_phone_number?: string;
         current_limit?: string;
+        // history / smb_app_state_sync (Coexistência)
+        history?: unknown;
+        state_sync?: unknown;
       };
     }[];
   }[];
@@ -116,11 +120,21 @@ export async function POST(request: NextRequest) {
         await processarAccountUpdate({ supabaseUrl, anonKey, internalSecret, value: value ?? {} });
         continue;
       }
-      if (
-        change.field === "history" ||
-        change.field === "smb_app_state_sync" ||
-        change.field === "smb_message_echoes"
-      ) {
+      if (change.field === "history") {
+        const phoneNumberIdSync = value?.metadata?.phone_number_id;
+        if (phoneNumberIdSync) {
+          await processarHistorico({ supabaseUrl, anonKey, internalSecret, phoneNumberId: phoneNumberIdSync, value });
+        }
+        continue;
+      }
+      if (change.field === "smb_app_state_sync") {
+        const phoneNumberIdSync = value?.metadata?.phone_number_id;
+        if (phoneNumberIdSync) {
+          await processarContatoSync({ supabaseUrl, anonKey, internalSecret, phoneNumberId: phoneNumberIdSync, value });
+        }
+        continue;
+      }
+      if (change.field === "smb_message_echoes") {
         const phoneNumberIdSync = value?.metadata?.phone_number_id;
         if (phoneNumberIdSync) {
           await registrarSyncEvent({
@@ -251,9 +265,70 @@ async function processarAccountUpdate(params: {
   }
 }
 
-// Guarda os webhooks de sincronização (histórico de mensagens, contatos,
-// eco de mensagens do app) pra processar depois — ainda não temos a
-// importação pro CRM/conversas pronta, mas nada se perde enquanto isso.
+// Histórico de até 180 dias (Coexistência) — parseia o payload oficial da
+// Meta e grava mensagem por mensagem + estatística agregada por contato.
+// NUNCA cria um contato "oficial" no funil sozinho — isso só vira contato
+// de verdade quando o dono confirma na tela de revisão.
+async function processarHistorico(params: {
+  supabaseUrl: string;
+  anonKey: string;
+  internalSecret: string;
+  phoneNumberId: string;
+  value: {
+    metadata?: { display_phone_number?: string; phone_number_id?: string };
+    history?: unknown;
+  };
+}) {
+  const { supabaseUrl, anonKey, internalSecret, phoneNumberId, value } = params;
+
+  const mensagens = parseHistoricoPayload(
+    value as Parameters<typeof parseHistoricoPayload>[0],
+    value.metadata?.display_phone_number,
+  );
+  if (mensagens.length === 0) return;
+
+  const supabase = createClient(supabaseUrl, anonKey);
+  const { error } = await supabase.rpc("whatsapp_registrar_historico_mensagens", {
+    p_secret: internalSecret,
+    p_phone_number_id: phoneNumberId,
+    p_mensagens: mensagens,
+  });
+  if (error) {
+    console.error("[whatsapp webhook] falha ao registrar histórico", error);
+  }
+}
+
+// Lista de contatos do WhatsApp Business do cliente (Coexistência) — só
+// guarda o nome sugerido, não cria contato oficial.
+async function processarContatoSync(params: {
+  supabaseUrl: string;
+  anonKey: string;
+  internalSecret: string;
+  phoneNumberId: string;
+  value: { state_sync?: unknown };
+}) {
+  const { supabaseUrl, anonKey, internalSecret, phoneNumberId, value } = params;
+
+  const contatos = parseContatoSyncPayload(value as Parameters<typeof parseContatoSyncPayload>[0]);
+  if (contatos.length === 0) return;
+
+  const supabase = createClient(supabaseUrl, anonKey);
+  for (const contato of contatos) {
+    const { error } = await supabase.rpc("whatsapp_registrar_contato_sync", {
+      p_secret: internalSecret,
+      p_phone_number_id: phoneNumberId,
+      p_telefone: contato.telefone,
+      p_nome: contato.nome,
+      p_action: contato.action,
+    });
+    if (error) {
+      console.error("[whatsapp webhook] falha ao registrar contato sync", error);
+    }
+  }
+}
+
+// Guarda os webhooks de sincronização (eco de mensagens do app) pra
+// processar depois — nada se perde enquanto isso.
 async function registrarSyncEvent(params: {
   supabaseUrl: string;
   anonKey: string;
@@ -379,6 +454,8 @@ type ResultadoInbound = {
   profissionais: { id: string; nome: string }[];
   indicacao_recompensa_ativo: boolean;
   indicacao_recompensa_texto: string | null;
+  historico_antigo_resumo: string | null;
+  historico_antigo_classificacao: string | null;
 };
 
 // Manda a resposta (texto, e a lista de horários clicável quando fizer
@@ -697,6 +774,7 @@ async function processarMensagem(params: {
     horarioFechamento: resultado.horario_fechamento,
     indicacaoRecompensaAtiva: resultado.indicacao_recompensa_ativo,
     indicacaoRecompensaTexto: resultado.indicacao_recompensa_texto,
+    historicoAntigoResumo: resultado.historico_antigo_resumo,
   };
 
   let resposta: string;

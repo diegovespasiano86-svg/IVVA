@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { criarContato } from "./actions";
+import { criarContato, confirmarContatoHistorico, ignorarContatoHistorico } from "./actions";
 import CrmBoard from "./board";
 import StageManager from "./stage-manager";
 
@@ -27,7 +27,7 @@ export default async function CrmPage({
   searchParams: Promise<{ view?: string }>;
 }) {
   const { view } = await searchParams;
-  const aba = view === "dashboard" ? "dashboard" : "funil";
+  const aba = view === "dashboard" ? "dashboard" : view === "historico" ? "historico" : "funil";
 
   const supabase = await createClient();
 
@@ -43,7 +43,7 @@ export default async function CrmPage({
     : { data: null };
   const souDono = perfil?.role === "dono";
 
-  const [{ data: estagios }, { data: contatos }] = await Promise.all([
+  const [{ data: estagios }, { data: contatos }, { data: historicoPendente }] = await Promise.all([
     supabase
       .from("funnel_stages")
       .select("id, key, label, posicao")
@@ -54,10 +54,17 @@ export default async function CrmPage({
         "id, nome, telefone, tags, status_funil, email, data_nascimento, estado_civil, como_conheceu, created_at",
       )
       .order("created_at", { ascending: false }),
+    supabase
+      .from("whatsapp_historico_contatos")
+      .select("id, telefone, nome_sugerido, resumo, classificacao_sugerida, total_mensagens, ultima_mensagem_em")
+      .eq("confirmado", false)
+      .not("resumo", "is", null)
+      .order("ultima_mensagem_em", { ascending: false }),
   ]);
 
   const listaEstagios = estagios ?? [];
   const listaContatos = contatos ?? [];
+  const listaHistoricoPendente = historicoPendente ?? [];
 
   return (
     <div>
@@ -120,13 +127,119 @@ export default async function CrmPage({
         >
           Dashboard
         </Link>
+        <Link
+          href="/crm?view=historico"
+          className={`flex items-center gap-1.5 px-3.5 py-2 text-[13px] font-bold ${
+            aba === "historico"
+              ? "border-b-2 border-ink text-ink"
+              : "text-ink-faint"
+          }`}
+        >
+          Histórico WhatsApp
+          {listaHistoricoPendente.length > 0 && (
+            <span className="rounded-full bg-coral px-1.5 py-0.5 text-[10.5px] font-extrabold text-white">
+              {listaHistoricoPendente.length}
+            </span>
+          )}
+        </Link>
       </div>
 
-      {aba === "funil" ? (
+      {aba === "funil" && (
         <CrmBoard estagios={listaEstagios} contatosIniciais={listaContatos} />
-      ) : (
+      )}
+      {aba === "dashboard" && (
         <CrmDashboard estagios={listaEstagios} contatos={listaContatos} />
       )}
+      {aba === "historico" && (
+        <HistoricoWhatsAppReview itens={listaHistoricoPendente} />
+      )}
+    </div>
+  );
+}
+
+const CLASSIFICACAO_LABEL: Record<string, { texto: string; cor: string }> = {
+  cliente: { texto: "Parece cliente", cor: "text-teal bg-teal/10" },
+  apenas_conversou: { texto: "Só conversou", cor: "text-ink-faint bg-surface-soft" },
+  indefinido: { texto: "Não deu pra saber", cor: "text-purple bg-purple/10" },
+};
+
+function HistoricoWhatsAppReview({
+  itens,
+}: {
+  itens: {
+    id: string;
+    telefone: string;
+    nome_sugerido: string | null;
+    resumo: string | null;
+    classificacao_sugerida: string | null;
+    total_mensagens: number;
+    ultima_mensagem_em: string | null;
+  }[];
+}) {
+  if (itens.length === 0) {
+    return (
+      <div className="card px-6 py-14 text-center text-[13px] text-ink-faint">
+        Sem sugestões pendentes — o histórico do WhatsApp conectado (se
+        houver) já foi revisado, ou ainda está sendo processado.
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <p className="mb-4 text-[12.5px] text-ink-soft">
+        A IA leu as conversas antigas do WhatsApp Business conectado e
+        sugere quem parece já ter sido cliente. Nada aqui vira contato de
+        verdade até você confirmar.
+      </p>
+      <div className="flex flex-col gap-3">
+        {itens.map((item) => {
+          const classificacao =
+            CLASSIFICACAO_LABEL[item.classificacao_sugerida ?? "indefinido"] ??
+            CLASSIFICACAO_LABEL.indefinido;
+          return (
+            <div key={item.id} className="card px-5 py-4">
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <p className="text-[14px] font-bold">
+                    {item.nome_sugerido?.trim() || item.telefone}
+                  </p>
+                  <p className="text-[12px] text-ink-faint">
+                    {item.telefone} · {item.total_mensagens}{" "}
+                    {item.total_mensagens === 1 ? "mensagem" : "mensagens"}
+                  </p>
+                </div>
+                <span
+                  className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${classificacao.cor}`}
+                >
+                  {classificacao.texto}
+                </span>
+              </div>
+              <p className="mb-3 text-[13px] leading-relaxed text-ink">{item.resumo}</p>
+              <div className="flex gap-2">
+                <form action={confirmarContatoHistorico}>
+                  <input type="hidden" name="historico_id" value={item.id} />
+                  <button
+                    type="submit"
+                    className="btn bg-teal px-3.5 py-2 text-[12.5px] text-white"
+                  >
+                    Confirmar como cliente
+                  </button>
+                </form>
+                <form action={ignorarContatoHistorico}>
+                  <input type="hidden" name="historico_id" value={item.id} />
+                  <button
+                    type="submit"
+                    className="btn border border-border bg-surface px-3.5 py-2 text-[12.5px] text-ink-soft"
+                  >
+                    Não é cliente
+                  </button>
+                </form>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

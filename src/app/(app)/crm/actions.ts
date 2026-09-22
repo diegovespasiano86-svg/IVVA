@@ -259,6 +259,71 @@ export async function excluirEstagio(formData: FormData) {
   revalidatePath("/crm");
 }
 
+// Histórico de WhatsApp (Coexistência): a IA só sugere quem parece
+// cliente — confirmar de verdade é sempre uma decisão manual do dono/
+// equipe, nunca automática. Aqui o contato "oficial" nasce de fato.
+export async function confirmarContatoHistorico(formData: FormData) {
+  const historicoId = String(formData.get("historico_id") ?? "");
+  if (!historicoId) return;
+
+  const ctx = await contexto();
+  if (!ctx) return;
+
+  const { data: item } = await ctx.supabase
+    .from("whatsapp_historico_contatos")
+    .select("telefone, nome_sugerido")
+    .eq("id", historicoId)
+    .eq("tenant_id", ctx.tenant_id)
+    .maybeSingle();
+  if (!item) return;
+
+  const { data: primeiraEtapa } = await ctx.supabase
+    .from("funnel_stages")
+    .select("key")
+    .eq("tenant_id", ctx.tenant_id)
+    .order("posicao", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  const { data: contato } = await ctx.supabase
+    .from("contacts")
+    .insert({
+      tenant_id: ctx.tenant_id,
+      nome: item.nome_sugerido?.trim() || item.telefone,
+      telefone: item.telefone,
+      status_funil: primeiraEtapa?.key ?? "sem_contato",
+      tipo_relacionamento: "cliente",
+    })
+    .select("id")
+    .single();
+
+  await ctx.supabase
+    .from("whatsapp_historico_contatos")
+    .update({ confirmado: true, contact_id: contato?.id ?? null })
+    .eq("id", historicoId)
+    .eq("tenant_id", ctx.tenant_id);
+
+  revalidatePath("/crm");
+}
+
+// "Não é cliente" — só marca como revisado, sem criar contato. Some da
+// lista de sugestões sem virar ninguém no funil.
+export async function ignorarContatoHistorico(formData: FormData) {
+  const historicoId = String(formData.get("historico_id") ?? "");
+  if (!historicoId) return;
+
+  const ctx = await contexto();
+  if (!ctx) return;
+
+  await ctx.supabase
+    .from("whatsapp_historico_contatos")
+    .update({ confirmado: true })
+    .eq("id", historicoId)
+    .eq("tenant_id", ctx.tenant_id);
+
+  revalidatePath("/crm");
+}
+
 export async function moverEstagioOrdem(formData: FormData) {
   const stageId = String(formData.get("stage_id") ?? "");
   const direcao = String(formData.get("direcao") ?? ""); // "up" | "down"

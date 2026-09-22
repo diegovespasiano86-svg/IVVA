@@ -35,6 +35,10 @@ export type ContextoConversa = {
   horarioFechamento: string | null;
   indicacaoRecompensaAtiva: boolean;
   indicacaoRecompensaTexto: string | null;
+  /** Resumo gerado por IA do histórico antigo de WhatsApp desse contato
+   * (Coexistência) — só existe se o cliente aceitou compartilhar o
+   * histórico ao conectar. Nunca é o histórico da conversa atual. */
+  historicoAntigoResumo?: string | null;
 };
 
 export type ResultadoIA = {
@@ -72,6 +76,10 @@ function montarSystemPrompt(ctx: ContextoConversa) {
       `e como ela chegou até vocês (indicação, Instagram, passou na rua, etc.). ` +
       `Assim que souber algo disso, chame a ferramenta atualizar_contato pra registrar — não é pra perguntar tudo de uma vez.`
     : `Essa pessoa já teve contato antes. Use o histórico abaixo pra continuar a conversa com naturalidade, sem se reapresentar como se fosse a primeira vez.`;
+
+  const linhaHistoricoAntigo = ctx.historicoAntigoResumo
+    ? `Contexto de conversas antigas dessa pessoa no WhatsApp (antes de você existir, resumido por IA — use como pano de fundo pra tratar essa pessoa com naturalidade, mas nunca cite isso literalmente como se tivesse "lido o histórico dela"): ${ctx.historicoAntigoResumo}`
+    : "";
 
   const agora = new Date().toLocaleString("pt-BR", {
     timeZone: "America/Sao_Paulo",
@@ -118,6 +126,7 @@ function montarSystemPrompt(ctx: ContextoConversa) {
     `Tom de voz: ${tom}.`,
     `Nunca use uma saudação decorada ou genérica — responda como uma pessoa real do time responderia, adaptando ao que foi dito.`,
     linhasQualificacao,
+    linhaHistoricoAntigo,
     linhasAgenda,
     linhasVenda,
     horario ? `Horário de atendimento humano: ${horario}.` : "",
