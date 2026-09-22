@@ -31,19 +31,24 @@ export async function updateSession(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  // Rotas de API (webhooks da Meta/Stripe) nunca têm sessão de usuário —
-  // são chamadas servidor-a-servidor, não visitas de navegador.
-  if (pathname.startsWith("/api/")) {
+  // Rotas de API (webhooks da Meta/Stripe) e o callback de auth (troca o
+  // código do link de e-mail por sessão) nunca têm sessão de usuário
+  // normal — não são visitas de navegador logado.
+  if (pathname.startsWith("/api/") || pathname.startsWith("/auth/")) {
     return response;
   }
 
   // /planos e /bem-vindo fazem parte do fluxo público de assinatura —
-  // negócio novo escolhe plano e paga antes de ter conta.
+  // negócio novo escolhe plano e paga antes de ter conta. /esqueci-senha e
+  // /redefinir-senha precisam ser acessíveis sem sessão (é justamente pra
+  // quem não consegue entrar).
   const isPublicRoute =
     pathname.startsWith("/login") ||
     pathname.startsWith("/planos") ||
     pathname.startsWith("/bem-vindo") ||
-    pathname.startsWith("/convite");
+    pathname.startsWith("/convite") ||
+    pathname.startsWith("/esqueci-senha") ||
+    pathname.startsWith("/redefinir-senha");
 
   if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone();

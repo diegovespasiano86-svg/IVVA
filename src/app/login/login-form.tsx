@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 import { login } from "./actions";
 
@@ -22,7 +23,12 @@ export default function LoginForm() {
       </div>
 
       <div>
-        <label htmlFor="password">Senha</label>
+        <div className="flex items-center justify-between">
+          <label htmlFor="password" className="!mb-0">Senha</label>
+          <Link href="/esqueci-senha" className="text-[12.5px] font-semibold text-purple">
+            Esqueceu?
+          </Link>
+        </div>
         <input
           id="password"
           name="password"
@@ -30,7 +36,7 @@ export default function LoginForm() {
           required
           autoComplete="current-password"
           placeholder="••••••••"
-          className="w-full rounded-[10px] border border-border bg-surface px-3.5 py-2.5 text-[14px] outline-none focus:border-purple"
+          className="mt-1 w-full rounded-[10px] border border-border bg-surface px-3.5 py-2.5 text-[14px] outline-none focus:border-purple"
         />
       </div>
 
