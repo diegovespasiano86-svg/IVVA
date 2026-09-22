@@ -188,7 +188,7 @@ async function executarFerramentaAdmin(
     // Mensagem iniciada pelo dono (não é resposta a cliente) — mesma
     // pausa de segurança do envio automático se a qualidade do número
     // caiu.
-    if (!(await podeEnviarAutomatico(supabase, secret, { tenantId: ctx.tenantId }))) {
+    if (!(await podeEnviarAutomatico(supabase, secret, { tenantId: ctx.tenantId, telefone: alvo.telefone }))) {
       const resultado = { erro: "automacoes_pausadas_por_qualidade" };
       await logar("chamar_cliente", { contact_id: alvo.id }, JSON.stringify(resultado));
       return JSON.stringify(resultado);
@@ -250,7 +250,14 @@ async function executarFerramentaAdmin(
 
     let enviados = 0;
     let falhas = 0;
+    let pulados = 0;
     for (const alvo of alvos) {
+      // Checa por contato — alguém desse lote pode ter pedido pra parar
+      // de receber mensagem automática mesmo com o resto liberado.
+      if (!(await podeEnviarAutomatico(supabase, secret, { tenantId: ctx.tenantId, telefone: alvo.telefone }))) {
+        pulados++;
+        continue;
+      }
       try {
         await sendWhatsAppTemplate(creds, alvo.telefone, ctx.upsellTemplateNome);
         enviados++;
@@ -266,7 +273,7 @@ async function executarFerramentaAdmin(
       }
     }
 
-    const resultado = { ok: true, total: alvos.length, enviados, falhas };
+    const resultado = { ok: true, total: alvos.length, enviados, falhas, pulados };
     await logar("disparar_upsell_em_massa", input, JSON.stringify(resultado));
     return JSON.stringify(resultado);
   }

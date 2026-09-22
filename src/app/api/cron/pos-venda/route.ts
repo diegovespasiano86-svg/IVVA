@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
   for (const p of pendentes) {
     // Mensagem iniciada pelo negócio (não é resposta a cliente) — respeita
     // a pausa de segurança se a qualidade do número caiu.
-    if (!(await podeEnviarAutomatico(supabase, secret, { tenantId: p.tenant_id }))) {
+    if (!(await podeEnviarAutomatico(supabase, secret, { tenantId: p.tenant_id, telefone: p.contact_telefone }))) {
       pausadosPorQualidade++;
       continue;
     }
@@ -144,7 +144,12 @@ export async function GET(request: NextRequest) {
   let listaEsperaAvisados = 0;
   let listaEsperaPausados = 0;
   for (const item of listaEspera.avisar) {
-    if (!(await podeEnviarAutomatico(supabase, secret, { phoneNumberId: item.phone_number_id }))) {
+    if (
+      !(await podeEnviarAutomatico(supabase, secret, {
+        phoneNumberId: item.phone_number_id,
+        telefone: item.contact_telefone,
+      }))
+    ) {
       listaEsperaPausados++;
       continue;
     }
@@ -188,7 +193,12 @@ export async function GET(request: NextRequest) {
   let recuperacaoTocada = 0;
   let recuperacaoPausada = 0;
   for (const item of recuperacao.avisar) {
-    if (!(await podeEnviarAutomatico(supabase, secret, { phoneNumberId: item.phone_number_id }))) {
+    if (
+      !(await podeEnviarAutomatico(supabase, secret, {
+        phoneNumberId: item.phone_number_id,
+        telefone: item.contact_telefone,
+      }))
+    ) {
       recuperacaoPausada++;
       continue;
     }

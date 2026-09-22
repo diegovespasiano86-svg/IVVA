@@ -14,12 +14,13 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 export async function podeEnviarAutomatico(
   supabase: SupabaseClient,
   secret: string,
-  params: { tenantId?: string; phoneNumberId?: string },
+  params: { tenantId?: string; phoneNumberId?: string; telefone?: string },
 ): Promise<boolean> {
   const { data, error } = await supabase.rpc("whatsapp_pode_enviar_automatico", {
     p_secret: secret,
     p_tenant_id: params.tenantId ?? null,
     p_phone_number_id: params.phoneNumberId ?? null,
+    p_telefone: params.telefone ?? null,
   });
 
   if (error) {

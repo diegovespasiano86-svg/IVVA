@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
   let pausadosPorQualidade = 0;
 
   for (const p of pendentes) {
-    if (!(await podeEnviarAutomatico(supabase, secret, { tenantId: p.tenant_id }))) {
+    if (!(await podeEnviarAutomatico(supabase, secret, { tenantId: p.tenant_id, telefone: p.contact_telefone }))) {
       pausadosPorQualidade++;
       continue;
     }

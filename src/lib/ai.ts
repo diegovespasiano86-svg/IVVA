@@ -132,6 +132,7 @@ function montarSystemPrompt(ctx: ContextoConversa) {
     horario ? `Horário de atendimento humano: ${horario}.` : "",
     regras ? `Regras específicas desse negócio:\n${regras}` : "",
     `Se o cliente pedir claramente pra falar com uma pessoa, reclamar de algo sério, ou se você não souber responder com segurança, chame a ferramenta solicitar_atendimento_humano explicando o motivo — não invente informação que você não tem.`,
+    `Se o cliente pedir pra parar de receber mensagem automática do negócio (não confundir com cancelar agendamento), chame parar_mensagens_automaticas e confirme educadamente — deixe claro que ele continua podendo falar com vocês quando quiser, só não vai mais receber mensagem que o negócio manda por conta própria.`,
     `Se a mensagem do cliente for literalmente "[Cliente mandou um áudio, mas não consegui converter pra texto ainda]", isso significa que a transcrição de voz não está disponível agora — peça educadamente pra ele escrever a mensagem, sem fingir que ouviu algo.`,
     `Se vier uma imagem anexada, ela é real (uma foto que o cliente mandou) — descreva o que vê com naturalidade e responda ao que ele quis dizer com a foto (referência de corte, foto de um problema, etc.), sem inventar detalhes que não dá pra ver.`,
     `Responda sempre em português do Brasil, em mensagens curtas como quem digita no WhatsApp de verdade — não em blocos longos de texto.`,
@@ -244,6 +245,18 @@ const TOOLS = [
     },
   },
   {
+    name: "parar_mensagens_automaticas",
+    description:
+      "Registra que o cliente NÃO quer mais receber mensagens que o negócio inicia por conta própria (lembrete, pós-venda, promoção, aniversário). Chame SÓ quando ele pedir isso explicitamente — frases como 'pare de mandar mensagem', 'não quero mais receber propaganda', 'me tira dessa lista', 'para de me chamar'. NUNCA confunda com cancelar um agendamento (isso é remarcar_ou_cancelar_agendamento) — se não tiver certeza do que o cliente quer, pergunte antes de chamar isso. Depois de chamar, confirme pro cliente que parou e que ele continua podendo mandar mensagem quando quiser.",
+    input_schema: { type: "object", properties: {} },
+  },
+  {
+    name: "voltar_a_receber_mensagens_automaticas",
+    description:
+      "Reativa mensagens automáticas (lembrete, pós-venda, promoção) pra um cliente que tinha pedido pra parar antes e agora mudou de ideia.",
+    input_schema: { type: "object", properties: {} },
+  },
+  {
     name: "solicitar_pagamento_pix",
     description: "Gera uma cobrança Pix (código copia-e-cola) pra sinal de um serviço de ticket alto. Só use depois que o cliente já confirmou o serviço/valor e concordou em pagar o sinal.",
     input_schema: {
@@ -309,6 +322,15 @@ async function executarFerramenta(
       p_tipo_relacionamento: input.tipo_relacionamento ?? null,
       p_como_conheceu: input.como_conheceu ?? null,
       p_indicado_por: input.indicado_por ?? null,
+    });
+    return { resultado: "ok", handoff: false };
+  }
+
+  if (nome === "parar_mensagens_automaticas" || nome === "voltar_a_receber_mensagens_automaticas") {
+    await supabase.rpc("whatsapp_definir_opt_out", {
+      p_secret: secret,
+      p_contact_id: ctx.contactId,
+      p_aceita: nome === "voltar_a_receber_mensagens_automaticas",
     });
     return { resultado: "ok", handoff: false };
   }
