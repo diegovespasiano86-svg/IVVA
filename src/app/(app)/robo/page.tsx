@@ -43,7 +43,7 @@ export default async function RoboPage() {
   const [{ data: conta }, { data: botSettings }] = await Promise.all([
     supabase
       .from("whatsapp_accounts")
-      .select("id")
+      .select("id, is_coexistence")
       .maybeSingle(),
     // Ainda não existe linha pra todo tenant (só é criada quando o dono
     // salva pela primeira vez) — maybeSingle cobre o caso de não existir.
@@ -70,6 +70,30 @@ export default async function RoboPage() {
           antes, mas o robô só atende de verdade depois de conectar em
           Conta e assinatura →
         </a>
+      )}
+
+      {conta?.is_coexistence && (
+        <div className="mb-4 rounded-[12px] border border-coral/30 bg-coral/5 px-4 py-3.5">
+          <p className="mb-1.5 flex items-center gap-1.5 text-[13px] font-extrabold text-coral">
+            ⚠️ Observação — WhatsApp conectado em modo "app + ivva juntos"
+          </p>
+          <p className="text-[12.5px] leading-relaxed text-ink">
+            Seu número continua funcionando no app do WhatsApp Business do
+            celular ao mesmo tempo que a ivva atende por ele. Combine isso
+            com sua equipe antes de usar:
+          </p>
+          <ul className="mt-2 flex list-disc flex-col gap-1 pl-4 text-[12.5px] leading-relaxed text-ink">
+            <li>Conversas em <b>grupo</b> não sincronizam com a ivva.</li>
+            <li>
+              Mensagens de <b>&quot;ver uma vez&quot;</b> e{" "}
+              <b>localização ao vivo</b> ficam desativadas.
+            </li>
+            <li>
+              <b>Listas de transmissão</b> viram só-leitura — não dá mais
+              pra criar novas pelo app.
+            </li>
+          </ul>
+        </div>
       )}
 
       <div className="grid gap-4 lg:grid-cols-2">
