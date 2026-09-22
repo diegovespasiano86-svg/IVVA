@@ -50,12 +50,13 @@ export default async function AppLayout({
   // não vale a pena mostrar/consultar pra profissional, que não tem o que
   // fazer com o aviso.
   let whatsappEmErro = false;
+  let automacoesPausadasAte: string | null = null;
   let chamadosAbertos = 0;
   if (role === "dono") {
     const [{ data: conta }, { count }] = await Promise.all([
       supabase
         .from("whatsapp_accounts")
-        .select("status")
+        .select("status, automacoes_pausadas_ate")
         .eq("tenant_id", perfil.tenant_id)
         .maybeSingle(),
       supabase
@@ -65,6 +66,9 @@ export default async function AppLayout({
         .neq("status", "resolvido"),
     ]);
     whatsappEmErro = conta?.status === "erro";
+    if (conta?.automacoes_pausadas_ate && new Date(conta.automacoes_pausadas_ate) > new Date()) {
+      automacoesPausadasAte = conta.automacoes_pausadas_ate;
+    }
     chamadosAbertos = count ?? 0;
   }
   const alertHrefs = chamadosAbertos > 0 ? ["/conta"] : [];
@@ -85,6 +89,22 @@ export default async function AppLayout({
             className="mb-5 block rounded-[12px] border border-coral bg-coral/10 px-4 py-3 text-[13px] font-semibold text-coral"
           >
             ⚠️ O WhatsApp parou de enviar mensagens — clientes estão sem resposta. Clique aqui pra reconectar em Conta.
+          </a>
+        )}
+        {!whatsappEmErro && automacoesPausadasAte && (
+          <a
+            href="/conta"
+            className="mb-5 block rounded-[12px] border border-purple bg-purple/10 px-4 py-3 text-[13px] font-semibold text-purple"
+          >
+            ⚠️ Disparos automáticos pausados até{" "}
+            {new Date(automacoesPausadasAte).toLocaleString("pt-BR", {
+              timeZone: "America/Sao_Paulo",
+              day: "2-digit",
+              month: "2-digit",
+              hour: "2-digit",
+              minute: "2-digit",
+            })}{" "}
+            por segurança de qualidade do número — o atendimento a clientes continua normal.
           </a>
         )}
         {children}

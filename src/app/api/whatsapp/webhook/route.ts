@@ -48,6 +48,9 @@ function assinaturaValida(rawBody: string, assinaturaHeader: string | null): boo
 
 type WhatsAppWebhookBody = {
   entry?: {
+    // Pra webhooks de objeto "whatsapp_business_account" (template,
+    // qualidade, account_update...), esse id É o WABA id.
+    id?: string;
     changes?: {
       field?: string;
       value?: {
@@ -71,6 +74,13 @@ type WhatsAppWebhookBody = {
         // no campo phone_number.
         event?: string;
         phone_number?: string;
+        // message_template_status_update / message_template_quality_update
+        message_template_name?: string;
+        reason?: string;
+        new_quality_score?: string;
+        // phone_number_quality_update
+        display_phone_number?: string;
+        current_limit?: string;
       };
     }[];
   }[];
@@ -122,6 +132,43 @@ export async function POST(request: NextRequest) {
             payload: value,
           });
         }
+        continue;
+      }
+
+      // Template aprovado/rejeitado/pausado — pausa só a automação que usa
+      // esse template específico (upsell em massa hoje), nunca o
+      // atendimento normal.
+      if (
+        (change.field === "message_template_status_update" || change.field === "message_template_quality_update") &&
+        value?.message_template_name
+      ) {
+        await processarTemplateStatus({
+          supabaseUrl,
+          anonKey,
+          internalSecret,
+          businessAccountId: entry.id ?? "",
+          templateNome: value.message_template_name,
+          field: change.field,
+          evento: value.event,
+          qualidade: value.new_quality_score,
+          motivo: value.reason,
+        });
+        continue;
+      }
+
+      // Qualidade do número caindo — mais sério que um template, pausa
+      // TODAS as automações proativas do negócio por 48h (não o
+      // atendimento reativo a cliente).
+      if (change.field === "phone_number_quality_update") {
+        await processarQualidadeNumero({
+          supabaseUrl,
+          anonKey,
+          internalSecret,
+          phoneNumberId: value?.metadata?.phone_number_id,
+          displayPhoneNumber: value?.display_phone_number,
+          evento: value?.event,
+          currentLimit: value?.current_limit,
+        });
         continue;
       }
 
@@ -225,6 +272,92 @@ async function registrarSyncEvent(params: {
   });
   if (error) {
     console.error(`[whatsapp webhook] falha ao registrar sync event (${field})`, error);
+  }
+}
+
+const STATUS_TEMPLATE_BLOQUEIA = new Set(["REJECTED", "PAUSED", "DISABLED"]);
+
+// message_template_status_update (aprovado/rejeitado/pausado/desabilitado)
+// e message_template_quality_update (score de qualidade caindo, prevenção
+// antes de virar rejeição de fato) caem os dois aqui — mesma lógica de
+// bloquear/liberar a automação que usa o template.
+async function processarTemplateStatus(params: {
+  supabaseUrl: string;
+  anonKey: string;
+  internalSecret: string;
+  businessAccountId: string;
+  templateNome: string;
+  field: "message_template_status_update" | "message_template_quality_update";
+  evento?: string;
+  qualidade?: string;
+  motivo?: string;
+}) {
+  const { supabaseUrl, anonKey, internalSecret, businessAccountId, templateNome, field, evento, qualidade, motivo } =
+    params;
+  if (!businessAccountId) return;
+
+  let bloqueado: boolean;
+  let motivoFinal: string | null = motivo ?? null;
+
+  if (field === "message_template_status_update") {
+    if (evento === "APPROVED") {
+      bloqueado = false;
+    } else if (STATUS_TEMPLATE_BLOQUEIA.has(evento ?? "")) {
+      bloqueado = true;
+    } else {
+      // PENDING, IN_APPEAL etc — nada a fazer ainda.
+      return;
+    }
+  } else {
+    // message_template_quality_update: RED é prevenção — pausa antes de
+    // virar rejeição de verdade. Recupera se voltar pra GREEN/YELLOW.
+    bloqueado = (qualidade ?? "").toUpperCase() === "RED";
+    motivoFinal = motivoFinal ?? `Qualidade do template caiu para ${qualidade}`;
+  }
+
+  const supabase = createClient(supabaseUrl, anonKey);
+  const { error } = await supabase.rpc("whatsapp_processar_template_status", {
+    p_secret: internalSecret,
+    p_business_account_id: businessAccountId,
+    p_template_nome: templateNome,
+    p_bloqueado: bloqueado,
+    p_motivo: motivoFinal,
+  });
+  if (error) {
+    console.error(`[whatsapp webhook] falha ao processar ${field}`, error);
+  }
+}
+
+const EVENTOS_QUALIDADE_NUMERO_RUIM = new Set(["FLAGGED", "RESTRICTED", "UNAVAILABLE"]);
+
+// phone_number_quality_update — afeta o número inteiro, pausa 48h de
+// automações proativas por segurança. O payload às vezes só traz
+// display_phone_number, sem metadata.phone_number_id.
+async function processarQualidadeNumero(params: {
+  supabaseUrl: string;
+  anonKey: string;
+  internalSecret: string;
+  phoneNumberId?: string;
+  displayPhoneNumber?: string;
+  evento?: string;
+  currentLimit?: string;
+}) {
+  const { supabaseUrl, anonKey, internalSecret, phoneNumberId, displayPhoneNumber, evento, currentLimit } = params;
+  if (!phoneNumberId && !displayPhoneNumber) return;
+
+  const pausar = EVENTOS_QUALIDADE_NUMERO_RUIM.has(evento ?? "");
+  const qualidade = evento ?? currentLimit ?? "desconhecida";
+
+  const supabase = createClient(supabaseUrl, anonKey);
+  const { error } = await supabase.rpc("whatsapp_processar_qualidade_numero", {
+    p_secret: internalSecret,
+    p_phone_number_id: phoneNumberId ?? null,
+    p_display_phone_number: displayPhoneNumber ?? null,
+    p_qualidade: qualidade,
+    p_pausar: pausar,
+  });
+  if (error) {
+    console.error("[whatsapp webhook] falha ao processar phone_number_quality_update", error);
   }
 }
 

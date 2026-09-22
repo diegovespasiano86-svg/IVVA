@@ -3,6 +3,7 @@
 
 import { createPixPaymentIntent } from "@/lib/stripe";
 import { sendWhatsAppText } from "@/lib/whatsapp";
+import { podeEnviarAutomatico } from "@/lib/automacao";
 
 const ANTHROPIC_API = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_VERSION = "2023-06-01";
@@ -367,7 +368,12 @@ async function executarFerramenta(
     // Vaga acabou de abrir — avisa quem estiver na lista de espera desse
     // profissional, sem esperar o cron (que só roda 1x/dia). Falha aqui
     // nunca deve quebrar a resposta pro cliente que cancelou.
-    if (resultado?.ok && resultado.status === "cancelado" && resultado.professional_id) {
+    if (
+      resultado?.ok &&
+      resultado.status === "cancelado" &&
+      resultado.professional_id &&
+      (await podeEnviarAutomatico(supabase, secret, { tenantId: ctx.tenantId }))
+    ) {
       try {
         const { data: aviso } = await supabase.rpc("ia_notificar_proximo_lista_espera", {
           p_secret: secret,

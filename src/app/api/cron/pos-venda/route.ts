@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { sendWhatsAppText } from "@/lib/whatsapp";
 import { processarResumosPendentes } from "@/lib/resumo-conversas";
+import { podeEnviarAutomatico } from "@/lib/automacao";
 
 // Roda 1x por dia (limite do plano Hobby da Vercel — ver vercel.json).
 // Isso significa que os prazos "1h"/"2h" na prática viram "dentro do
@@ -48,8 +49,16 @@ export async function GET(request: NextRequest) {
   let enviados = 0;
   let forDaJanela = 0;
   let falhas = 0;
+  let pausadosPorQualidade = 0;
 
   for (const p of pendentes) {
+    // Mensagem iniciada pelo negócio (não é resposta a cliente) — respeita
+    // a pausa de segurança se a qualidade do número caiu.
+    if (!(await podeEnviarAutomatico(supabase, secret, { tenantId: p.tenant_id }))) {
+      pausadosPorQualidade++;
+      continue;
+    }
+
     const primeiroNome = p.contact_nome?.trim().split(/\s+/)[0] ?? "";
     const texto = (
       p.mensagem_customizada?.trim() ||
@@ -132,7 +141,13 @@ export async function GET(request: NextRequest) {
   };
 
   let listaEsperaAvisados = 0;
+  let listaEsperaPausados = 0;
   for (const item of listaEspera.avisar) {
+    if (!(await podeEnviarAutomatico(supabase, secret, { phoneNumberId: item.phone_number_id }))) {
+      listaEsperaPausados++;
+      continue;
+    }
+
     const primeiroNome = item.contact_nome?.trim().split(/\s+/)[0] ?? "";
     const texto = `Oi${primeiroNome ? " " + primeiroNome : ""}! Abriu uma vaga${
       item.preferencia_horario ? ` (${item.preferencia_horario})` : ""
@@ -170,7 +185,13 @@ export async function GET(request: NextRequest) {
   };
 
   let recuperacaoTocada = 0;
+  let recuperacaoPausada = 0;
   for (const item of recuperacao.avisar) {
+    if (!(await podeEnviarAutomatico(supabase, secret, { phoneNumberId: item.phone_number_id }))) {
+      recuperacaoPausada++;
+      continue;
+    }
+
     try {
       await sendWhatsAppText(
         { phoneNumberId: item.phone_number_id, token: item.access_token },
@@ -193,12 +214,15 @@ export async function GET(request: NextRequest) {
     enviados,
     forDaJanela,
     falhas,
+    pausadosPorQualidade,
     reengajamentoCriadas: tarefas.reengajamento_criadas,
     recallCriadas: tarefas.recall_criadas,
     listaEsperaExpirados: listaEspera.expirados,
     listaEsperaAvisados,
+    listaEsperaPausados,
     recuperacaoEsfriadas: recuperacao.esfriadas,
     recuperacaoTocada,
+    recuperacaoPausada,
     resumosGerados: resumos.resumidas,
     resumosFalhas: resumos.falhas,
   });

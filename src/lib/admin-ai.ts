@@ -7,6 +7,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 import { sendWhatsAppText, sendWhatsAppTemplate, type WhatsAppCreds } from "@/lib/whatsapp";
+import { podeEnviarAutomatico } from "@/lib/automacao";
 
 const ANTHROPIC_API = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_VERSION = "2023-06-01";
@@ -44,6 +45,7 @@ function montarSystemPromptAdmin(ctx: AdminContexto) {
     `Pra chamar_cliente: se a busca encontrar mais de um cliente, PERGUNTE qual (mostre nome e telefone de cada) antes de mandar qualquer coisa — nunca escolha um cliente sozinho quando há ambiguidade.`,
     `Pra upsell em massa: SEMPRE chame prever_upsell_em_massa primeiro e mostre a contagem de quantos clientes seriam afetados pro dono. Só chame disparar_upsell_em_massa depois que o dono confirmar explicitamente (algo como "sim", "pode mandar", "manda"). Nunca dispare sem essa confirmação explícita na mesma conversa.`,
     `Se disparar_upsell_em_massa ou chamar_cliente voltar com erro "fora_da_janela_24h_precisa_template" ou "sem_template_configurado", explique pro dono, em termos simples, que mensagens iniciadas pelo negócio (não é resposta a algo que o cliente mandou) só funcionam com um template de mensagem aprovado pela Meta — e que isso é configurado em Conta > Configurações do robô, e aprovado pela própria Meta (não é algo que resolve na hora).`,
+    `Se voltar com erro "automacoes_pausadas_por_qualidade", explique que a Meta sinalizou queda na qualidade do número e o ivva pausou os disparos automáticos por 48h como proteção — o atendimento aos clientes continua normal, só as mensagens que o negócio inicia por conta própria estão pausadas por segurança.`,
     `Responda sempre em português do Brasil, mensagens curtas como no WhatsApp.`,
   ].join("\n\n");
 }
@@ -182,6 +184,16 @@ async function executarFerramentaAdmin(
     if (candidatos.length > 1) return JSON.stringify({ multiplos_encontrados: candidatos });
 
     const alvo = candidatos[0];
+
+    // Mensagem iniciada pelo dono (não é resposta a cliente) — mesma
+    // pausa de segurança do envio automático se a qualidade do número
+    // caiu.
+    if (!(await podeEnviarAutomatico(supabase, secret, { tenantId: ctx.tenantId }))) {
+      const resultado = { erro: "automacoes_pausadas_por_qualidade" };
+      await logar("chamar_cliente", { contact_id: alvo.id }, JSON.stringify(resultado));
+      return JSON.stringify(resultado);
+    }
+
     try {
       await sendWhatsAppText(creds, alvo.telefone, String(input.mensagem ?? ""));
       await supabase.rpc("registrar_evento", {
@@ -218,6 +230,12 @@ async function executarFerramentaAdmin(
         erro: "sem_template_configurado",
         explicacao: "Precisa cadastrar um template de mensagem aprovado pela Meta em Conta > Configurações do robô antes de disparar em massa.",
       };
+      await logar("disparar_upsell_em_massa", input, JSON.stringify(resultado));
+      return JSON.stringify(resultado);
+    }
+
+    if (!(await podeEnviarAutomatico(supabase, secret, { tenantId: ctx.tenantId }))) {
+      const resultado = { erro: "automacoes_pausadas_por_qualidade" };
       await logar("disparar_upsell_em_massa", input, JSON.stringify(resultado));
       return JSON.stringify(resultado);
     }

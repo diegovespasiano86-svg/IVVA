@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { sendWhatsAppInteractiveButtons } from "@/lib/whatsapp";
+import { podeEnviarAutomatico } from "@/lib/automacao";
 
 // Roda 1x por dia (2º e último cron disponível no plano Hobby da Vercel).
 // Por isso a janela é generosa (20h-32h antes do horário) em vez de um
@@ -41,8 +42,14 @@ export async function GET(request: NextRequest) {
 
   let enviados = 0;
   let falhas = 0;
+  let pausadosPorQualidade = 0;
 
   for (const p of pendentes) {
+    if (!(await podeEnviarAutomatico(supabase, secret, { tenantId: p.tenant_id }))) {
+      pausadosPorQualidade++;
+      continue;
+    }
+
     const dataFmt = new Date(p.data_hora).toLocaleString("pt-BR", {
       timeZone: "America/Sao_Paulo",
       weekday: "long",
@@ -89,5 +96,5 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  return NextResponse.json({ ok: true, total: pendentes.length, enviados, falhas });
+  return NextResponse.json({ ok: true, total: pendentes.length, enviados, falhas, pausadosPorQualidade });
 }
