@@ -25,6 +25,11 @@ const PASSOS = [
       "Quando a Meta reconhecer que o número já está ativo no WhatsApp Business, ela oferece a opção de conectar esse número (em vez de criar um novo). Escolha essa opção e confirme.",
   },
   {
+    titulo: "Aceite compartilhar o histórico (se quiser)",
+    detalhe:
+      "A Meta pergunta se você quer compartilhar até 180 dias de conversas antigas do WhatsApp Business com a ivva. Se aceitar, o histórico começa a chegar aos poucos; se recusar, nenhum histórico antigo é trazido — só as conversas novas, dali pra frente.",
+  },
+  {
     titulo: "Pronto",
     detalhe:
       "A tela volta pra \"Conectado\" automaticamente. O app do WhatsApp Business continua funcionando normal no celular, em paralelo com a ivva.",
