@@ -50,7 +50,7 @@ export default async function BemVindoPage(props: {
 
   return (
     <main className="flex min-h-screen items-center justify-center px-4 py-10">
-      <div className="w-full max-w-[380px]">
+      <div className="w-full max-w-[560px]">
         <div className="rounded-2xl border border-border bg-surface p-8 shadow-[0_1px_2px_rgba(36,31,46,0.04)]">
           <h1 className="font-display text-[20px] font-bold">
             Pagamento confirmado 🎉

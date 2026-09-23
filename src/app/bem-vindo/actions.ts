@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCheckoutSession } from "@/lib/stripe";
+import { getSegmento } from "@/lib/segmentos";
 
 export async function finalizarCadastro(
   _prevState: string | undefined,
@@ -11,9 +12,13 @@ export async function finalizarCadastro(
   const sessionId = String(formData.get("session_id") ?? "");
   const nome = String(formData.get("nome") ?? "").trim();
   const senha = String(formData.get("senha") ?? "");
+  const segmentoId = String(formData.get("segmento") ?? "").trim();
 
   if (!sessionId || !nome || senha.length < 6) {
     return "Preencha seu nome e uma senha com pelo menos 6 caracteres.";
+  }
+  if (!segmentoId) {
+    return "Escolha o tipo do seu negócio antes de continuar.";
   }
 
   let session;
@@ -51,6 +56,8 @@ export async function finalizarCadastro(
     return "Configuração do servidor incompleta. Fale com a gente.";
   }
 
+  const segmento = getSegmento(segmentoId);
+
   const { error: rpcError } = await supabase.rpc("provision_tenant", {
     p_secret: secret,
     p_nome: nomeNegocio,
@@ -59,6 +66,8 @@ export async function finalizarCadastro(
     p_user_id: signUpData.user.id,
     p_user_nome: nome,
     p_user_email: email,
+    p_segmento: segmentoId,
+    p_conhecimento_inicial: segmento?.baseConhecimento ?? null,
   });
 
   if (rpcError) {
