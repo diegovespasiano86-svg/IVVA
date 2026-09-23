@@ -290,3 +290,53 @@ export async function salvarEntradas(formData: FormData) {
 
   revalidatePath("/base-conhecimento");
 }
+
+// Sugestão vinda de um ticket de SAC resolvido — aceitar vira item real
+// da base de conhecimento; ignorar só some da lista de pendentes. Mesmo
+// padrão de "IA sugere, humano confirma" do histórico de WhatsApp no CRM.
+export async function confirmarSugestaoConhecimento(formData: FormData) {
+  const sugestaoId = String(formData.get("sugestao_id") ?? "");
+  if (!sugestaoId) return;
+
+  const supabase = await createClient();
+  const tenantId = await obterTenantId(supabase);
+  if (!tenantId) return;
+
+  const { data: sugestao } = await supabase
+    .from("knowledge_base_sugestoes")
+    .select("conteudo_sugerido")
+    .eq("id", sugestaoId)
+    .eq("tenant_id", tenantId)
+    .maybeSingle();
+  if (!sugestao) return;
+
+  await supabase.from("knowledge_base").insert({
+    tenant_id: tenantId,
+    tipo: "sac",
+    conteudo: sugestao.conteudo_sugerido,
+  });
+
+  await supabase
+    .from("knowledge_base_sugestoes")
+    .update({ confirmado: true })
+    .eq("id", sugestaoId);
+
+  revalidatePath("/base-conhecimento");
+}
+
+export async function ignorarSugestaoConhecimento(formData: FormData) {
+  const sugestaoId = String(formData.get("sugestao_id") ?? "");
+  if (!sugestaoId) return;
+
+  const supabase = await createClient();
+  const tenantId = await obterTenantId(supabase);
+  if (!tenantId) return;
+
+  await supabase
+    .from("knowledge_base_sugestoes")
+    .update({ confirmado: true })
+    .eq("id", sugestaoId)
+    .eq("tenant_id", tenantId);
+
+  revalidatePath("/base-conhecimento");
+}

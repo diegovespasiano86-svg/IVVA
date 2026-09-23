@@ -52,8 +52,9 @@ export default async function AppLayout({
   let whatsappEmErro = false;
   let automacoesPausadasAte: string | null = null;
   let chamadosAbertos = 0;
+  let sugestoesPendentes = 0;
   if (role === "dono") {
-    const [{ data: conta }, { count }] = await Promise.all([
+    const [{ data: conta }, { count }, { count: sugestoesCount }] = await Promise.all([
       supabase
         .from("whatsapp_accounts")
         .select("status, automacoes_pausadas_ate")
@@ -64,12 +65,18 @@ export default async function AppLayout({
         .select("id", { count: "exact", head: true })
         .eq("tenant_id", perfil.tenant_id)
         .neq("status", "resolvido"),
+      supabase
+        .from("knowledge_base_sugestoes")
+        .select("id", { count: "exact", head: true })
+        .eq("tenant_id", perfil.tenant_id)
+        .eq("confirmado", false),
     ]);
     whatsappEmErro = conta?.status === "erro";
     if (conta?.automacoes_pausadas_ate && new Date(conta.automacoes_pausadas_ate) > new Date()) {
       automacoesPausadasAte = conta.automacoes_pausadas_ate;
     }
     chamadosAbertos = count ?? 0;
+    sugestoesPendentes = sugestoesCount ?? 0;
   }
 
   // Intervenção humana pendente é o alerta mais crítico do app — cliente
@@ -86,6 +93,7 @@ export default async function AppLayout({
   const alertHrefs = [
     ...(chamadosAbertos > 0 ? ["/conta"] : []),
     ...(aguardandoHumano > 0 ? ["/sac"] : []),
+    ...(sugestoesPendentes > 0 ? ["/base-conhecimento"] : []),
   ];
 
   return (

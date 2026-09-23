@@ -1,5 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
-import { criarEntrada } from "./actions";
+import {
+  criarEntrada,
+  confirmarSugestaoConhecimento,
+  ignorarSugestaoConhecimento,
+} from "./actions";
 import UploadArquivo from "./upload-arquivo";
 import EntrevistaAudio from "./entrevista-audio";
 import EntradaItem from "./entrada-item";
@@ -8,7 +12,7 @@ import ArquivoItem from "./arquivo-item";
 export default async function BaseConhecimentoPage() {
   const supabase = await createClient();
 
-  const [{ data: entradas }, { data: arquivos }] = await Promise.all([
+  const [{ data: entradas }, { data: arquivos }, { data: sugestoes }] = await Promise.all([
     supabase
       .from("knowledge_base")
       .select("id, conteudo, created_at")
@@ -16,6 +20,11 @@ export default async function BaseConhecimentoPage() {
     supabase
       .from("knowledge_files")
       .select("id, nome_arquivo, storage_path, tamanho_bytes, status, erro, entradas_geradas, created_at")
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("knowledge_base_sugestoes")
+      .select("id, pergunta_cliente, conteudo_sugerido, created_at")
+      .eq("confirmado", false)
       .order("created_at", { ascending: false }),
   ]);
 
@@ -40,6 +49,56 @@ export default async function BaseConhecimentoPage() {
           robô responder o cliente.
         </p>
       </div>
+
+      {sugestoes && sugestoes.length > 0 && (
+        <div className="mb-5">
+          <p className="mb-2 flex items-center gap-1.5 text-[13px] font-bold text-purple">
+            💡 Sugestões vindas do SAC
+            <span className="font-normal text-ink-faint">
+              ({sugestoes.length}) — geradas quando um humano resolveu algo que o robô não sabia
+            </span>
+          </p>
+          <div className="flex flex-col gap-2">
+            {sugestoes.map((s) => (
+              <div
+                key={s.id}
+                className="card flex flex-col gap-2 border-purple/30 bg-purple/5 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div className="min-w-0 flex-1">
+                  {s.pergunta_cliente && (
+                    <p className="mb-1 text-[11.5px] font-semibold text-ink-faint">
+                      Cliente perguntou: {s.pergunta_cliente}
+                    </p>
+                  )}
+                  <p className="text-[13px] font-semibold text-ink">
+                    {s.conteudo_sugerido}
+                  </p>
+                </div>
+                <div className="flex shrink-0 gap-1.5">
+                  <form action={ignorarSugestaoConhecimento}>
+                    <input type="hidden" name="sugestao_id" value={s.id} />
+                    <button
+                      type="submit"
+                      className="rounded-[8px] border border-border px-3 py-1.5 text-[11.5px] font-semibold text-ink-soft hover:bg-surface-soft"
+                    >
+                      Ignorar
+                    </button>
+                  </form>
+                  <form action={confirmarSugestaoConhecimento}>
+                    <input type="hidden" name="sugestao_id" value={s.id} />
+                    <button
+                      type="submit"
+                      className="rounded-[8px] bg-purple px-3 py-1.5 text-[11.5px] font-bold text-white"
+                    >
+                      Adicionar à base
+                    </button>
+                  </form>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <form action={criarEntrada} className="card mb-5 flex gap-2 px-4 py-4">
         <textarea
