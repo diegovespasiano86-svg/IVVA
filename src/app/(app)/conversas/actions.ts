@@ -67,7 +67,7 @@ export async function encerrarConversa(formData: FormData) {
   const supabase = await createClient();
   await supabase
     .from("conversations")
-    .update({ status: "encerrada" })
+    .update({ status: "encerrada", handoff_em: null })
     .eq("id", conversationId);
 
   revalidatePath("/conversas");
@@ -85,7 +85,7 @@ export async function restaurarBot(formData: FormData) {
   const supabase = await createClient();
   await supabase
     .from("conversations")
-    .update({ status: "bot", handoff_motivo: null })
+    .update({ status: "bot", handoff_motivo: null, handoff_em: null })
     .eq("id", conversationId);
 
   revalidatePath("/conversas");

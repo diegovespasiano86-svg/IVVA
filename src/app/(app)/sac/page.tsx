@@ -12,6 +12,16 @@ function formatarRelativo(data: string) {
   return `${diffDias}d`;
 }
 
+function formatarDataHora(data: string) {
+  return new Date(data).toLocaleString("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export default async function SacPage() {
   const supabase = await createClient();
 
@@ -20,7 +30,9 @@ export default async function SacPage() {
 
   const { data: tickets } = await supabase
     .from("conversations")
-    .select("id, status, updated_at, handoff_motivo, contacts(nome)")
+    .select(
+      "id, status, updated_at, handoff_motivo, handoff_em, contacts(nome, telefone, email)",
+    )
     .not("handoff_motivo", "is", null)
     .gte("updated_at", inicio14dias.toISOString())
     .order("updated_at", { ascending: false })
@@ -94,25 +106,40 @@ export default async function SacPage() {
                   col.itens.map((t) => {
                     const contato = t.contacts as unknown as {
                       nome: string;
+                      telefone: string | null;
+                      email: string | null;
                     } | null;
+                    // handoff_em é o momento exato em que o robô pediu ajuda;
+                    // tickets antigos (de antes dessa coluna existir) caem
+                    // pro updated_at como aproximação razoável.
+                    const desde = t.handoff_em ?? t.updated_at;
+                    const aberto = col.titulo === "Abertos";
                     return (
                       <Link
                         key={t.id}
                         href={`/conversas/${t.id}`}
                         className={`card block px-4 py-3.5 hover:border-ink/25 ${
                           col.titulo === "Resolvidos (14 dias)" ? "opacity-60" : ""
-                        }`}
+                        } ${aberto ? "border-coral/40" : ""}`}
                       >
                         <p className="mb-1 truncate text-[13px] font-bold">
                           {t.handoff_motivo}
                         </p>
-                        <div className="flex items-center justify-between">
-                          <span className="text-[12px] text-ink-soft">
+                        <div className="mb-1.5 flex items-center justify-between">
+                          <span className="text-[12px] font-semibold text-ink-soft">
                             {contato?.nome ?? "Cliente"}
                           </span>
-                          <span className="text-[11px] text-ink-faint">
-                            {formatarRelativo(t.updated_at)}
+                          <span
+                            className={`text-[11px] font-bold ${aberto ? "text-coral" : "text-ink-faint"}`}
+                            title={formatarDataHora(desde)}
+                          >
+                            {aberto ? "aguardando há " : ""}
+                            {formatarRelativo(desde)}
                           </span>
+                        </div>
+                        <div className="flex items-center justify-between text-[11px] text-ink-faint">
+                          <span>{contato?.telefone ?? contato?.email ?? "—"}</span>
+                          <span>{formatarDataHora(desde)}</span>
                         </div>
                       </Link>
                     );

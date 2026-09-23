@@ -71,7 +71,22 @@ export default async function AppLayout({
     }
     chamadosAbertos = count ?? 0;
   }
-  const alertHrefs = chamadosAbertos > 0 ? ["/conta"] : [];
+
+  // Intervenção humana pendente é o alerta mais crítico do app — cliente
+  // real esperando resposta agora — então vale tanto pro dono quanto pro
+  // profissional (os dois têm acesso a SAC) e nunca fica atrás de plano:
+  // segurança/reputação do negócio do cliente não é feature paga.
+  const { count: aguardandoHumanoCount } = await supabase
+    .from("conversations")
+    .select("id", { count: "exact", head: true })
+    .eq("tenant_id", perfil.tenant_id)
+    .eq("status", "humano");
+  const aguardandoHumano = aguardandoHumanoCount ?? 0;
+
+  const alertHrefs = [
+    ...(chamadosAbertos > 0 ? ["/conta"] : []),
+    ...(aguardandoHumano > 0 ? ["/sac"] : []),
+  ];
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
@@ -83,6 +98,23 @@ export default async function AppLayout({
         alertHrefs={alertHrefs}
       />
       <main className="flex-1 overflow-x-hidden px-4 py-6 md:px-8 md:py-8">
+        {aguardandoHumano > 0 && (
+          <a
+            href="/sac"
+            className="mb-5 flex animate-pulse items-center gap-2.5 rounded-[12px] bg-coral px-4 py-3.5 text-[13.5px] font-bold text-white shadow-[0_4px_16px_-4px_rgba(255,107,91,0.6)]"
+          >
+            <svg className="icon shrink-0" viewBox="0 0 24 24" style={{ color: "#fff" }}>
+              <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
+              <path d="M12 9v4M12 17h.01" />
+            </svg>
+            {aguardandoHumano === 1
+              ? "1 cliente está aguardando atendimento humano agora"
+              : `${aguardandoHumano} clientes estão aguardando atendimento humano agora`}
+            <span className="ml-auto shrink-0 underline underline-offset-2">
+              Ver na Central de SAC →
+            </span>
+          </a>
+        )}
         {whatsappEmErro && (
           <a
             href="/conta"

@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { resolverChamado } from "./actions";
 
 const PLANO_LABEL: Record<string, string> = {
   essencial: "Essencial",
@@ -45,8 +46,21 @@ export default async function AdminPage() {
     redirect("/dashboard");
   }
 
-  const { data } = await supabase.rpc("admin_tenants_overview");
+  const [{ data }, { data: chamadosData }] = await Promise.all([
+    supabase.rpc("admin_tenants_overview"),
+    supabase.rpc("admin_chamados_recentes"),
+  ]);
   const tenants = (data ?? []) as AdminTenantRow[];
+  const chamados = (chamadosData ?? []) as {
+    id: string;
+    tenant_id: string;
+    tenant_nome: string;
+    assunto: string;
+    mensagem: string | null;
+    status: string;
+    criado_em: string;
+  }[];
+  const leadsUpgrade = chamados.filter((c) => c.assunto.startsWith("Quer conhecer:"));
 
   const total = tenants.length;
   const comWhatsapp = tenants.filter((t) => t.whatsapp_conectado).length;
@@ -99,6 +113,71 @@ export default async function AdminPage() {
               {chamadosAbertos}
             </p>
           </div>
+        </div>
+
+        <div className="mb-6">
+          <div className="mb-3 flex items-baseline justify-between">
+            <p className="text-[14px] font-bold">
+              Chamados abertos{" "}
+              <span className="font-normal text-ink-faint">
+                ({chamados.length}
+                {leadsUpgrade.length > 0 && (
+                  <span className="text-purple"> · {leadsUpgrade.length} interesse em upgrade</span>
+                )}
+                )
+              </span>
+            </p>
+          </div>
+          {chamados.length === 0 ? (
+            <div className="card px-6 py-8 text-center text-[13px] text-ink-faint">
+              Nenhum chamado aberto agora.
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {chamados.map((c) => {
+                const upgrade = c.assunto.startsWith("Quer conhecer:");
+                return (
+                  <div
+                    key={c.id}
+                    className={`card flex items-start justify-between gap-4 px-4 py-3.5 ${
+                      upgrade ? "border-purple/30 bg-purple/5" : ""
+                    }`}
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[13px] font-bold">
+                        {upgrade && <span className="mr-1.5">💜</span>}
+                        {c.assunto}
+                      </p>
+                      <p className="mt-0.5 text-[11.5px] text-ink-soft">
+                        {c.tenant_nome}
+                        {c.mensagem && (
+                          <span className="text-ink-faint"> — {c.mensagem}</span>
+                        )}
+                      </p>
+                      <p className="mt-1 text-[11px] text-ink-faint">
+                        {new Date(c.criado_em).toLocaleString("pt-BR", {
+                          timeZone: "America/Sao_Paulo",
+                          day: "2-digit",
+                          month: "2-digit",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </p>
+                    </div>
+                    <form action={resolverChamado}>
+                      <input type="hidden" name="id" value={c.id} />
+                      <button
+                        type="submit"
+                        className="shrink-0 rounded-[8px] border border-border px-2.5 py-1.5 text-[11px] font-semibold text-ink-soft hover:bg-surface-soft"
+                      >
+                        Marcar resolvido
+                      </button>
+                    </form>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {total === 0 ? (

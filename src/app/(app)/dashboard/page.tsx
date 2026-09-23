@@ -64,6 +64,7 @@ export default async function DashboardPage() {
     { count: chamadosAbertos },
     { count: aguardandoHumano },
     { data: reviews },
+    { count: intervencoesHumanas },
   ] = await Promise.all([
     supabase
       .from("conversations")
@@ -113,6 +114,13 @@ export default async function DashboardPage() {
           .eq("status", "humano")
       : Promise.resolve({ count: 0 }),
     temSac ? supabase.from("reviews").select("nota") : Promise.resolve({ data: [] }),
+    temSac
+      ? supabase
+          .from("conversations")
+          .select("*", { count: "exact", head: true })
+          .not("handoff_em", "is", null)
+          .gte("handoff_em", startOfMonth.toISOString())
+      : Promise.resolve({ count: 0 }),
   ]);
 
   const faturamentoMes = (pagamentos ?? []).reduce(
@@ -179,6 +187,11 @@ export default async function DashboardPage() {
 
   const notas = (reviews ?? []).map((r) => r.nota).filter((n): n is number => n !== null);
   const mediaNotas = notas.length ? (notas.reduce((s, n) => s + n, 0) / notas.length).toFixed(1) : "—";
+
+  const percentualNaoAtendido =
+    conversas && conversas > 0
+      ? Math.round(((intervencoesHumanas ?? 0) / conversas) * 100)
+      : 0;
 
   return (
     <div>
@@ -258,6 +271,16 @@ export default async function DashboardPage() {
               label="Aguardando humano"
               valor={aguardandoHumano ?? 0}
               tom={(aguardandoHumano ?? 0) > 0 ? "atencao" : "bom"}
+            />
+            <StatusTile
+              label="Intervenções humanas (mês)"
+              valor={intervencoesHumanas ?? 0}
+              tom="neutro"
+            />
+            <StatusTile
+              label="% não atendido pelo robô"
+              valor={`${percentualNaoAtendido}%`}
+              tom={percentualNaoAtendido > 20 ? "atencao" : "bom"}
             />
           </div>
         </FeatureLock>

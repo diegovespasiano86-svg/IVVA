@@ -79,7 +79,7 @@ export default function Sidebar({
               <span className="relative flex">
                 <Icon d={item.icon} />
                 {emAlerta && (
-                  <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-coral" />
+                  <span className="absolute -right-0.5 -top-0.5 h-2 w-2 animate-pulse rounded-full bg-coral" />
                 )}
               </span>
               {item.label}
