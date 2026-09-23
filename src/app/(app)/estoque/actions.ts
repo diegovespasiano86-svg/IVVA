@@ -2,6 +2,28 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { temRecurso } from "@/lib/planos";
+
+async function tenantComEstoqueLiberado(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+): Promise<string | null> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data: perfil } = await supabase
+    .from("users")
+    .select("tenant_id, tenants(plano)")
+    .eq("id", user.id)
+    .maybeSingle();
+  if (!perfil) return null;
+
+  const plano = (perfil.tenants as unknown as { plano: string } | null)?.plano;
+  if (!temRecurso(plano, "estoque")) return null;
+
+  return perfil.tenant_id;
+}
 
 export async function criarProduto(formData: FormData) {
   const nome = String(formData.get("nome") ?? "").trim();
@@ -13,21 +35,11 @@ export async function criarProduto(formData: FormData) {
   if (!nome) return;
 
   const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return;
-
-  const { data: perfil } = await supabase
-    .from("users")
-    .select("tenant_id")
-    .eq("id", user.id)
-    .maybeSingle();
-  if (!perfil) return;
+  const tenantId = await tenantComEstoqueLiberado(supabase);
+  if (!tenantId) return;
 
   await supabase.from("products").insert({
-    tenant_id: perfil.tenant_id,
+    tenant_id: tenantId,
     nome,
     categoria: categoria || null,
     preco,
@@ -44,6 +56,8 @@ export async function ajustarEstoque(formData: FormData) {
   if (!id || !delta) return;
 
   const supabase = await createClient();
+  const tenantId = await tenantComEstoqueLiberado(supabase);
+  if (!tenantId) return;
 
   const { data: produto } = await supabase
     .from("products")

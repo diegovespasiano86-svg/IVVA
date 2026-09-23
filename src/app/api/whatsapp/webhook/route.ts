@@ -3,6 +3,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import {
   sendWhatsAppText,
+  sendWhatsAppAudio,
   sendWhatsAppInteractiveList,
   baixarMidiaWhatsApp,
   type WhatsAppCreds,
@@ -11,6 +12,7 @@ import { gerarRespostaWhatsApp, type ContextoConversa, type ResultadoIA } from "
 import { gerarRespostaAdmin } from "@/lib/admin-ai";
 import { verifyPin } from "@/lib/pin";
 import { transcreverAudio } from "@/lib/transcricao";
+import { gerarFala } from "@/lib/fala";
 import { parseHistoricoPayload, parseContatoSyncPayload } from "@/lib/whatsapp-historico";
 
 // Verificação inicial do webhook — a Meta chama essa rota com um GET pra
@@ -469,20 +471,41 @@ async function enviarRespostaEregistrar(params: {
   resposta: string;
   resultado: ResultadoInbound;
   opcoesHorario?: { professional_id: string; professional_nome: string; data_hora: string }[];
+  viaAudio?: boolean;
 }) {
-  const { supabase, internalSecret, creds, waId, resposta, resultado, opcoesHorario } = params;
+  const { supabase, internalSecret, creds, waId, resposta, resultado, opcoesHorario, viaAudio } = params;
 
   let envio: { messages?: { id?: string }[] } | undefined;
-  try {
-    envio = await sendWhatsAppText(creds, waId, resposta);
-  } catch (err) {
-    console.error("[whatsapp webhook] falha ao ENVIAR resposta pro WhatsApp", err);
-    await supabase.rpc("record_whatsapp_send_failure", {
-      p_secret: internalSecret,
-      p_tenant_id: resultado.tenant_id,
-      p_erro: err instanceof Error ? err.message : "Falha desconhecida ao enviar mensagem",
-    });
-    return;
+  let enviouPorAudio = false;
+
+  // Tenta responder em áudio quando o gatilho mandou (streak de voz +
+  // toggle + plano) — qualquer falha (TTS indisponível, upload, envio)
+  // cai graciosamente pra texto, nunca deixa o cliente sem resposta.
+  if (viaAudio) {
+    try {
+      const voz = resultado.identidade_assistente?.voz === "masculina" ? "masculina" : "feminina";
+      const fala = await gerarFala(resposta, voz);
+      if (fala) {
+        envio = await sendWhatsAppAudio(creds, waId, fala.base64, fala.mimeType);
+        enviouPorAudio = true;
+      }
+    } catch (err) {
+      console.error("[whatsapp webhook] falha ao responder em áudio — caindo pra texto", err);
+    }
+  }
+
+  if (!enviouPorAudio) {
+    try {
+      envio = await sendWhatsAppText(creds, waId, resposta);
+    } catch (err) {
+      console.error("[whatsapp webhook] falha ao ENVIAR resposta pro WhatsApp", err);
+      await supabase.rpc("record_whatsapp_send_failure", {
+        p_secret: internalSecret,
+        p_tenant_id: resultado.tenant_id,
+        p_erro: err instanceof Error ? err.message : "Falha desconhecida ao enviar mensagem",
+      });
+      return;
+    }
   }
 
   await supabase.rpc("record_whatsapp_send_success", {
@@ -809,7 +832,32 @@ async function processarMensagem(params: {
     });
   }
 
+  // Decide se essa resposta sai em áudio — recurso do plano Profissional+,
+  // opt-in do dono, e só depois de 2+ mensagens de voz seguidas do
+  // cliente (evita trocar pra áudio por causa de um áudio avulso).
+  let viaAudio = false;
+  try {
+    const { data: deveAudio } = await supabase.rpc("avaliar_resposta_por_audio", {
+      p_secret: internalSecret,
+      p_conversation_id: resultado.conversation_id,
+      p_tenant_id: resultado.tenant_id,
+      p_foi_audio: midia?.tipo === "audio",
+    });
+    viaAudio = Boolean(deveAudio);
+  } catch (err) {
+    console.error("[whatsapp webhook] falha ao avaliar resposta por áudio", err);
+  }
+
   // Antes, uma falha de envio aqui sumia sem ninguém saber — cliente sem
   // resposta, dono sem aviso. Isso é tratado dentro de enviarRespostaEregistrar.
-  await enviarRespostaEregistrar({ supabase, internalSecret, creds, waId, resposta, resultado, opcoesHorario });
+  await enviarRespostaEregistrar({
+    supabase,
+    internalSecret,
+    creds,
+    waId,
+    resposta,
+    resultado,
+    opcoesHorario,
+    viaAudio,
+  });
 }

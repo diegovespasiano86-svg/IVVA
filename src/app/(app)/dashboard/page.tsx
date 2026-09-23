@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { LineAreaChart, HBarList, VBarChart, StatusTile, CardVazio } from "@/components/charts";
+import { FeatureLock } from "@/components/feature-lock";
+import { temRecurso, nomePlano } from "@/lib/planos";
 
 function KpiCard({
   label,
@@ -28,6 +30,17 @@ const DIAS_SEMANA = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
 export default async function DashboardPage() {
   const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data: perfil } = await supabase
+    .from("users")
+    .select("tenants(plano)")
+    .eq("id", user?.id ?? "")
+    .maybeSingle();
+  const plano = (perfil?.tenants as unknown as { plano: string } | null)?.plano ?? "essencial";
+  const temSac = temRecurso(plano, "sac_avaliacoes");
 
   const now = new Date();
   const startOfMonth = new Date();
@@ -84,15 +97,22 @@ export default async function DashboardPage() {
       .not("servico", "is", null),
     supabase.from("funnel_stages").select("key, label, posicao").order("posicao"),
     supabase.from("contacts").select("status_funil"),
-    supabase
-      .from("help_requests")
-      .select("*", { count: "exact", head: true })
-      .neq("status", "resolvido"),
-    supabase
-      .from("conversations")
-      .select("*", { count: "exact", head: true })
-      .eq("status", "humano"),
-    supabase.from("reviews").select("nota"),
+    // Central de SAC e avaliações são recurso do plano Profissional+ — no
+    // Essencial nem busca esses dados, pra seção bloqueada nunca ter
+    // informação real do tenant, só o esqueleto genérico.
+    temSac
+      ? supabase
+          .from("help_requests")
+          .select("*", { count: "exact", head: true })
+          .neq("status", "resolvido")
+      : Promise.resolve({ count: 0 }),
+    temSac
+      ? supabase
+          .from("conversations")
+          .select("*", { count: "exact", head: true })
+          .eq("status", "humano")
+      : Promise.resolve({ count: 0 }),
+    temSac ? supabase.from("reviews").select("nota") : Promise.resolve({ data: [] }),
   ]);
 
   const faturamentoMes = (pagamentos ?? []).reduce(
@@ -220,7 +240,13 @@ export default async function DashboardPage() {
       </div>
 
       <div className="mt-3.5 grid gap-3.5 md:grid-cols-3">
-        <div className="card px-5 py-4.5">
+        <FeatureLock
+          liberado={temSac}
+          titulo="Central de atendimento"
+          planoNecessario={nomePlano("profissional")}
+          variante="cards"
+          className="px-5 py-4.5"
+        >
           <p className="mb-3 text-[13px] font-bold">Central de atendimento</p>
           <div className="grid grid-cols-2 gap-4">
             <StatusTile
@@ -234,13 +260,19 @@ export default async function DashboardPage() {
               tom={(aguardandoHumano ?? 0) > 0 ? "atencao" : "bom"}
             />
           </div>
-        </div>
-        <div className="card px-5 py-4.5">
+        </FeatureLock>
+        <FeatureLock
+          liberado={temSac}
+          titulo="Satisfação média"
+          planoNecessario={nomePlano("profissional")}
+          variante="cards"
+          className="px-5 py-4.5"
+        >
           <StatusTile label="Satisfação média" valor={mediaNotas === "—" ? "—" : `${mediaNotas} ★`} tom="neutro" />
           <p className="mt-1.5 text-[11.5px] text-ink-faint">
             {notas.length} {notas.length === 1 ? "avaliação recebida" : "avaliações recebidas"}
           </p>
-        </div>
+        </FeatureLock>
         <div className="card px-5 py-4.5">
           <StatusTile label="Faturamento do mês" valor={money.format(faturamentoMes)} tom="bom" />
           <p className="mt-1.5 text-[11.5px] text-ink-faint">Somando todos os profissionais</p>

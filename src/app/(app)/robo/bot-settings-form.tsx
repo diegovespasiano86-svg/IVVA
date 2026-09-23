@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { atualizarBotSettings } from "./actions";
+import { FeatureLock } from "@/components/feature-lock";
 
 type BotSettings = {
   pos_venda_ativo: boolean;
@@ -24,9 +25,16 @@ type BotSettings = {
   recuperar_conversa_primeiro_toque_min: number;
   indicacao_recompensa_ativo: boolean;
   indicacao_recompensa_texto: string | null;
+  responder_audio_ativo: boolean;
 } | null;
 
-export default function BotSettingsForm({ settings }: { settings: BotSettings }) {
+export default function BotSettingsForm({
+  settings,
+  audioLiberado,
+}: {
+  settings: BotSettings;
+  audioLiberado: boolean;
+}) {
   const [error, formAction, pending] = useActionState(
     atualizarBotSettings,
     undefined,
@@ -131,6 +139,33 @@ export default function BotSettingsForm({ settings }: { settings: BotSettings })
             />
           </div>
         </div>
+      </section>
+
+      <section className="border-t border-border pt-4">
+        <FeatureLock
+          liberado={audioLiberado}
+          titulo="Resposta por áudio"
+          planoNecessario="Profissional"
+          variante="list"
+          className="px-4 py-4"
+        >
+          <p className="mb-2 text-[13px] font-bold">Resposta por áudio</p>
+          <label className="mb-2 flex items-center gap-2 text-[12.5px] font-semibold">
+            <input
+              type="checkbox"
+              name="responder_audio_ativo"
+              defaultChecked={s?.responder_audio_ativo ?? false}
+            />
+            Deixar a ivva responder em áudio quando fizer sentido
+          </label>
+          <p className="text-[11.5px] text-ink-faint">
+            Quando o cliente manda 2 ou mais mensagens de voz seguidas, a
+            ivva entende que ele prefere áudio e responde também em áudio —
+            usando a voz configurada em Personalidade do atendimento. Se em
+            algum momento não der pra gerar o áudio, ela responde em texto
+            normalmente, sem deixar o cliente sem resposta.
+          </p>
+        </FeatureLock>
       </section>
 
       <section className="border-t border-border pt-4">

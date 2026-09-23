@@ -15,6 +15,7 @@ type IdentidadeAssistente = {
   tom?: string;
   regras?: string[];
   horario_atendimento?: string;
+  voz?: string;
 };
 
 type HistoricoItem = { remetente: "contato" | "bot" | "humano"; conteudo: string };

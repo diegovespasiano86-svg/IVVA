@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { hashPin } from "@/lib/pin";
+import { temRecurso } from "@/lib/planos";
 
 export async function atualizarIdentidadeAssistente(
   _prevState: string | undefined,
@@ -70,13 +71,16 @@ export async function atualizarBotSettings(
 
   const { data: perfil } = await supabase
     .from("users")
-    .select("tenant_id, role")
+    .select("tenant_id, role, tenants(plano)")
     .eq("id", user.id)
     .maybeSingle();
 
   if (!perfil || perfil.role !== "dono") {
     return "Só o dono do negócio pode configurar isso.";
   }
+
+  const plano = (perfil.tenants as unknown as { plano: string } | null)?.plano;
+  const audioLiberado = temRecurso(plano, "resposta_por_audio");
 
   const posVendaDelay = String(formData.get("pos_venda_delay") ?? "1d");
   const novoPin = String(formData.get("admin_pin") ?? "").trim();
@@ -107,6 +111,9 @@ export async function atualizarBotSettings(
     indicacao_recompensa_ativo: formData.get("indicacao_recompensa_ativo") === "on",
     indicacao_recompensa_texto:
       String(formData.get("indicacao_recompensa_texto") ?? "").trim() || null,
+    // Trava no servidor também — mesmo que alguém force o campo no HTML,
+    // só grava true se o plano realmente incluir o recurso.
+    responder_audio_ativo: audioLiberado && formData.get("responder_audio_ativo") === "on",
     updated_at: new Date().toISOString(),
   };
 

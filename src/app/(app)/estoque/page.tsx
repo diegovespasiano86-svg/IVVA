@@ -1,8 +1,41 @@
 import { createClient } from "@/lib/supabase/server";
 import { criarProduto, ajustarEstoque } from "./actions";
+import { FeatureLock } from "@/components/feature-lock";
+import { temRecurso, nomePlano } from "@/lib/planos";
 
 export default async function EstoquePage() {
   const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data: perfil } = await supabase
+    .from("users")
+    .select("tenants(plano)")
+    .eq("id", user?.id ?? "")
+    .maybeSingle();
+  const plano = (perfil?.tenants as unknown as { plano: string } | null)?.plano ?? "essencial";
+  const liberado = temRecurso(plano, "estoque");
+
+  if (!liberado) {
+    return (
+      <div>
+        <div className="mb-5">
+          <h1 className="font-display text-[22px] font-extrabold">Estoque</h1>
+          <p className="text-[13.5px] text-ink-soft">
+            Controle de produtos, alertas de estoque mínimo e ajuste rápido.
+          </p>
+        </div>
+        <FeatureLock
+          liberado={false}
+          titulo="Controle de estoque"
+          planoNecessario={nomePlano("profissional")}
+          variante="list"
+          className="px-6 py-14"
+        />
+      </div>
+    );
+  }
 
   const { data: produtos } = await supabase
     .from("products")

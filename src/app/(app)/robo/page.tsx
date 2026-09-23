@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import AssistantForm from "./assistant-form";
 import BotSettingsForm from "./bot-settings-form";
+import { temRecurso } from "@/lib/planos";
 
 export default async function RoboPage() {
   const supabase = await createClient();
@@ -11,7 +12,7 @@ export default async function RoboPage() {
 
   const { data: perfil } = await supabase
     .from("users")
-    .select("role, tenants(identidade_assistente)")
+    .select("role, tenants(identidade_assistente, plano)")
     .eq("id", user?.id ?? "")
     .maybeSingle();
 
@@ -25,7 +26,10 @@ export default async function RoboPage() {
       horario_atendimento?: string;
       voz?: string;
     } | null;
+    plano: string;
   } | null;
+
+  const audioLiberado = temRecurso(tenant?.plano, "resposta_por_audio");
 
   if (!isDono) {
     return (
@@ -116,7 +120,7 @@ export default async function RoboPage() {
             Pós-venda, reengajamento, aniversário e o canal de comandos que
             você usa pra falar com o robô como dono.
           </p>
-          <BotSettingsForm settings={botSettings} />
+          <BotSettingsForm settings={botSettings} audioLiberado={audioLiberado} />
         </div>
       </div>
     </div>

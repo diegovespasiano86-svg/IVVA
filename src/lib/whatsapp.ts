@@ -97,6 +97,59 @@ export async function sendWhatsAppText(
   return data;
 }
 
+// Manda a resposta do robô como mensagem de voz (não texto). Precisa de
+// 2 passos na API da Meta: sobe o áudio pra virar um media id, depois
+// manda a mensagem apontando pra esse id — não dá pra mandar o arquivo
+// direto no /messages.
+export async function sendWhatsAppAudio(
+  creds: WhatsAppCreds,
+  to: string,
+  audioBase64: string,
+  mimeType: string,
+) {
+  const { phoneNumberId, token } = creds;
+
+  const form = new FormData();
+  form.append("messaging_product", "whatsapp");
+  form.append(
+    "file",
+    new Blob([Buffer.from(audioBase64, "base64")], { type: mimeType }),
+    "resposta.ogg",
+  );
+
+  const uploadRes = await fetch(
+    `https://graph.facebook.com/${GRAPH_API_VERSION}/${phoneNumberId}/media`,
+    { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: form },
+  );
+  const uploadData = await uploadRes.json();
+  if (!uploadRes.ok || !uploadData?.id) {
+    throw new Error(uploadData?.error?.message ?? "Falha ao subir áudio pro WhatsApp");
+  }
+
+  const res = await fetch(
+    `https://graph.facebook.com/${GRAPH_API_VERSION}/${phoneNumberId}/messages`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        to,
+        type: "audio",
+        audio: { id: uploadData.id },
+      }),
+    },
+  );
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data?.error?.message ?? "Falha ao enviar áudio no WhatsApp");
+  }
+  return data;
+}
+
 // Lista interativa (até 10 linhas, cada uma clicável) — usada pra oferecer
 // horários de agenda sem o cliente ter que digitar. O `id` de cada linha
 // volta no webhook (interactive.list_reply.id) quando a pessoa escolhe.

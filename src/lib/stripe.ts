@@ -111,6 +111,32 @@ export async function createBillingPortalSession(params: {
   return data as { id: string; url: string };
 }
 
+// Lê a assinatura ativa (ou em trial) do cliente na Stripe e devolve o
+// price id em uso — chamado quando o dono volta do Portal de cobrança,
+// já que trocar de plano por lá não avisa a gente de outra forma (sem
+// webhook configurado, mesmo padrão do getCheckoutSession).
+export async function getPriceIdAtivo(customerId: string): Promise<string | null> {
+  const params = new URLSearchParams({
+    customer: customerId,
+    status: "all",
+    limit: "5",
+  });
+  const res = await fetch(`${STRIPE_API}/subscriptions?${params}`, {
+    headers: stripeHeaders(),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data?.error?.message ?? "Falha ao consultar assinatura");
+  }
+
+  const assinaturas = (data?.data ?? []) as {
+    status: string;
+    items?: { data?: { price?: { id?: string } }[] };
+  }[];
+  const ativa = assinaturas.find((s) => s.status === "active" || s.status === "trialing");
+  return ativa?.items?.data?.[0]?.price?.id ?? null;
+}
+
 export async function getCheckoutSession(sessionId: string) {
   // Sem expand: "customer" vem só como o id ("cus_...") mesmo, que é tudo
   // que a gente guarda. Expandir devolveria o objeto Customer inteiro e

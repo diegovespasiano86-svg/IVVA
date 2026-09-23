@@ -4,6 +4,7 @@ import EmbeddedSignupButton from "./embedded-signup-button";
 import InviteForm from "./invite-form";
 import BillingPortalButton from "./billing-portal-button";
 import { desconectarWhatsApp, revogarConvite } from "./actions";
+import { sincronizarPlanoTenant } from "@/lib/sincronizar-plano";
 
 const PLANO_LABEL: Record<string, string> = {
   essencial: "Essencial",
@@ -18,10 +19,10 @@ const PLANOS = [
     preco: "R$ 297",
     destaque: false,
     beneficios: [
-      "Chatbot de agendamento no WhatsApp",
-      "CRM + 1 calendário",
-      "Dashboard simples",
-      "Acesso do dono",
+      "Chatbot no WhatsApp 24h (1 número)",
+      "Agenda + CRM com funil de vendas",
+      "Dashboard básico",
+      "Base de conhecimento pronta pro seu nicho",
     ],
   },
   {
@@ -31,11 +32,13 @@ const PLANOS = [
     destaque: true,
     beneficios: [
       "Tudo do Essencial",
-      "Calendário multi-profissional + comissão",
-      "Login por profissional",
-      "Dashboard de faturamento",
-      "CRM em funil + Tarefas de upsell",
-      "Avaliações + Checkout + SAC",
+      "Calendários múltiplos + comissão automática",
+      "Central de SAC + avaliações",
+      "Reengajamento e recall automático",
+      "Fila de espera inteligente",
+      "Controle de estoque",
+      "Resposta por áudio",
+      "Cliente cancela/remarca pelo chat",
     ],
   },
   {
@@ -45,11 +48,10 @@ const PLANOS = [
     destaque: false,
     beneficios: [
       "Tudo do Profissional",
-      "Recibo do atendimento por WhatsApp",
-      "Controle de estoque de produtos",
+      "Admin do negócio pelo WhatsApp",
       "Sinal antecipado (anti no-show)",
-      "Fila de espera",
-      "Admin pelo WhatsApp + suporte prioritário",
+      "Recibo automático por WhatsApp",
+      "Suporte prioritário",
     ],
   },
 ] as const;
@@ -73,6 +75,25 @@ export default async function ContaPage() {
   } | null;
 
   const isDono = perfil?.role === "dono";
+
+  // Trocar de plano acontece no Portal de cobrança da Stripe, fora do
+  // nosso controle — sem webhook configurado, essa é a hora que a gente
+  // tem pra notar que mudou e atualizar o plano gravado no tenant.
+  if (isDono && perfil?.tenant_id) {
+    const { data: assinatura } = await supabase
+      .from("subscriptions")
+      .select("stripe_customer_id")
+      .eq("tenant_id", perfil.tenant_id)
+      .maybeSingle();
+    const planoSincronizado = await sincronizarPlanoTenant(
+      supabase,
+      perfil.tenant_id,
+      assinatura?.stripe_customer_id ?? null,
+    );
+    if (planoSincronizado && tenant) {
+      tenant.plano = planoSincronizado;
+    }
+  }
 
   const [{ data: conta }, { data: equipe }, { data: chamados }, { data: convites }] =
     await Promise.all([
