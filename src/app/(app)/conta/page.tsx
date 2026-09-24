@@ -57,7 +57,12 @@ const PLANOS = [
   },
 ] as const;
 
-export default async function ContaPage() {
+export default async function ContaPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ bloqueado?: string }>;
+}) {
+  const { bloqueado } = await searchParams;
   const supabase = await createClient();
 
   const {
@@ -119,6 +124,16 @@ export default async function ContaPage() {
 
   return (
     <div>
+      {bloqueado === "1" && (
+        <div className="mb-5 rounded-[12px] border border-coral bg-coral/10 px-4 py-3.5 text-[13px] font-semibold text-coral">
+          ⚠️ Não conseguimos confirmar o pagamento da sua assinatura — o
+          acesso ao resto do sistema ficou pausado até resolver. Atualize
+          a forma de pagamento em &ldquo;Gerenciar assinatura&rdquo;
+          {isDono
+            ? " abaixo."
+            : ", fale com o dono do negócio pra corrigir."}
+        </div>
+      )}
       <div className="mb-5">
         <h1 className="font-display text-[22px] font-extrabold">
           Conta e assinatura

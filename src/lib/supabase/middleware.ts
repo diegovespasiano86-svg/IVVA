@@ -63,5 +63,24 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // Assinatura em atraso/cancelada (avisado pelo webhook da Stripe) trava
+  // o resto do sistema, mas nunca /conta — é lá que o dono corrige o
+  // pagamento (botão "Gerenciar assinatura").
+  if (user && !isPublicRoute && !pathname.startsWith("/conta")) {
+    const { data: perfil } = await supabase
+      .from("users")
+      .select("tenants(acesso_bloqueado)")
+      .eq("id", user.id)
+      .maybeSingle();
+    const bloqueado = (perfil?.tenants as unknown as { acesso_bloqueado: boolean } | null)
+      ?.acesso_bloqueado;
+    if (bloqueado) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/conta";
+      url.searchParams.set("bloqueado", "1");
+      return NextResponse.redirect(url);
+    }
+  }
+
   return response;
 }
