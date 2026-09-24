@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { createBillingPortalSession } from "@/lib/stripe";
+import { createBillingPortalSession, cancelarAssinaturasAtivas } from "@/lib/stripe";
 import {
   exchangeEmbeddedSignupCode,
   buscarDetalhesNumero,
@@ -340,4 +340,79 @@ export async function abrirPortalCobranca(
   }
 
   redirect(session.url);
+}
+
+// Apagar conta — encerra tudo de uma vez: cancela a assinatura na Stripe
+// (senão o dono continua sendo cobrado com os dados já apagados), apaga
+// o tenant inteiro em cascata via excluir_conta_lgpd (contatos, conversas,
+// mensagens, agenda, base de conhecimento, WhatsApp) e desloga.
+// Exige reautenticação por senha + digitar o nome do negócio, igual a
+// fluxos de exclusão de conta do Instagram/Google — dupla confirmação
+// numa ação irreversível.
+export async function excluirConta(
+  _prevState: { erro: string | null },
+  formData: FormData,
+): Promise<{ erro: string | null }> {
+  const nomeDigitado = String(formData.get("nome_confirmacao") ?? "").trim();
+  const senha = String(formData.get("senha") ?? "");
+
+  if (!senha) {
+    return { erro: "Digite sua senha pra confirmar." };
+  }
+
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user?.email) return { erro: "Sessão expirada, faça login de novo." };
+
+  const { data: perfil } = await supabase
+    .from("users")
+    .select("tenant_id, role, tenants(nome)")
+    .eq("id", user.id)
+    .maybeSingle();
+  if (!perfil || perfil.role !== "dono") {
+    return { erro: "Só o dono do negócio pode apagar a conta." };
+  }
+
+  const tenantNome = (perfil.tenants as unknown as { nome: string } | null)?.nome ?? "";
+  if (nomeDigitado !== tenantNome.trim()) {
+    return { erro: "O nome digitado não confere com o nome do negócio." };
+  }
+
+  // Reautentica pra confirmar que é mesmo o dono digitando, não uma sessão
+  // esquecida aberta em outro computador.
+  const { error: authError } = await supabase.auth.signInWithPassword({
+    email: user.email,
+    password: senha,
+  });
+  if (authError) {
+    return { erro: "Senha incorreta." };
+  }
+
+  const { data: assinatura } = await supabase
+    .from("subscriptions")
+    .select("stripe_customer_id")
+    .eq("tenant_id", perfil.tenant_id)
+    .maybeSingle();
+
+  if (assinatura?.stripe_customer_id) {
+    try {
+      await cancelarAssinaturasAtivas(assinatura.stripe_customer_id);
+    } catch {
+      return {
+        erro:
+          "Não consegui cancelar sua assinatura na Stripe agora. Tenta de novo em instantes, ou fale com a gente.",
+      };
+    }
+  }
+
+  const { error: excluirError } = await supabase.rpc("excluir_conta_lgpd");
+  if (excluirError) {
+    return { erro: "Não consegui apagar a conta agora. Tenta de novo ou fale com a gente." };
+  }
+
+  await supabase.auth.signOut();
+  redirect("/login?conta_apagada=1");
 }

@@ -3,6 +3,7 @@ import WhatsAppForm from "./whatsapp-form";
 import EmbeddedSignupButton from "./embedded-signup-button";
 import InviteForm from "./invite-form";
 import BillingPortalButton from "./billing-portal-button";
+import ApagarConta from "./apagar-conta";
 import { desconectarWhatsApp, revogarConvite } from "./actions";
 import { sincronizarPlanoTenant } from "@/lib/sincronizar-plano";
 
@@ -358,6 +359,11 @@ export default async function ContaPage() {
         </div>
       </div>
 
+      {isDono && tenant?.nome && (
+        <div className="mt-4">
+          <ApagarConta tenantNome={tenant.nome} />
+        </div>
+      )}
     </div>
   );
 }

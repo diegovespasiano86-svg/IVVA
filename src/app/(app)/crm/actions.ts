@@ -324,6 +324,33 @@ export async function ignorarContatoHistorico(formData: FormData) {
   revalidatePath("/crm");
 }
 
+// Exclusão em cascata (direito de eliminação da LGPD) — apaga o contato,
+// mensagens, agendamentos, notas, avaliações e o histórico de WhatsApp
+// dele. Ação irreversível, por isso restrita ao dono e sempre com o
+// tenant conferido dentro da própria função no banco (excluir_contato_lgpd).
+export async function excluirContatoLgpd(formData: FormData) {
+  const contactId = String(formData.get("contact_id") ?? "");
+  if (!contactId) return { erro: "Contato inválido." };
+
+  const ctx = await contexto();
+  if (!ctx || ctx.role !== "dono") {
+    return { erro: "Só o dono do negócio pode apagar um contato." };
+  }
+
+  const { error } = await ctx.supabase.rpc("excluir_contato_lgpd", {
+    p_contact_id: contactId,
+  });
+  if (error) {
+    return { erro: "Não consegui apagar o contato. Tenta de novo." };
+  }
+
+  revalidatePath("/crm");
+  revalidatePath("/dashboard");
+  revalidatePath("/calendario");
+  revalidatePath("/conversas");
+  return { erro: null };
+}
+
 export async function moverEstagioOrdem(formData: FormData) {
   const stageId = String(formData.get("stage_id") ?? "");
   const direcao = String(formData.get("direcao") ?? ""); // "up" | "down"

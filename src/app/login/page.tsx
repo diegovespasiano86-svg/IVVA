@@ -3,9 +3,9 @@ import LoginForm from "./login-form";
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ erro?: string }>;
+  searchParams: Promise<{ erro?: string; conta_apagada?: string }>;
 }) {
-  const { erro } = await searchParams;
+  const { erro, conta_apagada: contaApagada } = await searchParams;
 
   return (
     <main className="flex min-h-screen items-center justify-center px-4 py-10">
@@ -43,6 +43,11 @@ export default async function LoginPage({
           {erro === "link_invalido" && (
             <p className="mt-4 rounded-[10px] border border-coral/30 bg-coral/5 px-3.5 py-2.5 text-[12.5px] font-semibold text-coral">
               Esse link expirou ou já foi usado. Peça a recuperação de senha de novo.
+            </p>
+          )}
+          {contaApagada === "1" && (
+            <p className="mt-4 rounded-[10px] border border-teal/30 bg-teal/5 px-3.5 py-2.5 text-[12.5px] font-semibold text-teal">
+              Sua conta e todos os dados foram apagados com sucesso.
             </p>
           )}
           <LoginForm />

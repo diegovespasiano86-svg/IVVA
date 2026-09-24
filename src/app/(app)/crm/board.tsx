@@ -6,6 +6,7 @@ import {
   adicionarNota,
   atualizarContato,
   buscarHistorico,
+  excluirContatoLgpd,
   moverContato,
 } from "./actions";
 
@@ -192,6 +193,11 @@ export default function CrmBoard({
               c ? { ...c, status_funil: novoEstagio } : c,
             );
           }}
+          onExcluido={() => {
+            setContatos((prev) => prev.filter((c) => c.id !== selecionado.id));
+            setSelecionado(null);
+            router.refresh();
+          }}
         />
       )}
     </>
@@ -203,17 +209,38 @@ function ContactDrawer({
   estagios,
   onFechar,
   onMover,
+  onExcluido,
 }: {
   contato: Contato;
   estagios: Estagio[];
   onFechar: () => void;
   onMover: (novoEstagio: string) => void;
+  onExcluido: () => void;
 }) {
   const router = useRouter();
   const [notas, setNotas] = useState<Nota[] | null>(null);
   const [salvando, setSalvando] = useState(false);
   const [enviandoNota, setEnviandoNota] = useState(false);
+  const [confirmandoExclusao, setConfirmandoExclusao] = useState(false);
+  const [textoConfirmacao, setTextoConfirmacao] = useState("");
+  const [excluindo, setExcluindo] = useState(false);
+  const [erroExclusao, setErroExclusao] = useState<string | null>(null);
   const carregando = notas === null;
+
+  async function confirmarExclusao() {
+    if (textoConfirmacao.trim() !== contato.nome.trim()) return;
+    setExcluindo(true);
+    setErroExclusao(null);
+    const formData = new FormData();
+    formData.set("contact_id", contato.id);
+    const resultado = await excluirContatoLgpd(formData);
+    setExcluindo(false);
+    if (resultado?.erro) {
+      setErroExclusao(resultado.erro);
+      return;
+    }
+    onExcluido();
+  }
 
   useEffect(() => {
     let ativo = true;
@@ -403,6 +430,66 @@ function ContactDrawer({
                 </li>
               ))}
             </ul>
+          )}
+        </div>
+
+        <div className="mt-6 border-t border-coral/20 pt-5">
+          <p className="mb-1 text-[12.5px] font-bold uppercase tracking-wide text-coral">
+            Zona de risco
+          </p>
+          <p className="mb-3 text-[12px] text-ink-faint">
+            Apaga permanentemente este contato: dados pessoais, mensagens,
+            agendamentos, notas, avaliações e o histórico de WhatsApp dele.
+            Não pode ser desfeito.
+          </p>
+
+          {!confirmandoExclusao ? (
+            <button
+              type="button"
+              onClick={() => setConfirmandoExclusao(true)}
+              className="rounded-[10px] border border-coral/40 px-3.5 py-2 text-[12.5px] font-semibold text-coral hover:bg-coral/5"
+            >
+              Apagar contato
+            </button>
+          ) : (
+            <div className="rounded-[12px] border border-coral/30 bg-coral/5 px-4 py-4">
+              <label htmlFor="confirmacao_exclusao" className="!text-coral">
+                Pra confirmar, digite o nome do contato ({contato.nome})
+              </label>
+              <input
+                id="confirmacao_exclusao"
+                value={textoConfirmacao}
+                onChange={(e) => setTextoConfirmacao(e.target.value)}
+                autoFocus
+                className="w-full rounded-[10px] border border-coral/40 bg-surface px-3 py-2 text-[13px]"
+              />
+              {erroExclusao && (
+                <p role="alert" className="mt-2 text-[12.5px] font-semibold text-coral">
+                  {erroExclusao}
+                </p>
+              )}
+              <div className="mt-3 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setConfirmandoExclusao(false);
+                    setTextoConfirmacao("");
+                    setErroExclusao(null);
+                  }}
+                  className="rounded-[10px] border border-border px-3.5 py-2 text-[12.5px] font-semibold text-ink-soft"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmarExclusao}
+                  disabled={textoConfirmacao.trim() !== contato.nome.trim() || excluindo}
+                  className="btn bg-coral px-3.5 py-2 text-[12.5px] text-white disabled:opacity-40"
+                >
+                  {excluindo ? "Apagando…" : "Apagar definitivamente"}
+                </button>
+              </div>
+            </div>
           )}
         </div>
       </div>

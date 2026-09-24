@@ -137,6 +137,35 @@ export async function getPriceIdAtivo(customerId: string): Promise<string | null
   return ativa?.items?.data?.[0]?.price?.id ?? null;
 }
 
+// Cancela toda assinatura ativa/em trial do cliente, imediatamente (sem
+// esperar o fim do período já pago) — usada só no fluxo de "apagar
+// conta", pra garantir que ninguém continue sendo cobrado depois que os
+// dados já foram todos apagados do banco.
+export async function cancelarAssinaturasAtivas(customerId: string): Promise<void> {
+  const params = new URLSearchParams({ customer: customerId, status: "all", limit: "10" });
+  const res = await fetch(`${STRIPE_API}/subscriptions?${params}`, {
+    headers: stripeHeaders(),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data?.error?.message ?? "Falha ao consultar assinaturas pra cancelar");
+  }
+
+  const assinaturas = (data?.data ?? []) as { id: string; status: string }[];
+  const ativas = assinaturas.filter((s) => s.status === "active" || s.status === "trialing");
+
+  for (const assinatura of ativas) {
+    const res = await fetch(`${STRIPE_API}/subscriptions/${assinatura.id}`, {
+      method: "DELETE",
+      headers: stripeHeaders(),
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err?.error?.message ?? "Falha ao cancelar assinatura");
+    }
+  }
+}
+
 export async function getCheckoutSession(sessionId: string) {
   // Sem expand: "customer" vem só como o id ("cus_...") mesmo, que é tudo
   // que a gente guarda. Expandir devolveria o objeto Customer inteiro e
