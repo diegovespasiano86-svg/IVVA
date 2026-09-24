@@ -38,11 +38,12 @@ export async function updateSession(request: NextRequest) {
     return response;
   }
 
-  // /planos e /bem-vindo fazem parte do fluxo público de assinatura —
-  // negócio novo escolhe plano e paga antes de ter conta. /esqueci-senha e
-  // /redefinir-senha precisam ser acessíveis sem sessão (é justamente pra
-  // quem não consegue entrar).
+  // "/" é a landing page pública. /planos e /bem-vindo fazem parte do fluxo
+  // público de assinatura — negócio novo escolhe plano e paga antes de ter
+  // conta. /esqueci-senha e /redefinir-senha precisam ser acessíveis sem
+  // sessão (é justamente pra quem não consegue entrar).
   const isPublicRoute =
+    pathname === "/" ||
     pathname.startsWith("/login") ||
     pathname.startsWith("/planos") ||
     pathname.startsWith("/bem-vindo") ||
@@ -56,7 +57,7 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (user && pathname.startsWith("/login")) {
+  if (user && (pathname.startsWith("/login") || pathname === "/")) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
