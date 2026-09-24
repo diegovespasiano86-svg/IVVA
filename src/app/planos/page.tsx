@@ -90,7 +90,8 @@ export default function PlanosPage() {
           {PLANOS.map((p) => (
             <div
               key={p.key}
-              className={`card flex flex-col px-6 py-7 ${
+              id={p.key}
+              className={`card flex scroll-mt-24 flex-col px-6 py-7 transition-shadow target:ring-2 target:ring-purple target:ring-offset-2 target:shadow-[0_20px_55px_-15px_rgba(139,127,232,0.55)] ${
                 p.destaque ? "border-2 border-purple" : ""
               }`}
             >
