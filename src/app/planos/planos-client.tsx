@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
+import { motion } from "framer-motion";
 import { loadStripe, type StripeEmbeddedCheckout } from "@stripe/stripe-js";
 import { assinarPlano, type AssinarPlanoState } from "./actions";
 
@@ -114,10 +115,16 @@ export default function PlanosClient({ planos }: { planos: Plano[] }) {
   return (
     <div className="grid gap-5 md:grid-cols-3 md:items-stretch">
       {planos.map((p) => (
-        <div
+        <motion.div
           key={p.key}
           id={p.key}
-          className={`relative scroll-mt-24 rounded-3xl transition-shadow target:shadow-[0_20px_55px_-15px_rgba(139,127,232,0.6)] ${
+          whileHover={{
+            y: -10,
+            boxShadow:
+              "0 22px 50px -18px rgba(47,191,159,0.45), 0 32px 70px -22px rgba(139,127,232,0.55), 0 20px 46px -20px rgba(255,107,91,0.4)",
+            transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] },
+          }}
+          className={`relative scroll-mt-24 rounded-3xl target:shadow-[0_20px_55px_-15px_rgba(139,127,232,0.6)] ${
             p.destaque
               ? "bg-[linear-gradient(145deg,#2fbf9f,#8b7fe8_55%,#ff6b5b)] p-[2px] shadow-[0_40px_90px_-25px_rgba(139,127,232,0.55)]"
               : "bg-white/10 p-px target:ring-2 target:ring-[#8b7fe8] target:ring-offset-2 target:ring-offset-[#0b0b10]"
@@ -167,7 +174,7 @@ export default function PlanosClient({ planos }: { planos: Plano[] }) {
               onClientSecret={(clientSecret) => setCheckout({ clientSecret, plano: p })}
             />
           </div>
-        </div>
+        </motion.div>
       ))}
     </div>
   );
