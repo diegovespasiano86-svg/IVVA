@@ -24,7 +24,7 @@ export async function createCheckoutSession(params: {
 }) {
   const body = new URLSearchParams({
     mode: "subscription",
-    ui_mode: "embedded",
+    ui_mode: "embedded_page",
     "line_items[0][price]": params.priceId,
     "line_items[0][quantity]": "1",
     return_url: params.returnUrl,
