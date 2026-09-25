@@ -1,7 +1,6 @@
 "use server";
 
 import { headers } from "next/headers";
-import { redirect } from "next/navigation";
 import { createCheckoutSession } from "@/lib/stripe";
 
 const PRICE_ENV: Record<string, string | undefined> = {
@@ -10,20 +9,22 @@ const PRICE_ENV: Record<string, string | undefined> = {
   completo: process.env.STRIPE_PRICE_COMPLETO,
 };
 
+export type AssinarPlanoState = { erro: string | null; clientSecret: string | null };
+
 export async function assinarPlano(
-  _prevState: string | undefined,
+  _prevState: AssinarPlanoState,
   formData: FormData,
-) {
+): Promise<AssinarPlanoState> {
   const plano = String(formData.get("plano") ?? "");
   const nomeNegocio = String(formData.get("nome_negocio") ?? "").trim();
 
   if (!nomeNegocio) {
-    return "Informe o nome do seu negócio.";
+    return { erro: "Informe o nome do seu negócio.", clientSecret: null };
   }
 
   const priceId = PRICE_ENV[plano];
   if (!priceId) {
-    return "Pagamento ainda em configuração — volta em instantes.";
+    return { erro: "Pagamento ainda em configuração — volta em instantes.", clientSecret: null };
   }
 
   const headerList = await headers();
@@ -31,18 +32,18 @@ export async function assinarPlano(
     headerList.get("origin") ??
     `https://${headerList.get("host") ?? "localhost:3000"}`;
 
-  let session;
   try {
-    session = await createCheckoutSession({
+    const session = await createCheckoutSession({
       priceId,
       plano,
       nomeNegocio,
-      successUrl: `${origin}/bem-vindo?session_id={CHECKOUT_SESSION_ID}`,
-      cancelUrl: `${origin}/planos`,
+      returnUrl: `${origin}/bem-vindo?session_id={CHECKOUT_SESSION_ID}`,
     });
+    return { erro: null, clientSecret: session.client_secret };
   } catch (err) {
-    return err instanceof Error ? err.message : "Falha ao iniciar pagamento.";
+    return {
+      erro: err instanceof Error ? err.message : "Falha ao iniciar pagamento.",
+      clientSecret: null,
+    };
   }
-
-  redirect(session.url);
 }

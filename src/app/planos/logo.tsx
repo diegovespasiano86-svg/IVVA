@@ -26,13 +26,17 @@ function WaveMark({ size = 26, strokeWidth = 7.5 }: { size?: number; strokeWidth
   );
 }
 
-export default function IvvaLogo() {
+export default function IvvaLogo({ light = false }: { light?: boolean }) {
   return (
     <span className="inline-flex items-center gap-2">
       <span className="flex h-9 w-9 items-center justify-center rounded-[11px] bg-white shadow-[0_4px_14px_-4px_rgba(14,14,19,0.25)]">
         <WaveMark />
       </span>
-      <span className="text-[1.55rem] leading-none font-extrabold tracking-[-0.03em] lowercase text-[#353542]">
+      <span
+        className={`text-[1.55rem] leading-none font-extrabold tracking-[-0.03em] lowercase ${
+          light ? "text-[#f7f6f2]" : "text-[#353542]"
+        }`}
+      >
         ivva
       </span>
     </span>

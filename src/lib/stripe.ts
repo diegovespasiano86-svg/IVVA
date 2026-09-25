@@ -11,19 +11,23 @@ function stripeHeaders() {
   };
 }
 
+// ui_mode "embedded": o formulário de cartão da Stripe fica montado dentro
+// da nossa própria página (app.ivva.app.br/planos) em vez de redirecionar
+// pro domínio checkout.stripe.com — mesma conformidade PCI, mas o cliente
+// nunca sai da cara do site. Por isso é client_secret, não url, e o
+// destino final é return_url (sem cancel_url separado).
 export async function createCheckoutSession(params: {
   priceId: string;
   plano: string;
   nomeNegocio: string;
-  successUrl: string;
-  cancelUrl: string;
+  returnUrl: string;
 }) {
   const body = new URLSearchParams({
     mode: "subscription",
+    ui_mode: "embedded",
     "line_items[0][price]": params.priceId,
     "line_items[0][quantity]": "1",
-    success_url: params.successUrl,
-    cancel_url: params.cancelUrl,
+    return_url: params.returnUrl,
     "subscription_data[trial_period_days]": "14",
     "metadata[nome_negocio]": params.nomeNegocio,
     "metadata[plano]": params.plano,
@@ -39,7 +43,7 @@ export async function createCheckoutSession(params: {
   if (!res.ok) {
     throw new Error(data?.error?.message ?? "Falha ao criar checkout");
   }
-  return data as { id: string; url: string };
+  return data as { id: string; client_secret: string };
 }
 
 // Pix pra cobrar sinal de serviço de ticket alto direto na conversa do

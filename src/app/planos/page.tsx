@@ -1,5 +1,16 @@
+import { FloatingPill, GlowBackdrop, HeroBackdrop, WaveWatermark } from "./brand-fx";
 import IvvaLogo from "./logo";
-import PlanoForm from "./plano-form";
+import PlanosClient from "./planos-client";
+
+const JAKARTA = { fontFamily: "var(--font-jakarta), system-ui, sans-serif" } as const;
+const SERIF = { fontFamily: "var(--font-instrument-serif), Georgia, serif" } as const;
+
+const PROVAS = [
+  "API oficial do WhatsApp",
+  "Configura conversando",
+  "A partir de R$ 297/mês",
+  "Sem fidelidade",
+];
 
 const PLANOS = [
   {
@@ -50,92 +61,163 @@ const PLANOS = [
   },
 ];
 
+function Check() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" className="shrink-0 text-[#2fbf9f]" aria-hidden>
+      <path d="M5 12.5l4.5 4.5L19 7" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export default function PlanosPage() {
   return (
-    <main className="min-h-screen px-4 py-14">
-      <div className="mx-auto max-w-[1100px]">
-        <div className="mb-12 text-center">
-          <div className="mb-6 flex items-center justify-center">
-            <IvvaLogo />
-          </div>
-          <h1 className="text-[30px] font-extrabold tracking-[-0.02em] text-balance sm:text-[36px]">
-            Escolha o{" "}
-            <span
-              className="bg-[linear-gradient(95deg,#2fbf9f_0%,#8b7fe8_55%,#ff6b5b_100%)] bg-clip-text italic text-transparent"
-              style={{ fontFamily: "var(--font-instrument-serif), Georgia, serif" }}
+    <main className="relative isolate overflow-hidden">
+      {/* ---------------------------------------------------------------- HERO */}
+      <section className="relative isolate flex min-h-[86svh] items-center overflow-hidden px-6 pt-10 pb-20">
+        <HeroBackdrop />
+
+        {/* a onda da marca atravessando o fundo */}
+        <WaveWatermark
+          className="left-1/2 top-1/2 h-[90vmin] w-[90vmin] -translate-x-1/2 -translate-y-1/2"
+          opacity={0.14}
+          strokeWidth={3.2}
+          drift={5}
+          duration={26}
+        />
+        <WaveWatermark
+          className="-left-24 bottom-[-12%] h-[46vmin] w-[46vmin]"
+          opacity={0.06}
+          strokeWidth={5}
+          drift={9}
+          duration={34}
+          delay={0.6}
+        />
+
+        {/* bolhas de conversa, como no hero do site */}
+        <FloatingPill className="left-[4%] top-[30%]" delay={0.2}>
+          Agendado ✅ Corte + barba, 16h
+        </FloatingPill>
+        <FloatingPill className="right-[5%] top-[24%]" delay={0.5}>
+          Venda extra: + R$ 20
+        </FloatingPill>
+        <FloatingPill className="left-[8%] bottom-[20%]" delay={0.8}>
+          Áudio entendido · 0:04
+        </FloatingPill>
+        <FloatingPill className="right-[7%] bottom-[26%]" delay={1.1}>
+          Lembrete enviado 2h antes
+        </FloatingPill>
+
+        <div className="relative mx-auto w-full max-w-4xl">
+          <div className="mb-10 flex items-center justify-between gap-4">
+            <IvvaLogo light />
+            <a
+              href="/login"
+              className="rounded-full border border-white/15 px-4 py-2 text-[13px] font-semibold text-[#c7c5d1] transition-colors hover:border-white/30 hover:text-[#f7f6f2]"
+              style={JAKARTA}
             >
-              plano
-            </span>{" "}
-            do seu negócio
-          </h1>
-          <p className="mt-3 text-[15px] text-[#6b6577]">
-            Preço público, sem &ldquo;fale com vendas&rdquo;. 14 dias grátis, cancela
-            quando quiser.
+              Entrar
+            </a>
+          </div>
+
+          <div className="text-center">
+            <span
+              className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/8 px-4 py-2 text-[13px] font-medium text-[#c7c5d1] backdrop-blur-sm"
+              style={JAKARTA}
+            >
+              <span className="h-2 w-2 rounded-full bg-[#2fbf9f]" />
+              Preço público, sem &ldquo;fale com vendas&rdquo;
+            </span>
+
+            <h1
+              className="mt-7 text-[38px] leading-[1.05] font-extrabold tracking-[-0.035em] text-balance text-[#f7f6f2] sm:text-[54px] lg:text-[62px]"
+              style={JAKARTA}
+            >
+              Escolha o plano.
+              <br />A sua empresa,{" "}
+              <span
+                className="bg-[linear-gradient(95deg,#2fbf9f_0%,#8b7fe8_55%,#ff6b5b_100%)] bg-clip-text italic text-transparent"
+                style={SERIF}
+              >
+                sempre viva
+              </span>
+              .
+            </h1>
+
+            <p
+              className="mx-auto mt-6 max-w-[54ch] text-[16px] leading-relaxed text-[#a5a3b0] sm:text-[17px]"
+              style={JAKARTA}
+            >
+              14 dias grátis pra testar com os seus clientes de verdade. Cancela
+              quando quiser, sem multa e sem ligação de retenção.
+            </p>
+
+            <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
+              <a
+                href="#planos"
+                className="rounded-full bg-[linear-gradient(100deg,#2fbf9f,#8b7fe8)] px-7 py-3.5 text-[14.5px] font-semibold text-white shadow-[0_18px_45px_-14px_rgba(139,127,232,0.75)] transition-shadow hover:shadow-[0_22px_55px_-12px_rgba(139,127,232,0.9)]"
+                style={JAKARTA}
+              >
+                Ver os planos ↓
+              </a>
+              <a
+                href="https://ivva.app.br"
+                className="rounded-full border border-white/15 bg-white/5 px-7 py-3.5 text-[14.5px] font-semibold text-[#f7f6f2] transition-colors hover:border-white/30 hover:bg-white/10"
+                style={JAKARTA}
+              >
+                Ver como funciona
+              </a>
+            </div>
+
+            <ul
+              className="mt-10 flex flex-wrap items-center justify-center gap-x-7 gap-y-3 text-[13.5px] text-[#a5a3b0]"
+              style={JAKARTA}
+            >
+              {PROVAS.map((p) => (
+                <li key={p} className="flex items-center gap-2">
+                  <Check />
+                  {p}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      {/* -------------------------------------------------------------- PLANOS */}
+      <section id="planos" className="relative isolate scroll-mt-8 overflow-hidden bg-[#0b0b10] px-4 py-20 sm:py-24">
+        <GlowBackdrop />
+
+        <div className="relative mx-auto max-w-[1100px]">
+          <div className="mb-12 text-center">
+            <h2
+              className="text-[27px] font-extrabold tracking-[-0.025em] text-balance text-[#f7f6f2] sm:text-[34px]"
+              style={JAKARTA}
+            >
+              Três planos. O mesmo{" "}
+              <span
+                className="bg-[linear-gradient(95deg,#2fbf9f_0%,#8b7fe8_55%,#ff6b5b_100%)] bg-clip-text italic text-transparent"
+                style={SERIF}
+              >
+                atendimento
+              </span>{" "}
+              por trás.
+            </h2>
+            <p className="mx-auto mt-3 max-w-[48ch] text-[15px] text-[#a5a3b0]" style={JAKARTA}>
+              O que muda é o tamanho da operação: quantos profissionais, quanta
+              automação e quanto do negócio roda sozinho.
+            </p>
+          </div>
+
+          <PlanosClient planos={PLANOS} />
+
+          <p className="mt-12 text-center text-[13px] text-[#8a8896]" style={JAKARTA}>
+            Já tem conta?{" "}
+            <a href="/login" className="font-semibold text-[#f7f6f2] hover:underline">
+              Entrar
+            </a>
           </p>
         </div>
-
-        <div className="grid gap-5 md:grid-cols-3 md:items-stretch">
-          {PLANOS.map((p) => (
-            <div
-              key={p.key}
-              id={p.key}
-              className={`relative scroll-mt-24 rounded-3xl transition-shadow target:shadow-[0_20px_55px_-15px_rgba(139,127,232,0.55)] ${
-                p.destaque
-                  ? "bg-[linear-gradient(145deg,#2fbf9f,#8b7fe8_55%,#ff6b5b)] p-[2px] shadow-[0_40px_80px_-30px_rgba(139,127,232,0.7)]"
-                  : "bg-[rgba(14,14,19,0.09)] p-px target:ring-2 target:ring-[#8b7fe8] target:ring-offset-2"
-              }`}
-            >
-              <div
-                className={`relative flex h-full flex-col rounded-[calc(1.5rem-2px)] p-7 ${
-                  p.destaque ? "bg-[#0b0b10] text-[#f7f6f2]" : "bg-white"
-                }`}
-              >
-                {p.destaque && (
-                  <span className="absolute -top-3.5 left-7 rounded-full bg-[linear-gradient(100deg,#2fbf9f,#8b7fe8)] px-3 py-1 text-[11px] font-bold text-white shadow-lg">
-                    Mais escolhido
-                  </span>
-                )}
-                <h2 className="text-[19px] font-extrabold">{p.nome}</h2>
-                <p className={`mt-1.5 text-[13px] ${p.destaque ? "text-[#a5a3b0]" : "text-[#6b6577]"}`}>
-                  {p.descricao}
-                </p>
-                <p className="mt-5 flex items-baseline gap-1">
-                  <span className="text-sm font-semibold opacity-70">R$</span>
-                  <span className="text-[38px] font-extrabold tracking-[-0.03em]">{p.preco}</span>
-                  <span className={`text-[13px] ${p.destaque ? "text-[#a5a3b0]" : "text-[#8a8896]"}`}>
-                    /mês
-                  </span>
-                </p>
-
-                <ul className="mt-6 flex flex-1 flex-col gap-2.5">
-                  {p.recursos.map((r) => (
-                    <li
-                      key={r}
-                      className={`flex items-start gap-2.5 text-[13px] ${
-                        p.destaque ? "text-[#c7c5d1]" : "text-[#6b6577]"
-                      }`}
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="mt-0.5 shrink-0 text-[#2fbf9f]">
-                        <path d="M5 12.5l4.5 4.5L19 7" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                      {r}
-                    </li>
-                  ))}
-                </ul>
-
-                <PlanoForm plano={p.key} destaque={p.destaque} />
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <p className="mt-10 text-center text-[13px] text-[#8a8896]">
-          Já tem conta?{" "}
-          <a href="/login" className="font-semibold text-[#0e0e13] hover:underline">
-            Entrar
-          </a>
-        </p>
-      </div>
+      </section>
     </main>
   );
 }
