@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { LineAreaChart, HBarList, VBarChart, StatusTile, CardVazio } from "@/components/charts";
 import { FeatureLock } from "@/components/feature-lock";
 import { temRecurso, nomePlano } from "@/lib/planos";
+import PrimeirosPassos from "@/components/primeiros-passos";
 
 function KpiCard({
   label,
@@ -36,11 +37,12 @@ export default async function DashboardPage() {
   } = await supabase.auth.getUser();
   const { data: perfil } = await supabase
     .from("users")
-    .select("tenants(plano)")
+    .select("role, tenants(plano)")
     .eq("id", user?.id ?? "")
     .maybeSingle();
   const plano = (perfil?.tenants as unknown as { plano: string } | null)?.plano ?? "essencial";
   const temSac = temRecurso(plano, "sac_avaliacoes");
+  const ehDono = perfil?.role === "dono";
 
   const now = new Date();
   const startOfMonth = new Date();
@@ -198,13 +200,15 @@ export default async function DashboardPage() {
       <div className="mb-5 flex items-baseline justify-between">
         <div>
           <h1 className="font-display text-[22px] font-extrabold">
-            Dashboard
+            Início
           </h1>
           <p className="text-[13.5px] text-ink-soft">
             Resultado do mês em linguagem de dono de negócio.
           </p>
         </div>
       </div>
+
+      {ehDono && <PrimeirosPassos />}
 
       <div className="grid grid-cols-2 gap-3.5 md:grid-cols-4">
         <KpiCard label="Conversas este mês" value={String(conversas ?? 0)} />

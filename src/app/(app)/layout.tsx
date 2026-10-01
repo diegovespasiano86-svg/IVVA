@@ -52,8 +52,9 @@ export default async function AppLayout({
   let automacoesPausadasAte: string | null = null;
   let chamadosAbertos = 0;
   let sugestoesPendentes = 0;
+  let roboStatus: "ativo" | "pausado" | "sem-whatsapp" | null = null;
   if (role === "dono") {
-    const [{ data: conta }, { count }, { count: sugestoesCount }] = await Promise.all([
+    const [{ data: conta }, { count }, { count: sugestoesCount }, { data: botCfg }] = await Promise.all([
       supabase
         .from("whatsapp_accounts")
         .select("status, automacoes_pausadas_ate")
@@ -69,7 +70,14 @@ export default async function AppLayout({
         .select("id", { count: "exact", head: true })
         .eq("tenant_id", perfil.tenant_id)
         .eq("confirmado", false),
+      supabase
+        .from("bot_settings")
+        .select("bot_pausado")
+        .eq("tenant_id", perfil.tenant_id)
+        .maybeSingle(),
     ]);
+    roboStatus =
+      !conta || conta.status !== "ativo" ? "sem-whatsapp" : botCfg?.bot_pausado ? "pausado" : "ativo";
     whatsappEmErro = conta?.status === "erro";
     if (conta?.automacoes_pausadas_ate && new Date(conta.automacoes_pausadas_ate) > new Date()) {
       automacoesPausadasAte = conta.automacoes_pausadas_ate;
@@ -101,6 +109,7 @@ export default async function AppLayout({
       negocio={tenantNome}
       nome={perfil.nome}
       alertHrefs={alertHrefs}
+      roboStatus={roboStatus}
     >
         {aguardandoHumano > 0 && (
           <a

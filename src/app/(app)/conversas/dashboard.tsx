@@ -76,7 +76,7 @@ export default async function ConversasDashboard({ periodo }: { periodo: Periodo
         {(["dia", "semana", "mes"] as Periodo[]).map((p) => (
           <Link
             key={p}
-            href={`/conversas?view=dashboard&periodo=${p}`}
+            href={`/conversas/desempenho?periodo=${p}`}
             className={`rounded-full px-3 py-1.5 text-[12.5px] font-bold ${
               periodo === p ? "bg-ink text-white" : "bg-surface-soft text-ink-soft"
             }`}

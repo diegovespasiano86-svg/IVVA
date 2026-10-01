@@ -51,6 +51,7 @@ export default function AppShell({
   negocio,
   nome,
   alertHrefs,
+  roboStatus,
   children,
 }: {
   role: Role;
@@ -58,6 +59,8 @@ export default function AppShell({
   nome: string;
   /** hrefs com algo pedindo atenção (ponto vermelho) */
   alertHrefs: string[];
+  /** estado real do robô (só o dono vê); null = não mostrar */
+  roboStatus: "ativo" | "pausado" | "sem-whatsapp" | null;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -210,6 +213,26 @@ export default function AppShell({
             >
               <Search size={19} />
             </button>
+            {roboStatus && (
+              <Link
+                href={roboStatus === "sem-whatsapp" ? "/conta" : "/robo"}
+                title={
+                  roboStatus === "ativo"
+                    ? "O robô está atendendo seus clientes"
+                    : roboStatus === "pausado"
+                      ? "Robô pausado: conversas novas vão direto para atendimento humano"
+                      : "WhatsApp não conectado: o robô ainda não atende. Clique para conectar."
+                }
+                className="mr-1 hidden items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-[12.5px] font-bold hover:bg-white/15 sm:flex"
+              >
+                <span
+                  className={`h-2 w-2 rounded-full ${
+                    roboStatus === "ativo" ? "animate-pulse bg-[#3ddbb4]" : roboStatus === "pausado" ? "bg-[#ffb648]" : "bg-[#ff7a6b]"
+                  }`}
+                />
+                {roboStatus === "ativo" ? "Robô ativo" : roboStatus === "pausado" ? "Robô pausado" : "WhatsApp desconectado"}
+              </Link>
+            )}
             <a
               href="https://ivva.app.br/contato"
               target="_blank"

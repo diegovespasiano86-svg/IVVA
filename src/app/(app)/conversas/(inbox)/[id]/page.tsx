@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import ReplyForm from "../reply-form";
-import { encerrarConversa, restaurarBot } from "../actions";
+import { encerrarConversa, restaurarBot } from "../../actions";
 import { CATEGORIA_LABEL, type CategoriaResumo } from "@/lib/resumo-conversas";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -48,7 +48,7 @@ export default async function ConversaDetalhePage({
     <div>
       <Link
         href="/conversas"
-        className="mb-4 inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-ink-soft hover:text-ink"
+        className="mb-4 inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-ink-soft hover:text-ink md:hidden"
       >
         <svg className="icon" viewBox="0 0 24 24" width="15" height="15">
           <path d="m15 18-6-6 6-6" />
@@ -70,12 +70,12 @@ export default async function ConversaDetalhePage({
           </div>
           <div className="flex items-center gap-2">
             <span
-              className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${
+              className={`badge ${
                 conversa.status === "encerrada"
-                  ? "bg-surface-soft text-ink-faint"
+                  ? "badge-neutral"
                   : conversa.status === "humano"
-                    ? "bg-purple/10 text-purple"
-                    : "bg-teal/10 text-teal"
+                    ? "badge-danger"
+                    : "badge-success"
               }`}
             >
               {STATUS_LABEL[conversa.status] ?? conversa.status}
@@ -85,7 +85,7 @@ export default async function ConversaDetalhePage({
                 <input type="hidden" name="conversation_id" value={conversa.id} />
                 <button
                   type="submit"
-                  className="rounded-full border border-teal px-2.5 py-0.5 text-[11px] font-semibold text-teal hover:bg-teal/10"
+                  className="btn btn-secondary btn-sm"
                 >
                   Restaurar bot
                 </button>
@@ -96,7 +96,7 @@ export default async function ConversaDetalhePage({
                 <input type="hidden" name="conversation_id" value={conversa.id} />
                 <button
                   type="submit"
-                  className="rounded-full border border-border px-2.5 py-0.5 text-[11px] font-semibold text-ink-soft hover:bg-surface-soft"
+                  className="btn btn-ghost btn-sm"
                 >
                   Encerrar
                 </button>
@@ -154,19 +154,32 @@ export default async function ConversaDetalhePage({
             Sem mensagens ainda.
           </p>
         ) : (
-          <div className="flex max-h-[60vh] flex-col gap-1.5 overflow-y-auto py-1">
-            {mensagens.map((m) => (
-              <div
-                key={m.id}
-                className={`max-w-[75%] rounded-[10px] px-3 py-2 text-[13px] ${
-                  m.remetente === "contato"
-                    ? "self-start bg-surface-soft"
-                    : "self-end bg-ink text-white"
-                }`}
-              >
-                {m.conteudo}
-              </div>
-            ))}
+          <div className="flex flex-col gap-2 py-1">
+            {mensagens.map((m) => {
+              const cliente = m.remetente === "contato";
+              const robo = m.remetente === "bot";
+              return (
+                <div key={m.id} className={`flex max-w-[78%] flex-col ${cliente ? "items-start self-start" : "items-end self-end"}`}>
+                  {!cliente && (
+                    <span className="mb-0.5 px-1 text-[10.5px] font-bold text-ink-faint">{robo ? "Robô" : "Equipe"}</span>
+                  )}
+                  <div
+                    className={`rounded-[14px] px-3.5 py-2 text-[13.5px] leading-snug whitespace-pre-wrap ${
+                      cliente
+                        ? "rounded-tl-sm border border-border bg-surface"
+                        : robo
+                          ? "rounded-tr-sm bg-[#ece9fc] text-ink"
+                          : "rounded-tr-sm bg-ink-deep text-white"
+                    }`}
+                  >
+                    {m.conteudo}
+                  </div>
+                  <span className="mt-0.5 px-1 text-[10.5px] text-ink-faint">
+                    {new Date(m.created_at).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" })}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         )}
 

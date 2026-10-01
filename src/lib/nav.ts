@@ -44,6 +44,8 @@ export const NAV_GROUPS: NavGroup[] = [
     icon: MessageSquare,
     items: [
       { href: "/conversas", label: "Caixa de atendimento", roles: AMBOS },
+      { href: "/conversas/monitor", label: "Monitor do robô", roles: AMBOS },
+      { href: "/conversas/desempenho", label: "Desempenho", roles: DONO },
       { href: "/sac", label: "SAC", roles: AMBOS },
     ],
   },

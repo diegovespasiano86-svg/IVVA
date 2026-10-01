@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { responderConversa } from "./actions";
+import { responderConversa } from "../actions";
 
 const initialState: { erro: string | null } = { erro: null };
 
@@ -30,9 +30,9 @@ export default function ReplyForm({
         <button
           type="submit"
           disabled={pending}
-          className="btn bg-ink px-4 py-2 text-[12.5px] text-white disabled:opacity-60"
+          className={`btn btn-primary btn-md ${pending ? "btn-loading" : ""}`}
         >
-          {pending ? "Enviando…" : "Enviar"}
+          Enviar
         </button>
       </div>
       {state?.erro && (
