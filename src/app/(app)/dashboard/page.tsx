@@ -14,12 +14,13 @@ function KpiCard({
   accent?: boolean;
 }) {
   return (
-    <div className={`card px-5 py-4.5 ${accent ? "border-purple/35" : ""}`}>
+    <div className={`card card-lift relative overflow-hidden px-5 py-4.5 ${accent ? "border-purple/35" : ""}`}>
+      <span className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-[#2fbf9f] via-[#8b7fe8] to-[#ff6b5b] opacity-60" />
       <p className="mb-2.5 text-[11.5px] font-bold uppercase tracking-wide text-ink-faint">
         {label}
       </p>
       <p
-        className={`font-display text-[26px] font-extrabold ${accent ? "text-purple" : ""}`}
+        className={`font-display text-[28px] font-extrabold leading-none ${accent ? "text-purple" : ""}`}
       >
         {value}
       </p>
@@ -37,12 +38,16 @@ export default async function DashboardPage() {
   } = await supabase.auth.getUser();
   const { data: perfil } = await supabase
     .from("users")
-    .select("role, tenants(plano)")
+    .select("nome, role, tenants(nome, plano)")
     .eq("id", user?.id ?? "")
     .maybeSingle();
   const plano = (perfil?.tenants as unknown as { plano: string } | null)?.plano ?? "essencial";
   const temSac = temRecurso(plano, "sac_avaliacoes");
   const ehDono = perfil?.role === "dono";
+  const primeiroNome = (perfil?.nome ?? "").trim().split(/\s+/)[0] || "";
+  const nomeNegocio = (perfil?.tenants as unknown as { nome: string } | null)?.nome ?? "";
+  const hora = Number(new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", hour12: false }));
+  const saudacao = hora < 12 ? "Bom dia" : hora < 18 ? "Boa tarde" : "Boa noite";
 
   const now = new Date();
   const startOfMonth = new Date();
@@ -197,16 +202,18 @@ export default async function DashboardPage() {
 
   return (
     <div>
-      <div className="mb-5 flex items-baseline justify-between">
-        <div>
-          <h1 className="font-display text-[22px] font-extrabold">
-            Início
+      <section className="page-hero mb-5">
+        <div className="relative z-10">
+          <p className="text-[12.5px] font-bold uppercase tracking-wider text-white/60">{nomeNegocio || "Seu negócio"}</p>
+          <h1 className="mt-1 font-display text-[26px] font-extrabold text-white">
+            {saudacao}
+            {primeiroNome ? `, ${primeiroNome}` : ""}
           </h1>
-          <p className="text-[13.5px] text-ink-soft">
-            Resultado do mês em linguagem de dono de negócio.
+          <p className="mt-1 max-w-[560px] text-[13.5px] text-white/75">
+            Aqui está o resultado do mês e o que o seu robô fez por você, em linguagem de dono de negócio.
           </p>
         </div>
-      </div>
+      </section>
 
       {ehDono && <PrimeirosPassos />}
 

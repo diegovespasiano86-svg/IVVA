@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { logout } from "@/app/(app)/actions";
 import { Logo } from "@/components/logo";
+import MotionEffects from "@/components/motion-effects";
 import { navGroupsForRole, type NavGroup, type Role } from "@/lib/nav";
 
 const MOBILE_PRIORITY = ["inicio", "conversas", "agenda", "clientes"];
@@ -407,6 +408,7 @@ export default function AppShell({
         </div>
       )}
 
+      <MotionEffects />
       {paletteOpen && <Palette groups={groups} onClose={() => setPaletteOpen(false)} />}
     </div>
   );

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { salvarEntradas } from "./actions";
+import { salvarEntradasClassificadas } from "./blocos-actions";
 
 type Item = { id: number; texto: string; incluir: boolean };
 
@@ -9,10 +9,12 @@ export default function RevisarEntradas({
   entradas,
   tipo,
   arquivoId,
+  substituirId,
 }: {
   entradas: string[];
   tipo: string;
   arquivoId: string | null;
+  substituirId?: string | null;
 }) {
   const [itens, setItens] = useState<Item[]>(
     entradas.map((texto, id) => ({ id, texto, incluir: true })),
@@ -28,10 +30,11 @@ export default function RevisarEntradas({
     const fd = new FormData();
     fd.set("tipo", tipo);
     if (arquivoId) fd.set("arquivo_id", arquivoId);
+    if (substituirId) fd.set("substituir_id", substituirId);
     for (const item of itens) {
       if (item.incluir && item.texto.trim()) fd.append("entrada", item.texto.trim());
     }
-    await salvarEntradas(fd);
+    await salvarEntradasClassificadas(fd);
     setItens([]);
     setSalvando(false);
   }
