@@ -3,6 +3,7 @@ import {
   CalendarDays,
   Home,
   MessageSquare,
+  Plug,
   Settings,
   Users,
   Wallet,
@@ -84,7 +85,14 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/robo", label: "Personalidade e regras", roles: DONO },
       { href: "/base-conhecimento", label: "Base de conhecimento", roles: DONO },
+      { href: "/robo/simulador", label: "Simulador", roles: DONO },
     ],
+  },
+  {
+    id: "canais",
+    label: "Canais",
+    icon: Plug,
+    items: [{ href: "/canais", label: "WhatsApp e canais", roles: DONO }],
   },
   {
     id: "config",

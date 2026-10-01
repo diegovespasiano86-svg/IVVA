@@ -40,6 +40,10 @@ export type ContextoConversa = {
    * (Coexistência) — só existe se o cliente aceitou compartilhar o
    * histórico ao conectar. Nunca é o histórico da conversa atual. */
   historicoAntigoResumo?: string | null;
+  /** Modo teste (simulador do dono): só ferramentas de consulta rodam de
+   * verdade; qualquer outra é respondida com um resultado de mentira e
+   * NADA é gravado nem enviado. Desligado por padrão. */
+  simulacao?: boolean;
 };
 
 export type ResultadoIA = {
@@ -302,6 +306,15 @@ async function chamarClaude(system: string, messages: ClaudeMessage[]) {
 
 type Slot = { professional_id: string; professional_nome: string; data_hora: string };
 
+// Única lista de ferramentas que podem rodar de verdade no modo teste (só
+// leem dados). Tudo que não está aqui é bloqueado — se alguém criar uma
+// ferramenta nova que grava, ela já nasce bloqueada na simulação.
+const FERRAMENTAS_SOMENTE_LEITURA = new Set([
+  "consultar_disponibilidade",
+  "consultar_catalogo",
+  "consultar_avisos_ativos",
+]);
+
 async function executarFerramenta(
   nome: string,
   input: Record<string, unknown>,
@@ -310,6 +323,13 @@ async function executarFerramenta(
   supabaseUrl: string,
   anonKey: string,
 ): Promise<{ resultado: string; handoff: boolean; slots?: Slot[]; reservaFeita?: boolean }> {
+  if (ctx.simulacao && !FERRAMENTAS_SOMENTE_LEITURA.has(nome)) {
+    return {
+      resultado: "Modo teste: ação simulada com sucesso. Nada foi gravado, enviado nem cobrado de verdade. Siga a conversa normalmente, como se tivesse dado certo.",
+      handoff: nome === "solicitar_atendimento_humano",
+    };
+  }
+
   const { createClient } = await import("@supabase/supabase-js");
   const supabase = createClient(supabaseUrl, anonKey);
 
