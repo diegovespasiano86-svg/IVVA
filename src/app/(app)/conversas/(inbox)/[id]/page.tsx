@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import ReplyForm from "../reply-form";
 import { encerrarConversa, restaurarBot } from "../../actions";
+import { atribuirConversa } from "../../../clientes/segmentacao-actions";
 import { CATEGORIA_LABEL, type CategoriaResumo } from "@/lib/resumo-conversas";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -21,11 +22,13 @@ export default async function ConversaDetalhePage({
 
   const { data: conversa } = await supabase
     .from("conversations")
-    .select("id, status, created_at, handoff_motivo, contacts(nome, telefone)")
+    .select("id, status, created_at, handoff_motivo, assigned_user_id, contacts(nome, telefone)")
     .eq("id", id)
     .maybeSingle();
 
   if (!conversa) notFound();
+
+  const { data: equipe } = await supabase.from("users").select("id, nome").order("nome");
 
   const { data: mensagens } = await supabase
     .from("messages")
@@ -104,6 +107,20 @@ export default async function ConversaDetalhePage({
             )}
           </div>
         </div>
+
+        {conversa.status !== "encerrada" && (equipe ?? []).length > 0 && (
+          <form action={atribuirConversa} className="mb-3 flex flex-wrap items-center gap-2">
+            <input type="hidden" name="conversation_id" value={conversa.id} />
+            <label htmlFor="resp" className="!mb-0 text-[12px] font-bold text-ink-soft">Responsável</label>
+            <select id="resp" name="user_id" defaultValue={conversa.assigned_user_id ?? ""} className="select !h-9 !w-auto min-w-[170px]">
+              <option value="">Ninguém (fila geral)</option>
+              {(equipe ?? []).map((u) => (
+                <option key={u.id} value={u.id}>{u.nome}</option>
+              ))}
+            </select>
+            <button type="submit" className="btn btn-secondary btn-sm">Atribuir</button>
+          </form>
+        )}
 
         {conversa.handoff_motivo && (
           <div className="mb-3 rounded-[10px] border border-coral/30 bg-coral/5 px-3.5 py-2.5">

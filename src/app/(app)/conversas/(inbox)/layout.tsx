@@ -9,9 +9,15 @@ export default async function InboxLayout({ children }: { children: React.ReactN
 
   const { data: conversas } = await supabase
     .from("conversations")
-    .select("id, status, created_at, updated_at, handoff_motivo, contacts(nome, telefone)")
+    .select("id, status, created_at, updated_at, handoff_motivo, assigned_user_id, contacts(nome, telefone)")
     .order("updated_at", { ascending: false })
     .limit(100);
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data: equipe } = await supabase.from("users").select("id, nome");
+  const nomePorId = new Map((equipe ?? []).map((u) => [u.id, u.nome as string]));
 
   const ids = (conversas ?? []).map((c) => c.id);
 
@@ -53,6 +59,8 @@ export default async function InboxLayout({ children }: { children: React.ReactN
       previa: u?.conteudo ?? null,
       autor: u?.remetente ?? null,
       quando: u?.created_at ?? c.updated_at ?? c.created_at,
+      atribuidoA: c.assigned_user_id ?? null,
+      atribuidoNome: c.assigned_user_id ? nomePorId.get(c.assigned_user_id)?.split(" ")[0] ?? null : null,
       janelaAte: doCliente ? new Date(new Date(doCliente).getTime() + JANELA_MS).toISOString() : null,
     };
   });
@@ -60,7 +68,7 @@ export default async function InboxLayout({ children }: { children: React.ReactN
   return (
     <>
       <AutoRefresh segundos={20} />
-      <InboxShell items={items}>{children}</InboxShell>
+      <InboxShell items={items} meuId={user?.id ?? null}>{children}</InboxShell>
     </>
   );
 }

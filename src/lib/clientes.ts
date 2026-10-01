@@ -103,3 +103,19 @@ export function calcularRfv(p: { criadoEm: string; visitas: string[]; valor12m: 
 }
 
 export const rotuloSegmento = (id: SegmentoId) => SEGMENTOS_RFV.find((s) => s.id === id)!;
+
+// ---------- etiquetas ----------
+export const CORES_ETIQUETA = ["cinza", "vermelho", "laranja", "amarelo", "verde", "azul", "roxo", "rosa"] as const;
+export type CorEtiqueta = (typeof CORES_ETIQUETA)[number];
+
+/** Classes de cor (fundo suave + texto com contraste) de cada etiqueta. */
+export const ESTILO_ETIQUETA: Record<CorEtiqueta, string> = {
+  cinza: "bg-[#efecf3] text-[#4a4458]",
+  vermelho: "bg-[#fdece9] text-[#a82f20]",
+  laranja: "bg-[#ffeddb] text-[#8f4a00]",
+  amarelo: "bg-[#fbf3cf] text-[#6b5800]",
+  verde: "bg-[#e3f4ef] text-[#0b6a56]",
+  azul: "bg-[#e6eefc] text-[#1d4c9e]",
+  roxo: "bg-[#ece9fc] text-[#5a49c9]",
+  rosa: "bg-[#fde6f1] text-[#a02a63]",
+};

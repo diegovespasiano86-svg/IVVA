@@ -15,9 +15,11 @@ export type InboxItem = {
   autor: "contato" | "bot" | "humano" | null;
   quando: string; // ISO da última atividade
   janelaAte: string | null; // ISO: última msg do cliente + 24h
+  atribuidoA: string | null;
+  atribuidoNome: string | null;
 };
 
-type Aba = "humano" | "bot" | "encerrada" | "todas";
+type Aba = "humano" | "minhas" | "bot" | "encerrada" | "todas";
 
 function relativo(iso: string, now: number) {
   const min = Math.max(0, Math.round((now - new Date(iso).getTime()) / 60000));
@@ -42,9 +44,11 @@ const AUTOR_PREFIXO = { contato: "", bot: "Robô: ", humano: "Você: " } as cons
 
 export default function InboxShell({
   items,
+  meuId,
   children,
 }: {
   items: InboxItem[];
+  meuId: string | null;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -66,24 +70,28 @@ export default function InboxShell({
   const contagem = useMemo(
     () => ({
       humano: items.filter((i) => i.status === "humano").length,
+      minhas: meuId ? items.filter((i) => i.atribuidoA === meuId && i.status !== "encerrada").length : 0,
       bot: items.filter((i) => i.status === "bot").length,
       encerrada: items.filter((i) => i.status === "encerrada").length,
       todas: items.length,
     }),
-    [items],
+    [items, meuId],
   );
 
   const visiveis = useMemo(() => {
     const n = q.trim().toLowerCase();
     return items.filter((i) => {
-      if (aba !== "todas" && i.status !== aba) return false;
+      if (aba === "minhas") {
+        if (!meuId || i.atribuidoA !== meuId || i.status === "encerrada") return false;
+      } else if (aba !== "todas" && i.status !== aba) return false;
       if (!n) return true;
       return `${i.nome} ${i.telefone ?? ""}`.toLowerCase().includes(n);
     });
-  }, [items, aba, q]);
+  }, [items, aba, q, meuId]);
 
   const ABAS: { id: Aba; label: string }[] = [
     { id: "humano", label: "Precisam de você" },
+    { id: "minhas", label: "Minhas" },
     { id: "bot", label: "Com o robô" },
     { id: "encerrada", label: "Encerradas" },
     { id: "todas", label: "Todas" },
@@ -176,6 +184,7 @@ export default function InboxShell({
                       {i.status === "bot" && <span className="badge badge-success">Robô atendendo</span>}
                       {i.status === "encerrada" && <span className="badge badge-neutral">Encerrada</span>}
                       {i.sac && i.status !== "encerrada" && <span className="badge badge-warn">SAC</span>}
+                      {i.atribuidoNome && i.status !== "encerrada" && <span className="badge badge-brand" title="Responsável pela conversa">{i.atribuidoA === meuId ? "Você" : i.atribuidoNome}</span>}
                       {j && (
                         <span className={`badge ${j.tom === "warn" ? "badge-warn" : "badge-neutral"}`} title="Janela de 24 h do WhatsApp: depois dela só é possível enviar modelos aprovados">
                           <Clock size={11} /> {j.texto}

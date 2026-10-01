@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Download, Filter, Search, Upload, UserRound, Users } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, Filter, ListChecks, Search, Tag, Upload, UserRound, Users } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import PageHeader from "@/components/page-header";
 import EmptyState from "@/components/empty-state";
-import { SEGMENTOS_RFV, formatarTelefone, rotuloSegmento } from "@/lib/clientes";
+import { ESTILO_ETIQUETA, SEGMENTOS_RFV, formatarTelefone, rotuloSegmento, type CorEtiqueta } from "@/lib/clientes";
+import AdicionarALista from "./adicionar-a-lista";
 import { carregarBase, mesAtualSP, mesDe } from "@/lib/clientes-dados";
 import { brl } from "@/lib/relatorios";
 
@@ -11,10 +12,22 @@ const POR_PAGINA = 25;
 
 type Filtro = "todos" | "aniversariantes" | "sem_aceite" | (typeof SEGMENTOS_RFV)[number]["id"];
 
-export default async function ClientesPage({ searchParams }: { searchParams: Promise<{ seg?: string; q?: string; p?: string }> }) {
+export default async function ClientesPage({ searchParams }: { searchParams: Promise<{ seg?: string; q?: string; p?: string; etq?: string; lista?: string }> }) {
   const sp = await searchParams;
   const supabase = await createClient();
-  const base = await carregarBase(supabase);
+  const [base, { data: etiquetas }, { data: ligEtq }, { data: listas }, { data: membros }] = await Promise.all([
+    carregarBase(supabase),
+    supabase.from("labels").select("id, nome, cor").order("nome"),
+    supabase.from("contact_labels").select("contact_id, label_id").limit(20000),
+    supabase.from("contact_lists").select("id, nome").order("nome"),
+    supabase.from("contact_list_members").select("list_id, contact_id").limit(50000),
+  ]);
+  const etqPorContato = new Map<string, string[]>();
+  for (const l of ligEtq ?? []) etqPorContato.set(l.contact_id, [...(etqPorContato.get(l.contact_id) ?? []), l.label_id]);
+  const etqInfo = new Map((etiquetas ?? []).map((e) => [e.id, e]));
+  const etqFiltro = etiquetas?.some((e) => e.id === sp.etq) ? sp.etq : undefined;
+  const listaFiltro = listas?.some((l) => l.id === sp.lista) ? sp.lista : undefined;
+  const naLista = listaFiltro ? new Set((membros ?? []).filter((m) => m.list_id === listaFiltro).map((m) => m.contact_id)) : null;
 
   const mes = mesAtualSP();
   const contagem: Record<string, number> = {
@@ -38,6 +51,8 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
     if (seg === "aniversariantes" && mesDe(c.nascimento) !== mes) return false;
     if (seg === "sem_aceite" && c.aceita) return false;
     if (seg !== "todos" && seg !== "aniversariantes" && seg !== "sem_aceite" && c.rfv.segmento !== seg) return false;
+    if (etqFiltro && !(etqPorContato.get(c.id) ?? []).includes(etqFiltro)) return false;
+    if (naLista && !naLista.has(c.id)) return false;
     if (!q) return true;
     return c.nome.toLowerCase().includes(q) || (c.email ?? "").toLowerCase().includes(q) || (qDigitos.length >= 3 && c.telefone.replace(/\D/g, "").includes(qDigitos));
   });
@@ -49,7 +64,7 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
 
   const link = (over: Record<string, string | undefined>) => {
     const p = new URLSearchParams();
-    const m = { seg: seg === "todos" ? undefined : seg, q: sp.q, p: undefined, ...over } as Record<string, string | undefined>;
+    const m = { seg: seg === "todos" ? undefined : seg, q: sp.q, etq: etqFiltro, lista: listaFiltro, p: undefined, ...over } as Record<string, string | undefined>;
     for (const [k, v] of Object.entries(m)) if (v) p.set(k, v);
     const s = p.toString();
     return `/clientes${s ? `?${s}` : ""}`;
@@ -90,11 +105,50 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
         ))}
       </div>
 
-      <form action="/clientes" className="relative mb-4 max-w-[420px]">
+      <form action="/clientes" className="mb-4 flex flex-wrap items-center gap-2">
         {seg !== "todos" && <input type="hidden" name="seg" value={seg} />}
-        <Search size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-faint" />
-        <input name="q" defaultValue={sp.q ?? ""} placeholder="Buscar por nome, telefone ou e-mail" className="input !pl-10" aria-label="Buscar clientes" />
+        <div className="relative w-full max-w-[380px]">
+          <Search size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-faint" />
+          <input name="q" defaultValue={sp.q ?? ""} placeholder="Buscar por nome, telefone ou e-mail" className="input !pl-10" aria-label="Buscar clientes" />
+        </div>
+        {(etiquetas ?? []).length > 0 && (
+          <select name="etq" defaultValue={etqFiltro ?? ""} aria-label="Filtrar por etiqueta" className="select !w-auto min-w-[150px]">
+            <option value="">Todas as etiquetas</option>
+            {(etiquetas ?? []).map((e) => (
+              <option key={e.id} value={e.id}>
+                {e.nome}
+              </option>
+            ))}
+          </select>
+        )}
+        {(listas ?? []).length > 0 && (
+          <select name="lista" defaultValue={listaFiltro ?? ""} aria-label="Filtrar por lista" className="select !w-auto min-w-[150px]">
+            <option value="">Todas as listas</option>
+            {(listas ?? []).map((l) => (
+              <option key={l.id} value={l.id}>
+                {l.nome}
+              </option>
+            ))}
+          </select>
+        )}
+        <button type="submit" className="btn btn-secondary btn-md">
+          Filtrar
+        </button>
+        <span className="ml-auto flex gap-2">
+          <Link href="/clientes/etiquetas" className="btn btn-ghost btn-sm">
+            <Tag size={14} /> Etiquetas
+          </Link>
+          <Link href="/clientes/listas" className="btn btn-ghost btn-sm">
+            <ListChecks size={14} /> Listas
+          </Link>
+        </span>
       </form>
+
+      {filtrada.length > 0 && (
+        <div className="mb-3">
+          <AdicionarALista listas={listas ?? []} ids={filtrada.map((c) => c.id)} />
+        </div>
+      )}
 
       <div className="card overflow-hidden">
         {visiveis.length === 0 ? (
@@ -132,6 +186,19 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
                           <span className="min-w-0">
                             <span className="block truncate text-[13.5px] font-bold">{c.nome}</span>
                             <span className="block truncate text-[12px] text-ink-soft">{formatarTelefone(c.telefone)}</span>
+                            {(etqPorContato.get(c.id) ?? []).length > 0 && (
+                              <span className="mt-1 flex flex-wrap gap-1">
+                                {(etqPorContato.get(c.id) ?? []).slice(0, 3).map((id) => {
+                                  const e = etqInfo.get(id);
+                                  if (!e) return null;
+                                  return (
+                                    <span key={id} className={`rounded-full px-2 py-0.5 text-[10.5px] font-bold ${ESTILO_ETIQUETA[(e.cor as CorEtiqueta) in ESTILO_ETIQUETA ? (e.cor as CorEtiqueta) : "cinza"]}`}>
+                                      {e.nome}
+                                    </span>
+                                  );
+                                })}
+                              </span>
+                            )}
                           </span>
                         </Link>
                       </td>

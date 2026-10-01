@@ -7,6 +7,7 @@ import { formatarTelefone, normalizarTelefone, rotuloSegmento, calcularRfv } fro
 import { brl } from "@/lib/relatorios";
 import { CATEGORIA_LABEL, type CategoriaResumo } from "@/lib/resumo-conversas";
 import { adicionarNotaCliente } from "../actions";
+import EtiquetasListas from "./etiquetas-listas";
 
 const FORMA: Record<string, string> = { pix: "Pix", credito: "Crédito", debito: "Débito", dinheiro: "Dinheiro" };
 const AGENDA: Record<string, string> = { agendado: "Agendado", concluido: "Concluído", cancelado: "Cancelado" };
@@ -39,6 +40,13 @@ export default async function ClientePerfilPage({ params }: { params: Promise<{ 
     supabase.from("reviews").select("nota, comentario, canal, created_at").eq("contact_id", id).order("created_at", { ascending: false }).limit(50),
     supabase.from("contact_notes").select("conteudo, created_at").eq("contact_id", id).order("created_at", { ascending: false }).limit(50),
     supabase.from("funnel_stages").select("label").eq("key", c.status_funil ?? "").maybeSingle(),
+  ]);
+
+  const [{ data: todasEtiquetas }, { data: minhasEtiquetas }, { data: todasListas }, { data: minhasListas }] = await Promise.all([
+    supabase.from("labels").select("id, nome, cor").order("nome"),
+    supabase.from("contact_labels").select("label_id").eq("contact_id", id),
+    supabase.from("contact_lists").select("id, nome").order("nome"),
+    supabase.from("contact_list_members").select("list_id").eq("contact_id", id),
   ]);
 
   const convIds = (conversas ?? []).map((v) => v.id);
@@ -149,6 +157,14 @@ export default async function ClientePerfilPage({ params }: { params: Promise<{ 
               {c.como_conheceu && <li className="text-[12.5px] text-ink-soft">Conheceu por: {c.como_conheceu}</li>}
             </ul>
           </section>
+
+          <EtiquetasListas
+            contactId={c.id}
+            etiquetas={todasEtiquetas ?? []}
+            listas={todasListas ?? []}
+            etiquetasAtivas={(minhasEtiquetas ?? []).map((x) => x.label_id)}
+            listasAtivas={(minhasListas ?? []).map((x) => x.list_id)}
+          />
 
           <section className="card px-5 py-5">
             <h2 className="mb-1 text-[14px] font-extrabold">Perfil de compra</h2>

@@ -3,6 +3,7 @@ import {
   Bot,
   CalendarDays,
   Home,
+  Megaphone,
   MessageSquare,
   Plug,
   Settings,
@@ -58,7 +59,18 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/clientes", label: "Base de clientes", roles: DONO },
       { href: "/crm", label: "Funil de vendas", roles: DONO },
+      { href: "/clientes/etiquetas", label: "Etiquetas", roles: DONO },
+      { href: "/clientes/listas", label: "Listas", roles: DONO },
       { href: "/avaliacoes", label: "Avaliações", roles: AMBOS },
+    ],
+  },
+  {
+    id: "campanhas",
+    label: "Campanhas",
+    icon: Megaphone,
+    items: [
+      { href: "/campanhas", label: "Disparos", roles: DONO },
+      { href: "/campanhas/automacoes", label: "Automações", roles: DONO },
     ],
   },
   {

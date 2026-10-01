@@ -4,6 +4,7 @@ import { sendWhatsAppText } from "@/lib/whatsapp";
 import { processarResumosPendentes } from "@/lib/resumo-conversas";
 import { podeEnviarAutomatico } from "@/lib/automacao";
 import { processarResumosHistoricoPendentes } from "@/lib/whatsapp-historico";
+import { processarLotes } from "@/lib/campanhas-envio";
 
 // Roda 1x por dia (limite do plano Hobby da Vercel — ver vercel.json).
 // Isso significa que os prazos "1h"/"2h" na prática viram "dentro do
@@ -223,8 +224,20 @@ export async function GET(request: NextRequest) {
   // também por último e em lote pequeno.
   const resumosHistorico = await processarResumosHistoricoPendentes(supabase, secret);
 
+  // Campanhas agendadas/em andamento (o plano Hobby só tem 2 rotinas por dia,
+  // então o disparo agendado sai neste horário). A seleção, o teto diário e o
+  // opt-out são decididos no banco. Falha aqui nunca derruba o resto da rotina.
+  let campanhas = { enviados: 0, falhas: 0, lotes: 0 };
+  try {
+    campanhas = await processarLotes({ maxMs: 25000 });
+  } catch (err) {
+    console.error("[cron pos-venda] erro nas campanhas", err);
+  }
+
   return NextResponse.json({
     ok: true,
+    campanhasEnviadas: campanhas.enviados,
+    campanhasFalhas: campanhas.falhas,
     total: pendentes.length,
     enviados,
     forDaJanela,

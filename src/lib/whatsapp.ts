@@ -36,6 +36,8 @@ export async function sendWhatsAppTemplate(
   to: string,
   templateName: string,
   languageCode = "en_US",
+  /** Variáveis do modelo, ex.: [{ type: "body", parameters: [{ type: "text", text: "Maria" }] }] */
+  components?: unknown[],
 ) {
   const { phoneNumberId, token } = creds;
 
@@ -51,7 +53,11 @@ export async function sendWhatsAppTemplate(
         messaging_product: "whatsapp",
         to,
         type: "template",
-        template: { name: templateName, language: { code: languageCode } },
+        template: {
+          name: templateName,
+          language: { code: languageCode },
+          ...(components && components.length > 0 ? { components } : {}),
+        },
       }),
     },
   );
