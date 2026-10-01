@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import Sidebar from "@/components/sidebar";
-import { navForRole, type Role } from "@/lib/nav";
+import AppShell from "@/components/app-shell";
+import type { Role } from "@/lib/nav";
 
 export default async function AppLayout({
   children,
@@ -44,7 +44,6 @@ export default async function AppLayout({
   const role = perfil.role as Role;
   const tenantNome =
     (perfil.tenants as unknown as { nome: string } | null)?.nome ?? "ivva";
-  const items = navForRole(role);
 
   // Só o dono pode agir sobre isso (reconectar em /conta, ver chamados) —
   // não vale a pena mostrar/consultar pra profissional, que não tem o que
@@ -97,15 +96,12 @@ export default async function AppLayout({
   ];
 
   return (
-    <div className="flex min-h-screen flex-col md:flex-row">
-      <Sidebar
-        items={items}
-        negocio={tenantNome}
-        nome={perfil.nome}
-        role={role}
-        alertHrefs={alertHrefs}
-      />
-      <main className="flex-1 overflow-x-hidden px-4 py-6 md:px-8 md:py-8">
+    <AppShell
+      role={role}
+      negocio={tenantNome}
+      nome={perfil.nome}
+      alertHrefs={alertHrefs}
+    >
         {aguardandoHumano > 0 && (
           <a
             href="/sac"
@@ -148,7 +144,6 @@ export default async function AppLayout({
           </a>
         )}
         {children}
-      </main>
-    </div>
+    </AppShell>
   );
 }

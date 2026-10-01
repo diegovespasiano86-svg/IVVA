@@ -3,7 +3,7 @@
    visual padrão da lib. */
 
 .rbc-calendar {
-  font-family: var(--font-manrope), system-ui, sans-serif;
+  font-family: var(--font-jakarta), system-ui, sans-serif;
   color: var(--ink);
 }
 
@@ -13,7 +13,7 @@
 }
 
 .rbc-toolbar .rbc-toolbar-label {
-  font-family: var(--font-sora), system-ui, sans-serif;
+  font-family: var(--font-jakarta), system-ui, sans-serif;
   font-weight: 700;
   font-size: 15px;
   text-transform: capitalize;
