@@ -25,7 +25,7 @@ export default function ReplyForm({
         <input
           name="conteudo"
           placeholder="Responder como atendente…"
-          className="flex-1 rounded-[10px] border border-border bg-surface px-3 py-2 text-[13px]"
+          className="input flex-1"
         />
         <button
           type="submit"

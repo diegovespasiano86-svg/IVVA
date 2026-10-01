@@ -315,7 +315,7 @@ function ContactDrawer({
               id="nome"
               name="nome"
               defaultValue={contato.nome}
-              className="w-full rounded-[10px] border border-border bg-surface px-3 py-2 text-[13px]"
+              className="input"
             />
           </div>
           <div>
@@ -324,7 +324,7 @@ function ContactDrawer({
               id="telefone"
               name="telefone"
               defaultValue={contato.telefone}
-              className="w-full rounded-[10px] border border-border bg-surface px-3 py-2 text-[13px]"
+              className="input"
             />
           </div>
           <div>
@@ -334,7 +334,7 @@ function ContactDrawer({
               name="email"
               type="email"
               defaultValue={contato.email ?? ""}
-              className="w-full rounded-[10px] border border-border bg-surface px-3 py-2 text-[13px]"
+              className="input"
             />
           </div>
           <div>
@@ -344,7 +344,7 @@ function ContactDrawer({
               name="data_nascimento"
               type="date"
               defaultValue={contato.data_nascimento ?? ""}
-              className="w-full rounded-[10px] border border-border bg-surface px-3 py-2 text-[13px]"
+              className="input"
             />
           </div>
           <div>
@@ -353,7 +353,7 @@ function ContactDrawer({
               id="estado_civil"
               name="estado_civil"
               defaultValue={contato.estado_civil ?? ""}
-              className="w-full rounded-[10px] border border-border bg-surface px-3 py-2 text-[13px]"
+              className="select"
             >
               <option value="">Não informado</option>
               {Object.entries(ESTADO_CIVIL_LABEL).map(([key, label]) => (
@@ -370,7 +370,7 @@ function ContactDrawer({
               name="como_conheceu"
               placeholder="Indicação, Instagram, passou na rua…"
               defaultValue={contato.como_conheceu ?? ""}
-              className="w-full rounded-[10px] border border-border bg-surface px-3 py-2 text-[13px]"
+              className="input"
             />
           </div>
 
@@ -393,7 +393,7 @@ function ContactDrawer({
             <input
               name="conteudo"
               placeholder="Registrar o que foi conversado…"
-              className="flex-1 rounded-[10px] border border-border bg-surface px-3 py-2 text-[13px]"
+              className="input flex-1"
             />
             <button
               type="submit"

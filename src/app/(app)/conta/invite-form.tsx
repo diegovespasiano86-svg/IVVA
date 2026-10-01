@@ -39,7 +39,7 @@ export default function InviteForm() {
             name="nome"
             required
             placeholder="Nome do profissional"
-            className="w-[160px] rounded-[10px] border border-border bg-surface px-2.5 py-2 text-[12.5px]"
+            className="input w-[160px]"
           />
         </div>
         <div>
@@ -52,7 +52,7 @@ export default function InviteForm() {
             type="email"
             required
             placeholder="pessoa@email.com"
-            className="w-[190px] rounded-[10px] border border-border bg-surface px-2.5 py-2 text-[12.5px]"
+            className="input w-[190px]"
           />
         </div>
         <button

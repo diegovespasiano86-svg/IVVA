@@ -74,7 +74,7 @@ export default function AssistantForm({ identidade }: { identidade: Identidade }
           name="nome_assistente"
           defaultValue={identidade?.nome_assistente ?? ""}
           placeholder="Ex: Ana"
-          className="w-full rounded-[10px] border border-border bg-surface px-3 py-2 text-[13px]"
+          className="input"
         />
       </div>
 
@@ -137,7 +137,7 @@ export default function AssistantForm({ identidade }: { identidade: Identidade }
           name="horario_atendimento"
           defaultValue={identidade?.horario_atendimento ?? ""}
           placeholder="Ex: seg-sáb 9h-19h"
-          className="w-full rounded-[10px] border border-border bg-surface px-3 py-2 text-[13px]"
+          className="input"
         />
       </div>
 
@@ -176,7 +176,7 @@ export default function AssistantForm({ identidade }: { identidade: Identidade }
           rows={4}
           defaultValue={(identidade?.regras ?? []).join("\n")}
           placeholder={"Nunca prometer desconto sem confirmar com o dono\nSempre perguntar o nome na primeira mensagem"}
-          className="w-full resize-none rounded-[10px] border border-border bg-surface px-3 py-2 text-[13px]"
+          className="textarea"
         />
       </div>
 

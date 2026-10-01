@@ -79,7 +79,7 @@ export default async function RoboPage() {
       {conta?.is_coexistence && (
         <div className="mb-4 rounded-[12px] border border-coral/30 bg-coral/5 px-4 py-3.5">
           <p className="mb-1.5 flex items-center gap-1.5 text-[13px] font-extrabold text-coral">
-            ⚠️ Observação — WhatsApp conectado em modo "app + ivva juntos"
+            ⚠️ Observação — WhatsApp conectado em modo &ldquo;app + ivva juntos&rdquo;
           </p>
           <p className="text-[12.5px] leading-relaxed text-ink">
             Seu número continua funcionando no app do WhatsApp Business do

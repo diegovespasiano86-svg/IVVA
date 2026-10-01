@@ -66,7 +66,7 @@ export default async function CalendarioPage() {
               id="contact_id"
               name="contact_id"
               required
-              className="w-[150px] rounded-[10px] border border-border bg-surface px-2.5 py-2 text-[12.5px]"
+              className="select w-[150px]"
             >
               <option value="">Selecione…</option>
               {(contatos ?? []).map((c) => (
@@ -84,7 +84,7 @@ export default async function CalendarioPage() {
               id="professional_id"
               name="professional_id"
               required
-              className="w-[130px] rounded-[10px] border border-border bg-surface px-2.5 py-2 text-[12.5px]"
+              className="select w-[130px]"
             >
               <option value="">Selecione…</option>
               {(profissionais ?? []).map((p) => (
@@ -102,7 +102,7 @@ export default async function CalendarioPage() {
               id="servico"
               name="servico"
               placeholder="Ex: corte e barba"
-              className="w-[150px] rounded-[10px] border border-border bg-surface px-2.5 py-2 text-[12.5px]"
+              className="input w-[150px]"
             />
           </div>
           <div>
@@ -116,7 +116,7 @@ export default async function CalendarioPage() {
               min={5}
               step={5}
               defaultValue={30}
-              className="w-[90px] rounded-[10px] border border-border bg-surface px-2.5 py-2 text-[12.5px]"
+              className="input w-[90px]"
             />
           </div>
           <div>
@@ -128,7 +128,7 @@ export default async function CalendarioPage() {
               name="data_hora"
               type="datetime-local"
               required
-              className="rounded-[10px] border border-border bg-surface px-2.5 py-2 text-[12.5px]"
+              className="input"
             />
           </div>
           <button type="submit" className="btn bg-ink px-4 py-2 text-[12.5px] text-white">

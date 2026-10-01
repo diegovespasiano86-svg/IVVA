@@ -17,7 +17,7 @@
   --ink-deep: #14121b;
   --ink: #241f2e;
   --ink-soft: #6b6577;
-  --ink-faint: #8a8496;
+  --ink-faint: #716b7c;
   --border: rgba(36, 31, 46, 0.1);
 
   /* marca (só logo, topo e heros; nunca em botão ou texto) */
@@ -41,6 +41,10 @@
   --color-ink-soft: var(--ink-soft);
   --color-ink-faint: var(--ink-faint);
   --color-border: var(--border);
+  --color-purple-soft: #ece9fc;
+  --color-coral-soft: #fdece9;
+  --color-teal-soft: #e3f4ef;
+  --font-accent: var(--font-instrument-serif);
   --font-display: var(--font-jakarta);
   --font-sans: var(--font-jakarta);
 }
@@ -399,12 +403,16 @@ textarea:focus-visible {
 }
 
 /* ---------- compatibilidade: botões antigos (.btn + bg-*) ganham o visual novo ---------- */
-.btn.bg-ink {
-  background: linear-gradient(135deg, #14121b 0%, #2a2638 100%);
-  box-shadow: 0 10px 26px -12px rgba(20, 18, 27, 0.75);
+.btn.bg-ink,
+.btn.bg-teal {
+  background: linear-gradient(100deg, #0a7f69 0%, #6d5be0 58%, #c93a28 135%);
+  background-size: 150% 100%;
+  box-shadow: 0 10px 26px -10px rgba(109, 91, 224, 0.7);
 }
-.btn.bg-ink:hover:not(:disabled) {
-  box-shadow: 0 16px 36px -12px rgba(20, 18, 27, 0.9);
+.btn.bg-ink:hover:not(:disabled),
+.btn.bg-teal:hover:not(:disabled) {
+  background-position: 100% 0;
+  box-shadow: 0 16px 38px -10px rgba(109, 91, 224, 0.9);
 }
 .btn.bg-purple {
   background: linear-gradient(100deg, #0a7f69 0%, #6d5be0 58%, #c93a28 135%);
@@ -421,4 +429,290 @@ textarea:focus-visible {
 }
 .btn.bg-coral:hover:not(:disabled) {
   box-shadow: 0 16px 36px -12px rgba(201, 58, 40, 0.9);
+}
+
+
+/* ---------- campos de formulário ---------- */
+.input,
+.select,
+.textarea {
+  width: 100%;
+  height: 42px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(36, 31, 46, 0.14);
+  background: rgba(255, 255, 255, 0.88);
+  font-family: inherit;
+  font-size: 16px; /* evita o zoom automático no iPhone */
+  color: var(--ink);
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+@media (min-width: 768px) {
+  .input,
+  .select,
+  .textarea {
+    font-size: 14px;
+  }
+}
+.textarea {
+  height: auto;
+  min-height: 96px;
+  padding: 12px 14px;
+  line-height: 1.5;
+  resize: vertical;
+}
+.input:hover,
+.select:hover,
+.textarea:hover {
+  border-color: rgba(36, 31, 46, 0.28);
+}
+.input:focus,
+.select:focus,
+.textarea:focus {
+  outline: none;
+  border-color: var(--purple);
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(109, 91, 224, 0.14);
+}
+.input::placeholder,
+.textarea::placeholder {
+  color: #9a94a6;
+}
+.select {
+  appearance: none;
+  padding-right: 36px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b6577' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+}
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--purple);
+  width: 16px;
+  height: 16px;
+}
+
+/* ---------- interruptor (liga/desliga) ---------- */
+.switch {
+  position: relative;
+  flex-shrink: 0;
+  width: 42px;
+  height: 24px;
+  border-radius: 999px;
+  background: rgba(36, 31, 46, 0.2);
+  cursor: pointer;
+  transition: background 0.25s;
+}
+.switch::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.switch[aria-checked="true"] {
+  background: linear-gradient(100deg, #0a7f69 0%, #6d5be0 100%);
+}
+.switch[aria-checked="true"]::after {
+  transform: translateX(18px);
+}
+
+/* ---------- abas e filtros em segmento ---------- */
+.tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+}
+.tab {
+  position: relative;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-faint);
+  white-space: nowrap;
+  transition: color 0.2s;
+}
+.tab:hover {
+  color: var(--ink);
+}
+.tab[aria-selected="true"] {
+  color: var(--ink-deep);
+}
+.tab[aria-selected="true"]::after {
+  content: "";
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: -1px;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #2fbf9f, #8b7fe8 60%, #ff6b5b);
+}
+.segmented {
+  display: inline-flex;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 12px;
+  background: var(--surface-soft);
+}
+.segmented > * {
+  border-radius: 9px;
+  padding: 6px 12px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+}
+.segmented > *:hover {
+  color: var(--ink);
+}
+.segmented > [aria-selected="true"],
+.segmented > [aria-current="page"] {
+  background: #fff;
+  color: var(--ink-deep);
+  box-shadow: 0 1px 3px rgba(20, 18, 27, 0.12);
+}
+
+/* ---------- tabela: números alinhados ---------- */
+.table-clean th {
+  background: var(--surface-soft);
+}
+.table-clean td.num,
+.table-clean th.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.num,
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- vidro (tudo que flutua) ---------- */
+.glass {
+  background: rgba(255, 255, 255, 0.82);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  backdrop-filter: blur(18px) saturate(1.4);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+/* ---------- voz de destaque do site: serifa itálica em degradê ---------- */
+.font-accent {
+  font-family: var(--font-instrument-serif), Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+}
+.text-gradient {
+  background: linear-gradient(95deg, #2fbf9f 0%, #8b7fe8 55%, #ff6b5b 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ---------- entrada de página em cascata ---------- */
+@keyframes ivva-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+.stagger > * > * {
+  animation: ivva-in 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.stagger > * > *:nth-child(2) {
+  animation-delay: 50ms;
+}
+.stagger > * > *:nth-child(3) {
+  animation-delay: 100ms;
+}
+.stagger > * > *:nth-child(4) {
+  animation-delay: 150ms;
+}
+.stagger > * > *:nth-child(5) {
+  animation-delay: 200ms;
+}
+.stagger > * > *:nth-child(n + 6) {
+  animation-delay: 240ms;
+}
+@keyframes ivva-shake {
+  25% {
+    transform: translateX(-4px);
+  }
+  75% {
+    transform: translateX(4px);
+  }
+}
+.shake {
+  animation: ivva-shake 0.3s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .stagger > * > *,
+  .shake {
+    animation: none;
+  }
+}
+
+.float-slow {
+  animation: ivva-float 10s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .float-slow {
+    animation: none;
+  }
+}
+
+
+/* ---------- título de página padronizado (filete degradê da marca) ---------- */
+.stagger h1:not(.no-accent):not(.page-hero h1) {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  font-size: 24px;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+.stagger h1:not(.no-accent):not(.page-hero h1)::before {
+  content: "";
+  flex-shrink: 0;
+  width: 4px;
+  height: 1.05em;
+  border-radius: 4px;
+  background: linear-gradient(180deg, #2fbf9f, #8b7fe8 60%, #ff6b5b);
+}
+
+/* ---------- interruptor em CSS puro (checkbox continua sendo checkbox) ---------- */
+input.toggle[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  flex-shrink: 0;
+  width: 42px;
+  height: 24px;
+  border-radius: 999px;
+  background: rgba(36, 31, 46, 0.22);
+  cursor: pointer;
+  transition: background 0.25s;
+}
+input.toggle[type="checkbox"]::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+input.toggle[type="checkbox"]:checked {
+  background: linear-gradient(100deg, #0a7f69 0%, #6d5be0 100%);
+}
+input.toggle[type="checkbox"]:checked::after {
+  transform: translateX(18px);
 }

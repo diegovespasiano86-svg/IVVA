@@ -318,7 +318,7 @@ export default function EmbeddedSignupButton() {
               name="mensagem"
               rows={2}
               placeholder="O que aconteceu? (opcional)"
-              className="resize-none rounded-[10px] border border-border bg-surface px-3 py-2 text-[13px]"
+              className="textarea"
             />
             <button
               type="submit"

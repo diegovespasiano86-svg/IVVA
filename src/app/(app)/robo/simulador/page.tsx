@@ -12,7 +12,7 @@ export default async function SimuladorPage() {
   return (
     <div>
       <div className="mb-5">
-        <h1 className="flex items-center gap-2 text-[22px] font-extrabold">
+        <h1 className="no-accent flex items-center gap-2 text-[22px] font-extrabold">
           <FlaskConical size={22} className="text-purple" /> Simulador do robô
         </h1>
         <p className="text-[13.5px] text-ink-soft">

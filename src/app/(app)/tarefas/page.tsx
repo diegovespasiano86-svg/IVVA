@@ -61,7 +61,7 @@ export default async function TarefasPage() {
               id="contact_id"
               name="contact_id"
               required
-              className="w-[150px] rounded-[10px] border border-border bg-surface px-2.5 py-2 text-[12.5px]"
+              className="select w-[150px]"
             >
               <option value="">Selecione…</option>
               {(contatos ?? []).map((c) => (
@@ -79,7 +79,7 @@ export default async function TarefasPage() {
               id="motivo"
               name="motivo"
               required
-              className="w-[130px] rounded-[10px] border border-border bg-surface px-2.5 py-2 text-[12.5px]"
+              className="select w-[130px]"
             >
               <option value="">Selecione…</option>
               {Object.entries(MOTIVOS).map(([key, label]) => (
@@ -97,7 +97,7 @@ export default async function TarefasPage() {
               id="mensagem_enviada"
               name="mensagem_enviada"
               placeholder="Oferecer assinatura mensal"
-              className="w-[200px] rounded-[10px] border border-border bg-surface px-2.5 py-2 text-[12.5px]"
+              className="input w-[200px]"
             />
           </div>
           <button

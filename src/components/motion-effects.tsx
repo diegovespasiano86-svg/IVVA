@@ -23,7 +23,7 @@ export default function MotionEffects() {
     }
 
     function mover(e: PointerEvent) {
-      const alvo = (e.target as HTMLElement | null)?.closest<HTMLElement>(".btn-primary, .btn-dark, .btn-danger");
+      const alvo = (e.target as HTMLElement | null)?.closest<HTMLElement>(".btn-primary, .btn-dark, .btn-danger, .btn.bg-ink, .btn.bg-purple, .btn.bg-coral");
       if (!alvo || alvo.hasAttribute("disabled")) {
         soltar();
         return;

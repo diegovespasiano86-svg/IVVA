@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import AppShell from "@/components/app-shell";
+import Alert from "@/components/alert";
 import type { Role } from "@/lib/nav";
 
 export default async function AppLayout({
@@ -112,36 +113,20 @@ export default async function AppLayout({
       roboStatus={roboStatus}
     >
         {aguardandoHumano > 0 && (
-          <a
-            href="/sac"
-            className="mb-5 flex animate-pulse items-center gap-2.5 rounded-[12px] bg-coral px-4 py-3.5 text-[13.5px] font-bold text-white shadow-[0_4px_16px_-4px_rgba(255,107,91,0.6)]"
-          >
-            <svg className="icon shrink-0" viewBox="0 0 24 24" style={{ color: "#fff" }}>
-              <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
-              <path d="M12 9v4M12 17h.01" />
-            </svg>
+          <Alert tone="danger" pulse action={{ href: "/sac", label: "Abrir o SAC" }}>
             {aguardandoHumano === 1
-              ? "1 cliente está aguardando atendimento humano agora"
-              : `${aguardandoHumano} clientes estão aguardando atendimento humano agora`}
-            <span className="ml-auto shrink-0 underline underline-offset-2">
-              Ver na Central de SAC →
-            </span>
-          </a>
+              ? "1 cliente está aguardando atendimento humano agora."
+              : `${aguardandoHumano} clientes estão aguardando atendimento humano agora.`}
+          </Alert>
         )}
         {whatsappEmErro && (
-          <a
-            href="/conta"
-            className="mb-5 block rounded-[12px] border border-coral bg-coral/10 px-4 py-3 text-[13px] font-semibold text-coral"
-          >
-            ⚠️ O WhatsApp parou de enviar mensagens — clientes estão sem resposta. Clique aqui pra reconectar em Conta.
-          </a>
+          <Alert tone="danger" action={{ href: "/canais", label: "Reconectar" }}>
+            O WhatsApp parou de enviar mensagens e os clientes estão sem resposta. Reconecte para restabelecer o atendimento.
+          </Alert>
         )}
         {!whatsappEmErro && automacoesPausadasAte && (
-          <a
-            href="/conta"
-            className="mb-5 block rounded-[12px] border border-purple bg-purple/10 px-4 py-3 text-[13px] font-semibold text-purple"
-          >
-            ⚠️ Disparos automáticos pausados até{" "}
+          <Alert tone="warn">
+            Disparos automáticos pausados até{" "}
             {new Date(automacoesPausadasAte).toLocaleString("pt-BR", {
               timeZone: "America/Sao_Paulo",
               day: "2-digit",
@@ -149,8 +134,8 @@ export default async function AppLayout({
               hour: "2-digit",
               minute: "2-digit",
             })}{" "}
-            por segurança de qualidade do número — o atendimento a clientes continua normal.
-          </a>
+            por segurança de qualidade do número. O atendimento a clientes continua normal.
+          </Alert>
         )}
         {children}
     </AppShell>

@@ -177,7 +177,7 @@ export function StatusTile({
 }) {
   const cores: Record<string, string> = {
     bom: "var(--teal)",
-    atencao: "#D9A441",
+    atencao: "var(--amber)",
     critico: "var(--coral)",
     neutro: "var(--ink)",
   };

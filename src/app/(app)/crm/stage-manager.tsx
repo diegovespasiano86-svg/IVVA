@@ -106,7 +106,7 @@ export default function StageManager({ estagios }: { estagios: Estagio[] }) {
                     <input
                       name="label"
                       defaultValue={estagio.label}
-                      className="w-full rounded-[8px] border border-border bg-surface px-2 py-1.5 text-[12.5px]"
+                      className="input"
                     />
                     <button
                       type="submit"
@@ -148,7 +148,7 @@ export default function StageManager({ estagios }: { estagios: Estagio[] }) {
                 name="label"
                 required
                 placeholder="Nome da nova fase"
-                className="flex-1 rounded-[10px] border border-border bg-surface px-3 py-2 text-[13px]"
+                className="input flex-1"
               />
               <button
                 type="submit"

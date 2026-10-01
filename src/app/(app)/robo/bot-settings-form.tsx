@@ -66,7 +66,7 @@ export default function BotSettingsForm({
         <div className="flex flex-col gap-4">
           <div>
             <label className="mb-2 flex items-center gap-2 text-[12.5px] font-semibold">
-              <input
+              <input className="toggle"
                 type="checkbox"
                 name="recuperar_conversa_ativo"
                 defaultChecked={s?.recuperar_conversa_ativo ?? true}
@@ -88,13 +88,13 @@ export default function BotSettingsForm({
               type="number"
               min={5}
               defaultValue={s?.recuperar_conversa_primeiro_toque_min ?? 45}
-              className="w-32 rounded-[10px] border border-border bg-surface px-3 py-2 text-[13px]"
+              className="input w-32"
             />
           </div>
 
           <div className="border-t border-teal/20 pt-4">
             <label className="mb-2 flex items-center gap-2 text-[12.5px] font-semibold">
-              <input
+              <input className="toggle"
                 type="checkbox"
                 name="lista_espera_ativo"
                 defaultChecked={s?.lista_espera_ativo ?? true}
@@ -111,7 +111,7 @@ export default function BotSettingsForm({
 
           <div className="border-t border-teal/20 pt-4">
             <label className="mb-2 flex items-center gap-2 text-[12.5px] font-semibold">
-              <input
+              <input className="toggle"
                 type="checkbox"
                 name="indicacao_recompensa_ativo"
                 defaultChecked={s?.indicacao_recompensa_ativo ?? false}
@@ -135,7 +135,7 @@ export default function BotSettingsForm({
               name="indicacao_recompensa_texto"
               placeholder="Ex: 10% de desconto pra quem indicou e pra quem foi indicado"
               defaultValue={s?.indicacao_recompensa_texto ?? ""}
-              className="w-full rounded-[10px] border border-border bg-surface px-3 py-2 text-[13px]"
+              className="input"
             />
           </div>
         </div>
@@ -151,7 +151,7 @@ export default function BotSettingsForm({
         >
           <p className="mb-2 text-[13px] font-bold">Resposta por áudio</p>
           <label className="mb-2 flex items-center gap-2 text-[12.5px] font-semibold">
-            <input
+            <input className="toggle"
               type="checkbox"
               name="responder_audio_ativo"
               defaultChecked={s?.responder_audio_ativo ?? false}
@@ -171,7 +171,7 @@ export default function BotSettingsForm({
       <section className="border-t border-border pt-4">
         <p className="mb-2.5 text-[13px] font-bold">Pós-venda</p>
         <label className="mb-2 flex items-center gap-2 text-[12.5px] font-semibold">
-          <input
+          <input className="toggle"
             type="checkbox"
             name="pos_venda_ativo"
             defaultChecked={s?.pos_venda_ativo ?? true}
@@ -187,7 +187,7 @@ export default function BotSettingsForm({
               id="pos_venda_delay"
               name="pos_venda_delay"
               defaultValue={s?.pos_venda_delay ?? "1d"}
-              className="w-full rounded-[10px] border border-border bg-surface px-3 py-2 text-[13px]"
+              className="select"
             >
               <option value="1h">1 hora</option>
               <option value="2h">2 horas</option>
@@ -205,7 +205,7 @@ export default function BotSettingsForm({
               name="link_avaliacao_google"
               placeholder="https://g.page/r/..."
               defaultValue={s?.link_avaliacao_google ?? ""}
-              className="w-full rounded-[10px] border border-border bg-surface px-3 py-2 text-[13px]"
+              className="input"
             />
           </div>
         </div>
@@ -219,7 +219,7 @@ export default function BotSettingsForm({
             rows={2}
             placeholder="Oi {nome}! Como foi seu {servico} com a gente?"
             defaultValue={s?.pos_venda_mensagem ?? ""}
-            className="w-full resize-none rounded-[10px] border border-border bg-surface px-3 py-2 text-[13px]"
+            className="textarea"
           />
         </div>
       </section>
@@ -228,7 +228,7 @@ export default function BotSettingsForm({
         <p className="mb-2.5 text-[13px] font-bold">Primeiro contato</p>
         <div className="flex flex-col gap-2">
           <label className="flex items-center gap-2 text-[12.5px] font-semibold">
-            <input
+            <input className="toggle"
               type="checkbox"
               name="pedir_email_primeiro_contato"
               defaultChecked={s?.pedir_email_primeiro_contato ?? true}
@@ -236,7 +236,7 @@ export default function BotSettingsForm({
             Perguntar e-mail
           </label>
           <label className="flex items-center gap-2 text-[12.5px] font-semibold">
-            <input
+            <input className="toggle"
               type="checkbox"
               name="pedir_instagram_primeiro_contato"
               defaultChecked={s?.pedir_instagram_primeiro_contato ?? true}
@@ -249,7 +249,7 @@ export default function BotSettingsForm({
       <section className="border-t border-border pt-4">
         <p className="mb-2.5 text-[13px] font-bold">Reengajamento</p>
         <label className="mb-2 flex items-center gap-2 text-[12.5px] font-semibold">
-          <input
+          <input className="toggle"
             type="checkbox"
             name="reengajamento_ativo"
             defaultChecked={s?.reengajamento_ativo ?? false}
@@ -266,7 +266,7 @@ export default function BotSettingsForm({
             type="number"
             min={1}
             defaultValue={s?.reengajamento_dias_inatividade ?? 60}
-            className="w-32 rounded-[10px] border border-border bg-surface px-3 py-2 text-[13px]"
+            className="input w-32"
           />
         </div>
       </section>
@@ -274,7 +274,7 @@ export default function BotSettingsForm({
       <section className="border-t border-border pt-4">
         <p className="mb-2.5 text-[13px] font-bold">Aniversário</p>
         <label className="mb-2 flex items-center gap-2 text-[12.5px] font-semibold">
-          <input
+          <input className="toggle"
             type="checkbox"
             name="aniversario_ativo"
             defaultChecked={s?.aniversario_ativo ?? false}
@@ -292,7 +292,7 @@ export default function BotSettingsForm({
               type="number"
               min={0}
               defaultValue={s?.aniversario_dias_antecedencia ?? 0}
-              className="w-full rounded-[10px] border border-border bg-surface px-3 py-2 text-[13px]"
+              className="input"
             />
           </div>
           <div>
@@ -304,7 +304,7 @@ export default function BotSettingsForm({
               name="aniversario_mensagem"
               placeholder="Feliz aniversário, {nome}! 🎉"
               defaultValue={s?.aniversario_mensagem ?? ""}
-              className="w-full rounded-[10px] border border-border bg-surface px-3 py-2 text-[13px]"
+              className="input"
             />
           </div>
         </div>
@@ -329,7 +329,7 @@ export default function BotSettingsForm({
               name="admin_whatsapp_numero"
               placeholder="5511999998888"
               defaultValue={s?.admin_whatsapp_numero ?? ""}
-              className="w-full rounded-[10px] border border-border bg-surface px-3 py-2 text-[13px]"
+              className="input"
             />
           </div>
           <div>
@@ -342,7 +342,7 @@ export default function BotSettingsForm({
               type="password"
               inputMode="numeric"
               placeholder="••••"
-              className="w-full rounded-[10px] border border-border bg-surface px-3 py-2 text-[13px]"
+              className="input"
             />
           </div>
         </div>
@@ -361,7 +361,7 @@ export default function BotSettingsForm({
             name="upsell_template_nome"
             placeholder="ex: promocao_mensal"
             defaultValue={s?.upsell_template_nome ?? ""}
-            className="w-full rounded-[10px] border border-border bg-surface px-3 py-2 text-[13px]"
+            className="input"
           />
           <p className="mt-1 text-[11.5px] text-ink-faint">
             Sem isso, o comando &quot;disparar oferta em massa&quot; pelo canal do

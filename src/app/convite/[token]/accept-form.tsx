@@ -22,7 +22,7 @@ export default function AcceptForm({ token }: { token: string }) {
           required
           minLength={6}
           placeholder="Pelo menos 6 caracteres"
-          className="w-full rounded-[10px] border border-border bg-surface px-3.5 py-2.5 text-[14px] outline-none focus:border-purple"
+          className="input"
         />
       </div>
 

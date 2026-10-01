@@ -18,7 +18,7 @@ export default function RedefinirSenhaForm() {
           minLength={6}
           autoComplete="new-password"
           placeholder="••••••••"
-          className="w-full rounded-[10px] border border-border bg-surface px-3.5 py-2.5 text-[14px] outline-none focus:border-purple"
+          className="input !h-[46px]"
         />
       </div>
 
@@ -32,12 +32,12 @@ export default function RedefinirSenhaForm() {
           minLength={6}
           autoComplete="new-password"
           placeholder="••••••••"
-          className="w-full rounded-[10px] border border-border bg-surface px-3.5 py-2.5 text-[14px] outline-none focus:border-purple"
+          className="input !h-[46px]"
         />
       </div>
 
       {error && (
-        <p role="alert" className="text-[13px] font-semibold text-coral">
+        <p role="alert" className="shake rounded-xl border border-coral/25 bg-[#fdece9] px-3.5 py-2.5 text-[13px] font-semibold text-[#8f2a1c]">
           {error}
         </p>
       )}
@@ -45,7 +45,7 @@ export default function RedefinirSenhaForm() {
       <button
         type="submit"
         disabled={pending}
-        className="btn mt-1 w-full justify-center bg-ink py-3 text-[14px] text-white disabled:opacity-60"
+        className={`btn btn-primary btn-lg mt-1 w-full ${pending ? "btn-loading" : ""}`}
       >
         {pending ? "Salvando…" : "Salvar senha nova"}
       </button>

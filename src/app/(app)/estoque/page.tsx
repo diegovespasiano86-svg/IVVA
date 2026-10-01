@@ -81,7 +81,7 @@ export default async function EstoquePage() {
               name="nome"
               required
               placeholder="Shampoo 500ml"
-              className="w-[140px] rounded-[10px] border border-border bg-surface px-2.5 py-2 text-[12.5px]"
+              className="input w-[140px]"
             />
           </div>
           <div>
@@ -92,7 +92,7 @@ export default async function EstoquePage() {
               id="categoria"
               name="categoria"
               placeholder="Cabelo"
-              className="w-[110px] rounded-[10px] border border-border bg-surface px-2.5 py-2 text-[12.5px]"
+              className="input w-[110px]"
             />
           </div>
           <div>
@@ -106,7 +106,7 @@ export default async function EstoquePage() {
               step="0.01"
               min="0"
               placeholder="45,00"
-              className="w-[90px] rounded-[10px] border border-border bg-surface px-2.5 py-2 text-[12.5px]"
+              className="input w-[90px]"
             />
           </div>
           <div>
@@ -119,7 +119,7 @@ export default async function EstoquePage() {
               type="number"
               min="0"
               placeholder="10"
-              className="w-[80px] rounded-[10px] border border-border bg-surface px-2.5 py-2 text-[12.5px]"
+              className="input w-[80px]"
             />
           </div>
           <div>
@@ -132,7 +132,7 @@ export default async function EstoquePage() {
               type="number"
               min="0"
               placeholder="3"
-              className="w-[70px] rounded-[10px] border border-border bg-surface px-2.5 py-2 text-[12.5px]"
+              className="input w-[70px]"
             />
           </div>
           <button

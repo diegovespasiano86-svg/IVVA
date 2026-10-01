@@ -42,7 +42,7 @@ export default function ApagarConta({ tenantNome }: { tenantNome: string }) {
               id="nome_confirmacao"
               name="nome_confirmacao"
               autoComplete="off"
-              className="w-full rounded-[10px] border border-coral/40 bg-surface px-3 py-2 text-[13px]"
+              className="input"
             />
           </div>
           <div className="mb-3">
@@ -54,7 +54,7 @@ export default function ApagarConta({ tenantNome }: { tenantNome: string }) {
               name="senha"
               type="password"
               autoComplete="current-password"
-              className="w-full rounded-[10px] border border-coral/40 bg-surface px-3 py-2 text-[13px]"
+              className="input"
             />
           </div>
 

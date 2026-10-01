@@ -123,7 +123,7 @@ export default function AppShell({
     const single = g.items.length === 1;
     const isOpen = expanded && openId === g.id && !single;
     const rowClass = `relative flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-left text-[13.5px] font-semibold transition-colors ${
-      active ? "bg-[#ece9fc] text-purple" : "text-ink-soft hover:bg-surface-soft hover:text-ink"
+      active ? "bg-gradient-to-r from-[#8b7fe8]/20 to-[#8b7fe8]/5 text-purple" : "text-ink-soft hover:bg-surface-soft hover:text-ink"
     }`;
     const inner = (
       <>
@@ -264,7 +264,7 @@ export default function AppShell({
                 className="flex items-center gap-2 rounded-full bg-white/10 py-1 pl-3 pr-1 hover:bg-white/15"
               >
                 <span className="hidden max-w-[160px] truncate text-[13px] font-semibold md:block">{negocio}</span>
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-[12.5px] font-extrabold text-ink-deep">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-[#2fbf9f] to-[#8b7fe8] text-[12.5px] font-extrabold text-white">
                   {nome.slice(0, 1).toUpperCase()}
                 </span>
               </button>
@@ -311,7 +311,7 @@ export default function AppShell({
             onBlur={(e) => {
               if (!e.currentTarget.contains(e.relatedTarget as Node)) setHovered(false);
             }}
-            className={`absolute inset-y-0 left-0 z-30 flex flex-col overflow-hidden border-r border-border bg-surface px-3 py-4 transition-[width,box-shadow] duration-200 ${
+            className={`absolute inset-y-0 left-0 z-30 flex flex-col overflow-hidden border-r border-border bg-white/80 px-3 py-4 backdrop-blur-xl transition-[width,box-shadow] duration-200 ${
               expanded ? "w-[248px]" : "w-[68px]"
             } ${expanded && !pinned ? "shadow-[8px_0_32px_-12px_rgba(20,18,27,0.25)]" : ""}`}
           >
@@ -334,13 +334,13 @@ export default function AppShell({
         </div>
 
         {/* ---------- conteúdo ---------- */}
-        <main className="min-w-0 flex-1 overflow-x-hidden px-4 pb-24 pt-6 md:px-8 md:pb-8 md:pt-8">{children}</main>
+        <main className="min-w-0 flex-1 overflow-x-hidden px-4 pb-24 pt-6 md:px-8 md:pb-8 md:pt-8"><div className="mx-auto w-full max-w-[1320px]">{children}</div></main>
       </div>
 
       {/* ---------- barra inferior (celular) ---------- */}
       <nav
         aria-label="Menu principal"
-        className="fixed inset-x-0 bottom-0 z-40 flex border-t border-border bg-surface pb-[env(safe-area-inset-bottom)] md:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 flex border-t border-border bg-white/85 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden"
       >
         {mobileMain.map((g) => {
           const Icon = g.icon;

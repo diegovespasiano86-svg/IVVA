@@ -157,7 +157,7 @@ export default async function CheckoutPage(props: {
             name="contact_id"
             required
             defaultValue={prefill.contact_id ?? ""}
-            className="w-[150px] rounded-[10px] border border-border bg-surface px-2.5 py-2 text-[12.5px]"
+            className="select w-[150px]"
           >
             <option value="">Selecione…</option>
             {(contatos ?? []).map((c) => (
@@ -177,7 +177,7 @@ export default async function CheckoutPage(props: {
             name="professional_id"
             required
             defaultValue={prefill.professional_id ?? ""}
-            className="w-[150px] rounded-[10px] border border-border bg-surface px-2.5 py-2 text-[12.5px]"
+            className="select w-[150px]"
           >
             <option value="">Selecione…</option>
             {(profissionais ?? []).map((p) => (
@@ -198,7 +198,7 @@ export default async function CheckoutPage(props: {
             required
             defaultValue={prefill.servico ?? ""}
             placeholder="Corte + barba"
-            className="w-[150px] rounded-[10px] border border-border bg-surface px-2.5 py-2 text-[12.5px]"
+            className="input w-[150px]"
           />
         </div>
 
@@ -214,7 +214,7 @@ export default async function CheckoutPage(props: {
             min="0"
             required
             placeholder="120,00"
-            className="w-[100px] rounded-[10px] border border-border bg-surface px-2.5 py-2 text-[12.5px]"
+            className="input w-[100px]"
           />
         </div>
 
@@ -226,7 +226,7 @@ export default async function CheckoutPage(props: {
             id="forma_pagamento"
             name="forma_pagamento"
             required
-            className="w-[120px] rounded-[10px] border border-border bg-surface px-2.5 py-2 text-[12.5px]"
+            className="select w-[120px]"
           >
             <option value="">Selecione…</option>
             {FORMAS.map((f) => (

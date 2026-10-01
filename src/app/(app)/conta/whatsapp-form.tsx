@@ -84,7 +84,7 @@ export default function WhatsAppForm() {
             name="phone_number_id"
             required
             placeholder="Ex: 136065653045..."
-            className="w-full rounded-[10px] border border-border bg-surface px-3 py-2 text-[13px]"
+            className="input"
           />
         </div>
         <div>
@@ -95,7 +95,7 @@ export default function WhatsAppForm() {
             id="business_account_id"
             name="business_account_id"
             placeholder="Ex: 164317883736..."
-            className="w-full rounded-[10px] border border-border bg-surface px-3 py-2 text-[13px]"
+            className="input"
           />
         </div>
         <div>
@@ -108,7 +108,7 @@ export default function WhatsAppForm() {
             required
             type="password"
             placeholder="Cole o token gerado"
-            className="w-full rounded-[10px] border border-border bg-surface px-3 py-2 text-[13px]"
+            className="input"
           />
         </div>
         <div>
@@ -119,7 +119,7 @@ export default function WhatsAppForm() {
             id="display_phone_number"
             name="display_phone_number"
             placeholder="+55 11 90000-0000"
-            className="w-full rounded-[10px] border border-border bg-surface px-3 py-2 text-[13px]"
+            className="input"
           />
         </div>
 
@@ -154,7 +154,7 @@ export default function WhatsAppForm() {
               name="mensagem"
               rows={2}
               placeholder="Em que passo travou? (opcional)"
-              className="resize-none rounded-[10px] border border-border bg-surface px-3 py-2 text-[13px]"
+              className="textarea"
             />
             <button
               type="submit"

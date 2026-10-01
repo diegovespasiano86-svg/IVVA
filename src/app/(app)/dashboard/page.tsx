@@ -3,30 +3,8 @@ import { LineAreaChart, HBarList, VBarChart, StatusTile, CardVazio } from "@/com
 import { FeatureLock } from "@/components/feature-lock";
 import { temRecurso, nomePlano } from "@/lib/planos";
 import PrimeirosPassos from "@/components/primeiros-passos";
-
-function KpiCard({
-  label,
-  value,
-  accent,
-}: {
-  label: string;
-  value: string;
-  accent?: boolean;
-}) {
-  return (
-    <div className={`card card-lift relative overflow-hidden px-5 py-4.5 ${accent ? "border-purple/35" : ""}`}>
-      <span className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-[#2fbf9f] via-[#8b7fe8] to-[#ff6b5b] opacity-60" />
-      <p className="mb-2.5 text-[11.5px] font-bold uppercase tracking-wide text-ink-faint">
-        {label}
-      </p>
-      <p
-        className={`font-display text-[28px] font-extrabold leading-none ${accent ? "text-purple" : ""}`}
-      >
-        {value}
-      </p>
-    </div>
-  );
-}
+import KpiCard from "@/components/kpi-card";
+import { CalendarDays, MessageSquare, Users, Wallet } from "lucide-react";
 
 const DIAS_SEMANA = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
@@ -218,17 +196,10 @@ export default async function DashboardPage() {
       {ehDono && <PrimeirosPassos />}
 
       <div className="grid grid-cols-2 gap-3.5 md:grid-cols-4">
-        <KpiCard label="Conversas este mês" value={String(conversas ?? 0)} />
-        <KpiCard label="Contatos no CRM" value={String(contatos ?? 0)} />
-        <KpiCard
-          label="Agendamentos futuros"
-          value={String(agendamentos ?? 0)}
-        />
-        <KpiCard
-          label="Faturamento do mês"
-          value={money.format(faturamentoMes)}
-          accent
-        />
+        <KpiCard label="Conversas este mês" numero={conversas ?? 0} icon={MessageSquare} />
+        <KpiCard label="Contatos no CRM" numero={contatos ?? 0} icon={Users} />
+        <KpiCard label="Agendamentos futuros" numero={agendamentos ?? 0} icon={CalendarDays} />
+        <KpiCard label="Faturamento do mês" value={money.format(faturamentoMes)} icon={Wallet} accent />
       </div>
 
       <div className="mt-4 grid gap-3.5 lg:grid-cols-[1.4fr_1fr]">

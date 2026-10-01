@@ -87,13 +87,13 @@ export default async function CrmPage({
                 name="nome"
                 placeholder="Nome do cliente"
                 required
-                className="w-[150px] rounded-[10px] border border-border bg-surface px-3 py-2 text-[13px]"
+                className="input w-[150px]"
               />
               <input
                 name="telefone"
                 placeholder="Telefone (WhatsApp)"
                 required
-                className="w-[160px] rounded-[10px] border border-border bg-surface px-3 py-2 text-[13px]"
+                className="input w-[160px]"
               />
               <button
                 type="submit"

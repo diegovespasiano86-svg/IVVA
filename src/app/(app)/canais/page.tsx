@@ -42,7 +42,7 @@ export default async function CanaisPage() {
   return (
     <div>
       <div className="mb-5">
-        <h1 className="flex items-center gap-2 text-[22px] font-extrabold">
+        <h1 className="no-accent flex items-center gap-2 text-[22px] font-extrabold">
           <Plug size={22} className="text-purple" /> Canais
         </h1>
         <p className="text-[13.5px] text-ink-soft">Por onde o seu robô conversa com os clientes.</p>
