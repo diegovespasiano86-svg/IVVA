@@ -45,6 +45,7 @@ export async function sendWhatsAppTemplate(
     `https://graph.facebook.com/${GRAPH_API_VERSION}/${phoneNumberId}/messages`,
     {
       method: "POST",
+      signal: AbortSignal.timeout(15000),
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
@@ -64,7 +65,10 @@ export async function sendWhatsAppTemplate(
 
   const data = await res.json();
   if (!res.ok) {
-    throw new Error(data?.error?.message ?? "Falha ao enviar WhatsApp");
+    // Guarda o código da Meta para quem chamou separar erro de CONTA (token) de erro de DESTINATÁRIO.
+    const err = new Error(data?.error?.message ?? "Falha ao enviar WhatsApp") as Error & { code?: number };
+    err.code = typeof data?.error?.code === "number" ? data.error.code : undefined;
+    throw err;
   }
   return data;
 }

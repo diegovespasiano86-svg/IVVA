@@ -97,7 +97,7 @@ export type Celula = string | number | null;
 /** Evita "injeção de fórmula": célula que começa com = + - @ vira texto no Excel. */
 function neutralizar(v: Celula): Celula {
   if (typeof v !== "string") return v;
-  return /^[=+\-@\t\r]/.test(v) ? `'${v}` : v;
+  return /^[\s=+\-@\uFF1D\uFF0B\uFF0D\uFF20]/.test(v) ? `'${v}` : v;
 }
 
 /** CSV para Excel brasileiro: separador ";", BOM UTF-8, aspas escapadas. */

@@ -15,6 +15,21 @@ type Filtro = "todos" | "aniversariantes" | "sem_aceite" | (typeof SEGMENTOS_RFV
 export default async function ClientesPage({ searchParams }: { searchParams: Promise<{ seg?: string; q?: string; p?: string; etq?: string; lista?: string }> }) {
   const sp = await searchParams;
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data: perfil } = await supabase.from("users").select("role").eq("id", user?.id ?? "").maybeSingle();
+  if (perfil?.role !== "dono") {
+    return (
+      <div>
+        <PageHeader icon={Users} title="Clientes" />
+        <div className="card">
+          <EmptyState icon={Users} title="Só o dono do negócio vê a base de clientes completa" text="Você continua acessando o histórico de cada cliente pelas conversas e pela agenda." />
+        </div>
+      </div>
+    );
+  }
+
   const [base, { data: etiquetas }, { data: ligEtq }, { data: listas }, { data: membros }] = await Promise.all([
     carregarBase(supabase),
     supabase.from("labels").select("id, nome, cor").order("nome"),

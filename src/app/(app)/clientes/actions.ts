@@ -20,9 +20,12 @@ async function contexto(): Promise<{ supabase: Sb; userId: string; tenantId: str
 export async function adicionarNotaCliente(formData: FormData) {
   const contactId = String(formData.get("contact_id") ?? "");
   const conteudo = String(formData.get("conteudo") ?? "").trim().slice(0, 2000);
-  if (!contactId || !conteudo) return;
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(contactId) || !conteudo) return;
   const ctx = await contexto();
   if (!ctx) return;
+  // A leitura passa pela RLS: se o contato não é do seu negócio, não aparece.
+  const { data: contato } = await ctx.supabase.from("contacts").select("id").eq("id", contactId).maybeSingle();
+  if (!contato) return;
   await ctx.supabase.from("contact_notes").insert({
     tenant_id: ctx.tenantId,
     contact_id: contactId,
@@ -115,6 +118,13 @@ export async function importarContatos(linhas: LinhaImportacao[], autorizado: bo
     if (error) return { ok: false, erro: "Houve um problema ao salvar parte dos clientes. Confira a lista e tente de novo.", inseridos, jaExistiam, invalidos, duplicadosNoArquivo };
     inseridos += data?.length ?? 0;
   }
+
+  // Trilha de auditoria (LGPD): quem importou, quantos e se declarou autorização para enviar mensagens.
+  await ctx.supabase.from("eventos").insert({
+    tenant_id: ctx.tenantId,
+    tipo: "importacao_clientes",
+    detalhe: { user_id: ctx.userId, inseridos, ja_existiam: jaExistiam, invalidos, autorizado_envio: autorizado === true, em: new Date().toISOString() },
+  });
 
   revalidatePath("/clientes");
   revalidatePath("/crm");

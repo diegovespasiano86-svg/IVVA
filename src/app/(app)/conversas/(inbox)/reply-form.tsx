@@ -7,10 +7,8 @@ const initialState: { erro: string | null } = { erro: null };
 
 export default function ReplyForm({
   conversationId,
-  telefone,
 }: {
   conversationId: string;
-  telefone: string;
 }) {
   const [state, formAction, pending] = useActionState(
     responderConversa,
@@ -20,7 +18,6 @@ export default function ReplyForm({
   return (
     <form action={formAction} className="mt-2.5 flex flex-col gap-1.5">
       <input type="hidden" name="conversation_id" value={conversationId} />
-      <input type="hidden" name="telefone" value={telefone} />
       <div className="flex gap-2">
         <input
           name="conteudo"

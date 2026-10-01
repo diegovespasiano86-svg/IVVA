@@ -14,8 +14,9 @@ async function tenantDaSessao(supabase: Sb): Promise<string | null> {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return null;
-  const { data: perfil } = await supabase.from("users").select("tenant_id").eq("id", user.id).maybeSingle();
-  return perfil?.tenant_id ?? null;
+  const { data: perfil } = await supabase.from("users").select("tenant_id, role").eq("id", user.id).maybeSingle();
+  // A base de conhecimento define o que o robô diz aos clientes: só o dono altera.
+  return perfil?.role === "dono" ? (perfil.tenant_id ?? null) : null;
 }
 
 function categoriaValida(v: FormDataEntryValue | null): CategoriaId | null {
@@ -25,7 +26,7 @@ function categoriaValida(v: FormDataEntryValue | null): CategoriaId | null {
 
 /** Adiciona um item escrito à mão (já no tema escolhido; se vazio, a gente classifica). */
 export async function criarBloco(formData: FormData) {
-  const conteudo = String(formData.get("conteudo") ?? "").trim();
+  const conteudo = String(formData.get("conteudo") ?? "").trim().slice(0, 2000);
   if (!conteudo) return;
   const supabase = await createClient();
   const tenantId = await tenantDaSessao(supabase);
@@ -41,13 +42,19 @@ export async function criarBloco(formData: FormData) {
 
 /** Salva o que veio de arquivo, voz ou divisão de texto, já organizado em temas. */
 export async function salvarEntradasClassificadas(formData: FormData) {
-  const tipo = String(formData.get("tipo") ?? "texto");
-  const arquivoId = String(formData.get("arquivo_id") ?? "").trim() || null;
-  const substituirId = String(formData.get("substituir_id") ?? "").trim() || null;
+  const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const idOuNulo = (v: FormDataEntryValue | null) => {
+    const t = String(v ?? "").trim();
+    return UUID.test(t) ? t : null;
+  };
+  const tipo = String(formData.get("tipo") ?? "texto") === "arquivo" ? "arquivo" : "texto";
+  const arquivoId = idOuNulo(formData.get("arquivo_id"));
+  const substituirId = idOuNulo(formData.get("substituir_id"));
   const entradas = formData
     .getAll("entrada")
-    .map((e) => String(e).trim())
-    .filter(Boolean);
+    .map((e) => String(e).trim().slice(0, 2000))
+    .filter(Boolean)
+    .slice(0, 200);
   if (entradas.length === 0) return;
 
   const supabase = await createClient();
@@ -77,7 +84,7 @@ export async function aplicarModeloNicho(_prev: EstadoModelo, formData: FormData
 
   const supabase = await createClient();
   const tenantId = await tenantDaSessao(supabase);
-  if (!tenantId) return { adicionados: 0, jaExistiam: 0, erro: "Sessão expirada. Entre de novo." };
+  if (!tenantId) return { adicionados: 0, jaExistiam: 0, erro: "Só o dono do negócio pode alterar a base de conhecimento." };
 
   const { data: existentes } = await supabase.from("knowledge_base").select("conteudo");
   const jaTem = new Set((existentes ?? []).map((e) => e.conteudo.trim().toLowerCase()));
@@ -131,7 +138,10 @@ export type EstadoDivisao = { entradas: string[]; erro: string | null; aviso: st
 export async function dividirTextoLongo(entradaId: string): Promise<EstadoDivisao> {
   const supabase = await createClient();
   const tenantId = await tenantDaSessao(supabase);
-  if (!tenantId) return { entradas: [], erro: "Sessão expirada. Entre de novo.", aviso: null };
+  if (!tenantId) return { entradas: [], erro: "Só o dono do negócio pode alterar a base de conhecimento.", aviso: null };
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(entradaId)) return { entradas: [], erro: "Texto inválido.", aviso: null };
+  const { data: liberado } = await supabase.rpc("ia_registrar_uso", { p_tipo: "dividir_texto", p_limite: 20 });
+  if (liberado !== true) return { entradas: [], erro: "Você atingiu o limite diário desta função. Tente amanhã.", aviso: null };
 
   const { data: linha } = await supabase.from("knowledge_base").select("conteudo").eq("id", entradaId).maybeSingle();
   if (!linha?.conteudo) return { entradas: [], erro: "Texto não encontrado.", aviso: null };
@@ -145,6 +155,7 @@ export async function dividirTextoLongo(entradaId: string): Promise<EstadoDivisa
       aviso: truncado ? "O texto era muito longo e a IA parou no meio. Revise: alguns trechos podem ter ficado de fora." : null,
     };
   } catch (e) {
-    return { entradas: [], erro: e instanceof Error ? e.message : "Falha ao dividir o texto.", aviso: null };
+    console.error("[base-conhecimento] falha ao dividir texto", e);
+    return { entradas: [], erro: "Não foi possível dividir o texto agora. Tente de novo em instantes.", aviso: null };
   }
 }

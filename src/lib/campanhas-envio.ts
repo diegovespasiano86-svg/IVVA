@@ -17,7 +17,8 @@ type Item = {
 export type ResultadoEnvio = { enviados: number; falhas: number; lotes: number };
 
 // Erros que indicam problema da CONTA/TOKEN (e não de um destinatário específico).
-const ERRO_DE_CONTA = /access token|oauth|session has (been )?(expired|invalidated)|token.*(expired|invalid)|permission/i;
+// Códigos da Meta: 190 = token inválido/expirado, 10 e 200-299 = permissão. Erro de destinatário NÃO derruba a conta.
+const erroDeConta = (code: unknown) => typeof code === "number" && (code === 190 || code === 10 || (code >= 200 && code <= 299));
 
 const limparVariavel = (v: string | null) => (v ?? "").replace(/\s+/g, " ").trim().slice(0, 60) || "cliente";
 
@@ -26,7 +27,7 @@ const limparVariavel = (v: string | null) => (v ?? "").replace(/\s+/g, " ").trim
  * e a pausa de qualidade são decididos NO BANCO (campanha_proximo_lote). Aqui só se envia
  * e se registra o resultado de cada mensagem. Nada com token sai deste arquivo.
  */
-export async function processarLotes(opts: { maxMs?: number; limite?: number } = {}): Promise<ResultadoEnvio> {
+export async function processarLotes(opts: { maxMs?: number; limite?: number; tenantId?: string } = {}): Promise<ResultadoEnvio> {
   const vazio: ResultadoEnvio = { enviados: 0, falhas: 0, lotes: 0 };
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -41,7 +42,7 @@ export async function processarLotes(opts: { maxMs?: number; limite?: number } =
 
   // Para antes de estourar o tempo da função: um lote leva alguns segundos.
   while (Date.now() - inicio < maxMs - 15000) {
-    const { data, error } = await supabase.rpc("campanha_proximo_lote", { p_secret: secret, p_limite: limite });
+    const { data, error } = await supabase.rpc("campanha_proximo_lote", { p_secret: secret, p_limite: limite, p_tenant_id: opts.tenantId ?? null });
     if (error) {
       console.error("[campanhas] erro ao buscar lote:", error.message);
       break;
@@ -80,7 +81,7 @@ export async function processarLotes(opts: { maxMs?: number; limite?: number } =
               p_ok: false,
               p_erro: msg.slice(0, 400),
             });
-            if (ERRO_DE_CONTA.test(msg)) {
+            if (erroDeConta((err as { code?: unknown } | null)?.code)) {
               await supabase.rpc("record_whatsapp_send_failure", { p_secret: secret, p_tenant_id: item.tenant_id, p_erro: msg.slice(0, 400) });
             }
             total.falhas++;

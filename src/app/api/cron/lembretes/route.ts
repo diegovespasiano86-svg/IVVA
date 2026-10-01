@@ -8,7 +8,7 @@ import { podeEnviarAutomatico } from "@/lib/automacao";
 // "24h antes" exato — é a melhor precisão possível sem plano Pro.
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return new NextResponse("Unauthorized", { status: 401 });
   }
 

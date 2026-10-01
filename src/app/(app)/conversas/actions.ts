@@ -10,19 +10,31 @@ export async function responderConversa(
   formData: FormData,
 ) {
   const conversationId = String(formData.get("conversation_id") ?? "");
-  const telefone = String(formData.get("telefone") ?? "");
-  const conteudo = String(formData.get("conteudo") ?? "").trim();
+  const conteudo = String(formData.get("conteudo") ?? "").trim().slice(0, 4000);
 
-  if (!conversationId || !telefone || !conteudo) {
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(conversationId) || !conteudo) {
     return { erro: "Preencha a mensagem." };
   }
 
   const supabase = await createClient();
 
-  // Token nunca é lido em texto puro da tabela — a RPC decifra do Vault e
-  // já vem tenant-scoped pelo auth.uid() da sessão (não recebe tenant_id
-  // por parâmetro, então não dá pra pedir o token de outro negócio).
-  const { data: contas } = await supabase.rpc("whatsapp_conta_atual");
+  // O telefone vem da PRÓPRIA conversa (a RLS garante que é do seu negócio).
+  // Nunca do formulário: senão qualquer usuário mandaria mensagem pelo número
+  // do negócio para qualquer telefone.
+  const { data: conversa } = await supabase
+    .from("conversations")
+    .select("id, status, contacts(telefone)")
+    .eq("id", conversationId)
+    .maybeSingle();
+  const telefone = (conversa?.contacts as unknown as { telefone: string } | null)?.telefone;
+  if (!conversa || !telefone) return { erro: "Conversa não encontrada." };
+  if (conversa.status === "encerrada") return { erro: "Essa conversa já foi encerrada." };
+
+  // O token só sai do banco para o SERVIDOR: a função exige o segredo interno e a
+  // sessão do usuário define o negócio (não dá para pedir o token de outro).
+  const secret = process.env.WHATSAPP_WEBHOOK_INTERNAL_SECRET;
+  if (!secret) return { erro: "Configuração do servidor incompleta. Fale com a gente." };
+  const { data: contas } = await supabase.rpc("whatsapp_conta_atual_srv", { p_secret: secret });
   const conta = contas?.[0];
 
   if (!conta) {

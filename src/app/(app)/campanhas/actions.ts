@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { MODELOS, IDIOMAS, SEGMENTOS_CAMPANHA, modeloPorId, normalizarNomeModelo } from "@/lib/campanhas";
+import { IDIOMAS, SEGMENTOS_CAMPANHA, modeloPorId, normalizarNomeModelo } from "@/lib/campanhas";
 import { processarLotes } from "@/lib/campanhas-envio";
 
 // Toda ação aqui exige DONO. A regra é aplicada em duas camadas: aqui (mensagem amigável)
@@ -11,15 +11,15 @@ import { processarLotes } from "@/lib/campanhas-envio";
 
 type Sb = Awaited<ReturnType<typeof createClient>>;
 
-async function donoDaSessao(): Promise<{ supabase: Sb } | { erro: string }> {
+async function donoDaSessao(): Promise<{ supabase: Sb; tenantId: string } | { erro: string }> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { erro: "Sessão expirada. Entre de novo." };
-  const { data: perfil } = await supabase.from("users").select("role").eq("id", user.id).maybeSingle();
-  if (perfil?.role !== "dono") return { erro: "Só o dono do negócio pode gerenciar campanhas." };
-  return { supabase };
+  const { data: perfil } = await supabase.from("users").select("role, tenant_id").eq("id", user.id).maybeSingle();
+  if (perfil?.role !== "dono" || !perfil.tenant_id) return { erro: "Só o dono do negócio pode gerenciar campanhas." };
+  return { supabase, tenantId: perfil.tenant_id };
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -35,7 +35,7 @@ export type Retorno<T = object> = ({ erro: string } | ({ erro: null } & T));
 
 export async function criarCampanha(formData: FormData) {
   const ctx = await donoDaSessao();
-  if ("erro" in ctx) redirect("/campanhas?erro=" + encodeURIComponent(ctx.erro));
+  if ("erro" in ctx) redirect("/campanhas?e=permissao");
 
   const modelo = modeloPorId(String(formData.get("modelo") ?? ""));
   const nome = (modelo ? modelo.titulo : "Nova campanha").slice(0, 120);
@@ -50,7 +50,7 @@ export async function criarCampanha(formData: FormData) {
     })
     .select("id")
     .single();
-  if (error || !data) redirect("/campanhas?erro=" + encodeURIComponent("Não foi possível criar a campanha."));
+  if (error || !data) redirect("/campanhas?e=criar");
   revalidatePath("/campanhas");
   redirect(`/campanhas/${data.id}`);
 }
@@ -160,10 +160,9 @@ export const cancelarCampanha = async (id: string) => chamarFuncao("campanha_can
 export async function processarAgora(): Promise<Retorno<{ enviados: number; falhas: number; lotes: number }>> {
   const ctx = await donoDaSessao();
   if ("erro" in ctx) return ctx;
-  const r = await processarLotes({ maxMs: 40000, limite: 25 });
+  // Só processa as campanhas do PRÓPRIO negócio de quem clicou.
+  const r = await processarLotes({ maxMs: 40000, limite: 25, tenantId: ctx.tenantId });
   revalidatePath("/campanhas");
   return { erro: null, ...r };
 }
 
-// reexporta a lista só para tipagem em tempo de compilação (não é exportada em tempo de execução)
-export type ModeloId = (typeof MODELOS)[number]["id"];

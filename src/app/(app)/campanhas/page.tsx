@@ -5,8 +5,13 @@ import PageHeader from "@/components/page-header";
 import EmptyState from "@/components/empty-state";
 import { STATUS_CAMPANHA, type StatusCampanha } from "@/lib/campanhas";
 
-export default async function CampanhasPage({ searchParams }: { searchParams: Promise<{ erro?: string }> }) {
+export default async function CampanhasPage({ searchParams }: { searchParams: Promise<{ e?: string }> }) {
   const sp = await searchParams;
+  const MENSAGENS: Record<string, string> = {
+    permissao: "Só o dono do negócio pode gerenciar campanhas.",
+    criar: "Não foi possível criar a campanha. Tente de novo.",
+  };
+  const aviso = sp.e ? MENSAGENS[sp.e] : undefined;
   const supabase = await createClient();
   const {
     data: { user },
@@ -48,9 +53,9 @@ export default async function CampanhasPage({ searchParams }: { searchParams: Pr
         }
       />
 
-      {sp.erro && (
+      {aviso && (
         <p className="mb-4 flex items-center gap-2 rounded-xl border border-coral/25 bg-[#fdece9] px-3.5 py-2.5 text-[13px] font-semibold text-[#8f2a1c]">
-          <CircleAlert size={16} /> {sp.erro}
+          <CircleAlert size={16} /> {aviso}
         </p>
       )}
 

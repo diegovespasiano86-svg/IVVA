@@ -438,6 +438,10 @@ async function processarQualidadeNumero(params: {
   }
 }
 
+// Pedido de parar de receber mensagens: palavra-chave EXATA e curta, tratada sem IA, em qualquer
+// estado da conversa. ("cancelar" sozinho fica de fora: pode ser cancelar um horário.)
+const PEDIDO_DE_PARAR = /^\s*(parar|pare|sair|stop|descadastrar|n[aã]o quero (mais )?receber( mensagens)?)\s*[.!]*\s*$/i;
+
 type ResultadoInbound = {
   erro?: string;
   tenant_id: string;
@@ -756,6 +760,27 @@ async function processarMensagem(params: {
     // "tenant_nao_encontrado": número não está conectado a nenhum negócio —
     // "ja_processada": reentrega da Meta pro mesmo evento (idempotência).
     return;
+  }
+
+  // Opt-out determinístico: registra no banco e confirma ao cliente, sem passar pela IA.
+  if (PEDIDO_DE_PARAR.test(content.trim())) {
+    const { error: optErr } = await supabase.rpc("whatsapp_definir_opt_out", {
+      p_secret: internalSecret,
+      p_contact_id: resultado.contact_id,
+      p_aceita: false,
+    });
+    if (!optErr) {
+      await enviarRespostaEregistrar({
+        supabase,
+        internalSecret,
+        creds: { phoneNumberId: resultado.whatsapp_phone_number_id, token: resultado.whatsapp_access_token },
+        waId,
+        resposta: "Tudo bem! Você não vai mais receber mensagens automáticas nem campanhas da gente. Se precisar de algo, é só chamar por aqui. 🙂",
+        resultado,
+      });
+      return;
+    }
+    console.error("[whatsapp webhook] falha ao registrar opt-out", optErr);
   }
 
   // Conversa já está com um humano — a IA não responde, o dono/equipe

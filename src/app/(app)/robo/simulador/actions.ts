@@ -75,10 +75,15 @@ export async function simularResposta(historico: MensagemSimulada[]): Promise<Re
     simulacao: true,
   };
 
+  // Limite diário por negócio: cada teste usa a IA (e custa).
+  const { data: liberado } = await supabase.rpc("ia_registrar_uso", { p_tipo: "simulador", p_limite: 60 });
+  if (liberado !== true) return { erro: "Você atingiu o limite de 60 testes por dia. Volte amanhã." };
+
   try {
     const r = await gerarRespostaWhatsApp(ctx, secret, url, anon);
     return { resposta: r.resposta, pediuHumano: r.handoffSolicitado };
   } catch (e) {
-    return { erro: e instanceof Error ? e.message : "Não foi possível gerar a resposta de teste." };
+    console.error("[simulador] falha ao gerar resposta de teste", e);
+    return { erro: "Não foi possível gerar a resposta de teste agora. Tente de novo em instantes." };
   }
 }

@@ -201,7 +201,7 @@ export default async function ConversaDetalhePage({
         )}
 
         {conversa.status !== "encerrada" && contato && (
-          <ReplyForm conversationId={conversa.id} telefone={contato.telefone} />
+          <ReplyForm conversationId={conversa.id} />
         )}
       </div>
     </div>
