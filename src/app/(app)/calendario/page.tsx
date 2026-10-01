@@ -1,3 +1,5 @@
+import PageHeader from "@/components/page-header";
+import { CalendarDays } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { criarAgendamento } from "./actions";
 import CalendarView, { type EventoAgenda } from "./calendar-view";
@@ -48,12 +50,7 @@ export default async function CalendarioPage() {
 
   return (
     <div>
-      <div className="mb-5">
-        <h1 className="font-display text-[22px] font-extrabold">Calendário</h1>
-        <p className="text-[13.5px] text-ink-soft">
-          Agenda de todos os profissionais — inclui o que o robô marca sozinho pelo WhatsApp.
-        </p>
-      </div>
+      <PageHeader icon={CalendarDays} title="Calendário" subtitle="Agenda de todos os profissionais — inclui o que o robô marca sozinho pelo WhatsApp." />
 
       <details className="card group mb-4">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 [&::-webkit-details-marker]:hidden">

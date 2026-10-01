@@ -1,3 +1,4 @@
+import PageHeader from "@/components/page-header";
 import EmptyState from "@/components/empty-state";
 import { LifeBuoy } from "lucide-react";
 import Link from "next/link";
@@ -70,15 +71,7 @@ export default async function SacPage() {
 
   return (
     <div>
-      <div className="mb-5">
-        <h1 className="font-display text-[22px] font-extrabold">
-          Central de SAC
-        </h1>
-        <p className="text-[13.5px] text-ink-soft">
-          Quando a ivva precisa de um humano, o ticket já chega com o
-          histórico da conversa anexado.
-        </p>
-      </div>
+      <PageHeader icon={LifeBuoy} title="Central de SAC" subtitle="Quando a ivva precisa de um humano, o ticket já chega com o histórico da conversa anexado." />
 
       {(tickets ?? []).length === 0 ? (
         <div className="card">

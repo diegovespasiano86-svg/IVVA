@@ -1,3 +1,4 @@
+import PageHeader from "@/components/page-header";
 import EmptyState from "@/components/empty-state";
 import { Star } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
@@ -110,14 +111,7 @@ export default async function AvaliacoesPage() {
 
   return (
     <div>
-      <div className="mb-5">
-        <h1 className="font-display text-[22px] font-extrabold">
-          Avaliações
-        </h1>
-        <p className="text-[13.5px] text-ink-soft">
-          Coletadas automaticamente pelo WhatsApp após o atendimento.
-        </p>
-      </div>
+      <PageHeader icon={Star} title="Avaliações" subtitle="Coletadas automaticamente pelo WhatsApp após o atendimento." />
 
       <div className="mb-4 grid grid-cols-2 gap-3.5 md:grid-cols-4">
         <div className="card px-5 py-4.5">

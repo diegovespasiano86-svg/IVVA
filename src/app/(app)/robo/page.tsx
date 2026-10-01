@@ -1,3 +1,5 @@
+import PageHeader from "@/components/page-header";
+import { Bot } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import AssistantForm from "./assistant-form";
 import BotSettingsForm from "./bot-settings-form";
@@ -56,14 +58,7 @@ export default async function RoboPage() {
 
   return (
     <div>
-      <div className="mb-5">
-        <h1 className="font-display text-[22px] font-extrabold">
-          Configuração do robô
-        </h1>
-        <p className="text-[13.5px] text-ink-soft">
-          Como a ivva conversa, vende e trabalha por você no WhatsApp.
-        </p>
-      </div>
+      <PageHeader icon={Bot} title="Configuração do robô" subtitle="Como a ivva conversa, vende e trabalha por você no WhatsApp." />
 
       {!conta && (
         <a
