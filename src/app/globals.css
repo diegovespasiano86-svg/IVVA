@@ -981,3 +981,154 @@ html[data-density="compact"] .table-clean th,
 html[data-density="compact"] main .card table thead th {
   height: 34px;
 }
+
+/* ===== gráficos ===== */
+/* Entrada: os estados finais são o estilo normal; as animações só definem o
+   "from". Assim, com menos movimento (animation: none) tudo aparece pronto. */
+@keyframes chart-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+}
+@keyframes chart-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes chart-grow-x {
+  from {
+    transform: scaleX(0);
+  }
+}
+@keyframes chart-grow-y {
+  from {
+    transform: scaleY(0);
+  }
+}
+@keyframes chart-ring {
+  from {
+    stroke-dasharray: 0 100;
+  }
+}
+@keyframes chart-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.92) rotate(-14deg);
+  }
+}
+.chart-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  animation: chart-draw 700ms var(--ease-out) both;
+}
+.chart-fade {
+  animation: chart-fade 600ms var(--ease-out) 120ms both;
+}
+.chart-fade-late {
+  animation: chart-fade 320ms var(--ease-out) 560ms both;
+}
+.chart-grow-x {
+  transform-origin: left center;
+  animation: chart-grow-x 700ms var(--ease-out) both;
+}
+.chart-grow-y {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: chart-grow-y 650ms var(--ease-out) both;
+}
+.chart-ring {
+  animation: chart-ring 900ms var(--ease-out) both;
+}
+.chart-pop {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: chart-pop 700ms var(--ease-out) both;
+}
+.chart-root text {
+  font-family: var(--font-jakarta), system-ui, sans-serif;
+}
+.chart-root path {
+  transition: d 200ms var(--ease-std);
+}
+
+/* dica flutuante (não captura o mouse; nunca passa de 210px para caber no cartão) */
+.chart-tip {
+  position: absolute;
+  z-index: 5;
+  max-width: 210px;
+  white-space: nowrap;
+  pointer-events: none;
+  padding: 8px 11px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.94);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-3);
+  animation: chart-fade 120ms ease-out both;
+}
+
+/* linhas de ranking: hover destaca a linha e a barra, mostra o % do total */
+.chart-row {
+  transition: background var(--dur-1) ease;
+}
+.chart-row:hover {
+  background: color-mix(in srgb, var(--purple) 5%, #fff);
+}
+.chart-row .chart-bar-suave {
+  transition: background var(--dur-2) ease;
+}
+.chart-row:hover .chart-bar-suave {
+  background: color-mix(in srgb, var(--purple) 58%, #fff) !important;
+}
+.chart-row-pct {
+  opacity: 0;
+  transition: opacity var(--dur-1) ease;
+}
+.chart-row:hover .chart-row-pct {
+  opacity: 1;
+}
+@media (hover: none) {
+  .chart-row-pct {
+    display: none;
+  }
+}
+
+/* foco por teclado nos gráficos interativos */
+.chart-focus {
+  outline: none;
+  border-radius: 10px;
+}
+.chart-focus:focus-visible {
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px color-mix(in srgb, var(--purple) 55%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chart-draw,
+  .chart-fade,
+  .chart-fade-late,
+  .chart-grow-x,
+  .chart-grow-y,
+  .chart-ring,
+  .chart-pop,
+  .chart-tip {
+    animation: none !important;
+  }
+  .chart-root path {
+    transition: none;
+  }
+}
+@media print {
+  .chart-draw,
+  .chart-fade,
+  .chart-fade-late,
+  .chart-grow-x,
+  .chart-grow-y,
+  .chart-ring,
+  .chart-pop {
+    animation: none !important;
+  }
+  .chart-tip {
+    display: none;
+  }
+}

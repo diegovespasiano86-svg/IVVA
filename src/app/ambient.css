@@ -1,0 +1,76 @@
+/* Atmosfera do app (mesma receita do herói do site): brilhos suaves nos cantos, a onda da marca
+   como marca-d'água quase invisível, textura de pontinhos e cartões de vidro translúcido.
+   As cores dos brilhos acompanham a cor de destaque escolhida em "Aparência". */
+
+html body {
+  position: relative;
+  isolation: isolate;
+  background: var(--bg);
+}
+
+/* camada 1: brilhos + onda da marca */
+html body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 40'%3E%3Cpath d='M2 24c8 0 10-18 20-18s8 30 18 30 10-26 20-26 8 22 18 22 10-14 20-14 8 10 18 10' fill='none' stroke='%238b7fe8' stroke-opacity='0.085' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E"),
+    radial-gradient(780px circle at 0% 6%, color-mix(in srgb, var(--accent-a) 15%, transparent), transparent 66%),
+    radial-gradient(860px circle at 100% 0%, color-mix(in srgb, var(--accent-b) 17%, transparent), transparent 66%),
+    radial-gradient(940px circle at 88% 108%, color-mix(in srgb, var(--accent-c) 10%, transparent), transparent 66%);
+  background-repeat: no-repeat;
+  background-size: 1180px auto, auto, auto, auto;
+  background-position: 118% 96%, 0 0, 0 0, 0 0;
+}
+
+/* camada 2: textura de pontinhos que some para baixo */
+html body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: radial-gradient(rgba(36, 31, 46, 0.055) 1px, transparent 1.3px);
+  background-size: 24px 24px;
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, transparent 62%);
+  mask-image: linear-gradient(180deg, #000 0%, transparent 62%);
+}
+
+@media (max-width: 767px) {
+  html body::before {
+    background-size: 760px auto, auto, auto, auto;
+    background-position: 140% 98%, 0 0, 0 0, 0 0;
+  }
+}
+
+/* cartões de vidro: o fundo aparece de leve por trás e os blocos "flutuam" */
+html body .card {
+  background: rgba(255, 255, 255, 0.74);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow:
+    0 0 0 1px rgba(36, 31, 46, 0.055),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    var(--shadow-1);
+}
+/* cartões com cor própria (alertas, sugestões) mantêm a cor definida na classe */
+html body .card[class*="bg-"] {
+  background: revert-layer;
+}
+html body .card-lift:hover {
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--purple) 28%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    var(--shadow-2);
+}
+
+@media print {
+  html body::before,
+  html body::after {
+    display: none;
+  }
+  html body .card {
+    background: #fff;
+  }
+}

@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import CountUp from "@/components/count-up";
+import { Sparkline } from "@/components/sparkline";
 
 /** Indicador padrão (filete degradê da marca, elevação ao pairar, números alinhados). */
 export default function KpiCard({
@@ -10,6 +11,7 @@ export default function KpiCard({
   icon: Icon,
   accent,
   hint,
+  spark,
 }: {
   label: string;
   /** texto já formatado (use quando não for um número simples) */
@@ -20,7 +22,10 @@ export default function KpiCard({
   icon?: LucideIcon;
   accent?: boolean;
   hint?: string;
+  /** série curta (ex.: últimos 7–14 dias) para o minigráfico de tendência na base do cartão */
+  spark?: number[];
 }) {
+  const temSpark = !!spark && spark.length > 1;
   return (
     <div className={`card card-lift relative overflow-hidden px-5 py-4 ${accent ? "border-purple/35" : ""}`}>
       <span className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-[#2fbf9f] via-[#8b7fe8] to-[#ff6b5b] opacity-60" />
@@ -36,6 +41,11 @@ export default function KpiCard({
         {numero !== undefined ? <CountUp value={numero} kind={kind} /> : value}
       </p>
       {hint && <p className="mt-1.5 text-[12px] text-ink-soft">{hint}</p>}
+      {temSpark && (
+        <div className="mt-3 opacity-90">
+          <Sparkline valores={spark} altura={28} formato={kind === "brl" ? "brl" : "numero"} rotulo={`Tendência de ${label.toLowerCase()}`} />
+        </div>
+      )}
     </div>
   );
 }
