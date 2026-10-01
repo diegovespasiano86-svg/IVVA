@@ -1,9 +1,25 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { CheckCircle2, Sparkles } from "lucide-react";
+import { Building2, CheckCircle2, Dumbbell, Flower2, PawPrint, Scale, Scissors, Shapes, Smile, Sparkles, Store, UtensilsCrossed, Wrench, type LucideIcon } from "lucide-react";
 import { SEGMENTOS } from "@/lib/segmentos";
 import { aplicarModeloNicho } from "./blocos-actions";
+
+const ICONE_NICHO: Record<string, LucideIcon> = {
+  "salao-beleza": Scissors,
+  barbearia: Scissors,
+  "clinica-estetica": Sparkles,
+  odontologia: Smile,
+  advocacia: Scale,
+  imoveis: Building2,
+  comercio: Store,
+  pet: PawPrint,
+  academia: Dumbbell,
+  restaurante: UtensilsCrossed,
+  "servicos-gerais": Wrench,
+  floricultura: Flower2,
+  outro: Shapes,
+};
 
 export default function NichoSeletor({ segmentoAtual, totalItens }: { segmentoAtual: string | null; totalItens: number }) {
   const [escolhido, setEscolhido] = useState<string | null>(segmentoAtual);
@@ -56,6 +72,14 @@ export default function NichoSeletor({ segmentoAtual, totalItens }: { segmentoAt
                   ativo ? "border-purple bg-[#f6f4fe] shadow-[0_0_0_1px_var(--purple)]" : "border-border bg-surface hover:border-purple/50"
                 }`}
               >
+                {(() => {
+                  const Icone = ICONE_NICHO[s.id] ?? Shapes;
+                  return (
+                    <span className={`mb-2 flex h-8 w-8 items-center justify-center rounded-lg ${ativo ? "bg-purple text-white" : "bg-[#ece9fc] text-purple"}`}>
+                      <Icone size={16} />
+                    </span>
+                  );
+                })()}
                 <p className="text-[13px] font-extrabold leading-tight">{s.nome}</p>
                 <p className="mt-0.5 line-clamp-2 text-[11.5px] leading-snug text-ink-soft">{s.descricao}</p>
               </button>

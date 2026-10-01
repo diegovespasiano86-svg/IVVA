@@ -63,19 +63,23 @@ body {
   font-family: var(--font-jakarta), system-ui, sans-serif;
 }
 
-h1,
-h2,
-h3 {
-  font-family: var(--font-jakarta), system-ui, sans-serif;
-  letter-spacing: -0.015em;
-}
+/* Regras de elemento ficam na camada "base": assim as classes do Tailwind (flex, gap,
+   tamanho de fonte, cor) conseguem sobrescrever. Fora da camada elas ganhavam sempre. */
+@layer base {
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-jakarta), system-ui, sans-serif;
+    letter-spacing: -0.015em;
+  }
 
-label {
-  display: block;
-  margin-bottom: 7px;
-  font-size: 12.5px;
-  font-weight: 700;
-  color: var(--ink-soft);
+  label {
+    display: block;
+    margin-bottom: 7px;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--ink-soft);
+  }
 }
 
 .card {
@@ -755,4 +759,225 @@ main .card table tbody tr:hover {
 }
 main .card table td {
   font-variant-numeric: tabular-nums;
+}
+
+
+/* ===== v3: elevação, movimento, botões, tabelas, acessibilidade e personalização ===== */
+:root {
+  /* escala única de sombras (cartão, hover, popover, modal) */
+  --shadow-1: 0 1px 2px rgba(20, 18, 27, 0.05), 0 1px 1px rgba(20, 18, 27, 0.03);
+  --shadow-2: 0 2px 4px rgba(20, 18, 27, 0.04), 0 10px 24px -12px rgba(20, 18, 27, 0.18);
+  --shadow-3: 0 4px 8px rgba(20, 18, 27, 0.05), 0 24px 48px -16px rgba(20, 18, 27, 0.28);
+  --shadow-4: 0 8px 16px rgba(20, 18, 27, 0.08), 0 40px 80px -20px rgba(20, 18, 27, 0.45);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-std: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --dur-1: 120ms;
+  --dur-2: 200ms;
+  --dur-3: 320ms;
+  /* altura das linhas de tabela (muda no modo compacto) */
+  --row-h: 52px;
+  /* texto de apoio com contraste melhor sobre o creme */
+  --ink-faint: #666071;
+  /* degradê dos botões principais: cor de destaque do negócio */
+  --accent-a: #0a7f69;
+  --accent-b: #6d5be0;
+  --accent-c: #c93a28;
+}
+
+/* ---------- cores de destaque (escolhidas em "Aparência"; todas com contraste AA com texto branco) ---------- */
+html[data-accent="azul"] { --purple: #2563eb; --purple-strong: #1d4fd8; --accent-a: #0a6f8f; --accent-b: #2563eb; --accent-c: #6d5be0; }
+html[data-accent="verde"] { --purple: #0b7a64; --purple-strong: #095f4e; --accent-a: #0b6b57; --accent-b: #0b7a64; --accent-c: #1d6fb8; }
+html[data-accent="rosa"] { --purple: #c2255c; --purple-strong: #a31d4c; --accent-a: #7e22ce; --accent-b: #c2255c; --accent-c: #c2410c; }
+html[data-accent="laranja"] { --purple: #c2410c; --purple-strong: #9a360a; --accent-a: #b45309; --accent-b: #c2410c; --accent-c: #be123c; }
+html[data-accent="grafite"] { --purple: #3f3a4c; --purple-strong: #2a2638; --accent-a: #14121b; --accent-b: #3f3a4c; --accent-c: #6d5be0; }
+html[data-density="compact"] { --row-h: 40px; }
+
+::selection {
+  background: color-mix(in srgb, var(--purple) 22%, transparent);
+}
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(36, 31, 46, 0.2) transparent;
+}
+
+/* ---------- cartões ---------- */
+.card {
+  box-shadow: var(--shadow-1);
+}
+.card-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-2);
+  border-color: color-mix(in srgb, var(--purple) 35%, transparent);
+}
+.page-hero {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), var(--shadow-3);
+}
+
+/* ---------- botões ---------- */
+.btn-primary,
+.btn.bg-ink,
+.btn.bg-teal,
+.btn.bg-purple {
+  background-image: linear-gradient(100deg, var(--accent-a) 0%, var(--accent-b) 58%, var(--accent-c) 135%);
+  box-shadow: 0 10px 26px -10px color-mix(in srgb, var(--accent-b) 70%, transparent);
+}
+.btn-primary:hover:not(:disabled),
+.btn.bg-ink:hover:not(:disabled),
+.btn.bg-teal:hover:not(:disabled),
+.btn.bg-purple:hover:not(:disabled) {
+  box-shadow: 0 16px 38px -10px color-mix(in srgb, var(--accent-b) 90%, transparent);
+}
+/* secundário e fantasma: sem brilho nem movimento (só destaque de cor) */
+.btn-secondary::before,
+.btn-ghost::before {
+  display: none;
+}
+.btn.btn-secondary:hover:not(:disabled):not([aria-disabled="true"]),
+.btn.btn-ghost:hover:not(:disabled):not([aria-disabled="true"]),
+.btn.btn-sm:hover:not(:disabled):not([aria-disabled="true"]) {
+  transform: translate(var(--mx), var(--my));
+}
+.btn-secondary:hover:not(:disabled) {
+  box-shadow: var(--shadow-2);
+}
+.btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--purple);
+}
+/* desativado: neutro, com cara de "indisponível" (exceto enquanto carrega) */
+.btn-primary:disabled:not(.btn-loading),
+.btn.bg-ink:disabled:not(.btn-loading),
+.btn.bg-teal:disabled:not(.btn-loading),
+.btn.bg-purple:disabled:not(.btn-loading) {
+  background-image: none;
+  background-color: var(--surface-soft);
+  color: var(--ink-faint);
+  box-shadow: none;
+  opacity: 1;
+}
+/* alvos de toque confortáveis no celular */
+@media (pointer: coarse) {
+  .btn-sm {
+    height: 40px;
+  }
+  .btn-md {
+    height: 44px;
+  }
+  .btn-lg {
+    height: 52px;
+  }
+}
+
+/* ---------- interruptores nas cores de destaque ---------- */
+.switch[aria-checked="true"],
+input.toggle[type="checkbox"]:checked {
+  background: linear-gradient(100deg, var(--accent-a) 0%, var(--accent-b) 100%);
+}
+
+/* ---------- formulários: erro e ajuda ---------- */
+.input[aria-invalid="true"],
+.select[aria-invalid="true"],
+.textarea[aria-invalid="true"] {
+  border-color: var(--coral);
+  box-shadow: 0 0 0 4px rgba(201, 58, 40, 0.12);
+}
+.field-hint {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--ink-faint);
+}
+
+/* ---------- tabelas: um padrão só (cabeçalho fixo, altura de linha ajustável, hover na cor de destaque) ---------- */
+.table-clean th,
+main .card table thead th {
+  height: 40px;
+  box-shadow: inset 0 -1px 0 var(--border);
+}
+.table-clean td,
+main .card table td {
+  height: var(--row-h);
+}
+.table-clean tbody tr:hover,
+main .card table tbody tr:hover {
+  background: color-mix(in srgb, var(--purple) 4%, #fff);
+}
+.table-clean tbody tr:last-child td {
+  border-bottom: 0;
+}
+.table-clean tbody tr {
+  transition: background var(--dur-1) ease;
+}
+
+/* tabelas viram cartões empilhados no celular (classe table-stack) */
+@media (max-width: 767px) {
+  .table-stack {
+    min-width: 0 !important;
+  }
+  .table-stack thead {
+    display: none;
+  }
+  .table-stack tbody tr {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 6px 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .table-stack tbody tr:last-child {
+    border-bottom: 0;
+  }
+  .table-stack td {
+    height: auto !important;
+    padding: 0 !important;
+    border: 0;
+  }
+  .table-stack td.num {
+    text-align: left;
+  }
+  .table-stack td:nth-child(n + 5) {
+    grid-row: 2;
+  }
+  .table-stack td.hide-sm {
+    display: none;
+  }
+}
+
+/* ---------- ponto de "novo": pulsa uma vez ---------- */
+@keyframes ivva-ping1 {
+  from {
+    box-shadow: 0 0 0 0 rgba(201, 58, 40, 0.5);
+  }
+  to {
+    box-shadow: 0 0 0 8px transparent;
+  }
+}
+.dot-new {
+  animation: ivva-ping1 0.9s var(--ease-out) 1;
+}
+
+/* ---------- menos movimento: respeita a preferência do sistema em TUDO ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+html[data-density="compact"] .table-clean td,
+html[data-density="compact"] main .card table td {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+html[data-density="compact"] .table-clean th,
+html[data-density="compact"] main .card table thead th {
+  height: 34px;
 }

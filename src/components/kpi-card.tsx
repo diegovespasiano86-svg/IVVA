@@ -32,7 +32,7 @@ export default function KpiCard({
           </span>
         )}
       </div>
-      <p className={`font-display text-[28px] font-extrabold leading-none tabular-nums ${accent ? "text-purple" : ""}`}>
+      <p className={`font-display text-[clamp(18px,5.2vw,28px)] font-extrabold leading-none tabular-nums whitespace-nowrap ${accent ? "text-purple" : ""}`}>
         {numero !== undefined ? <CountUp value={numero} kind={kind} /> : value}
       </p>
       {hint && <p className="mt-1.5 text-[12px] text-ink-soft">{hint}</p>}

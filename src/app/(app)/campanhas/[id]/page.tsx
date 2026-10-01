@@ -39,7 +39,7 @@ export default async function CampanhaPage({ params }: { params: Promise<{ id: s
       <Link href="/campanhas" className="mb-3 inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-ink-soft hover:text-ink">
         <ArrowLeft size={15} /> Campanhas
       </Link>
-      <PageHeader icon={Megaphone} title={c.nome} subtitle={`Campanha de WhatsApp · ${st.label}`} actions={<span className={`badge ${st.badge}`}>{st.label}</span>} />
+      <PageHeader icon={Megaphone} title={c.nome} subtitle="Campanha de WhatsApp" actions={<span className={`badge ${st.badge}`}>{st.label}</span>} />
     </>
   );
 

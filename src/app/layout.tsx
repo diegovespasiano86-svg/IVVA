@@ -20,9 +20,16 @@ export const metadata: Metadata = {
   description: "Recepção com IA no WhatsApp para negócios de serviço.",
 };
 
+// Aplica as preferências de aparência (cor e densidade) antes da primeira pintura, sem piscar.
+// Texto fixo, sem dado de usuário.
+const PREFS_SCRIPT = `try{var d=document.documentElement,a=localStorage.getItem("ivva:cor"),t=localStorage.getItem("ivva:densidade");if(a&&/^(azul|verde|rosa|laranja|grafite)$/.test(a))d.setAttribute("data-accent",a);if(t==="compact")d.setAttribute("data-density","compact")}catch(e){}`;
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="pt-BR" className={`${jakarta.variable} ${instrumentSerif.variable} h-full antialiased`}>
+    <html lang="pt-BR" className={`${jakarta.variable} ${instrumentSerif.variable} h-full antialiased`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: PREFS_SCRIPT }} />
+      </head>
       <body className="min-h-full flex flex-col bg-bg text-ink">
         {children}
       </body>

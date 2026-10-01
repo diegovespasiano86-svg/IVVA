@@ -179,7 +179,7 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
           )
         ) : (
           <div className="overflow-x-auto">
-            <table className="table-clean min-w-[760px]">
+            <table className="table-clean table-stack min-w-[760px]">
               <thead>
                 <tr>
                   <th>Cliente</th>
@@ -220,10 +220,10 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
                       <td>
                         <span className={`badge ${s.badge}`}>{s.label}</span>
                       </td>
-                      <td className="text-[12.5px] text-ink-soft">
+                      <td className="hide-sm text-[12.5px] text-ink-soft">
                         {c.ultimaVisita ? new Date(c.ultimaVisita).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" }) : "—"}
                       </td>
-                      <td className="num">{c.visitas}</td>
+                      <td className="num hide-sm">{c.visitas}</td>
                       <td className="num font-semibold">{c.totalGasto > 0 ? brl.format(c.totalGasto) : "—"}</td>
                       <td>{c.aceita ? <span className="badge badge-success">Recebe</span> : <span className="badge badge-neutral">Não recebe</span>}</td>
                     </tr>

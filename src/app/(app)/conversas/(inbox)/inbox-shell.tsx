@@ -115,7 +115,7 @@ export default function InboxShell({
               className="h-9 w-full rounded-[10px] border border-border bg-bg pl-9 pr-3 text-[13px]"
             />
           </div>
-          <div className="mt-3 flex gap-1.5 overflow-x-auto pb-0.5">
+          <div className="mt-3 flex flex-wrap gap-1.5">
             {ABAS.map((a) => (
               <button
                 key={a.id}
@@ -180,9 +180,9 @@ export default function InboxShell({
                       {i.previa ? `${i.autor ? AUTOR_PREFIXO[i.autor] : ""}${i.previa}` : "Sem mensagens ainda."}
                     </p>
                     <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                      {i.status === "humano" && <span className="badge badge-danger">Precisa de você</span>}
-                      {i.status === "bot" && <span className="badge badge-success">Robô atendendo</span>}
-                      {i.status === "encerrada" && <span className="badge badge-neutral">Encerrada</span>}
+                      {i.status === "humano" && aba !== "humano" && <span className="badge badge-danger">Precisa de você</span>}
+                      {i.status === "bot" && aba === "todas" && <span className="badge badge-success">Robô atendendo</span>}
+                      {i.status === "encerrada" && aba === "todas" && <span className="badge badge-neutral">Encerrada</span>}
                       {i.sac && i.status !== "encerrada" && <span className="badge badge-warn">SAC</span>}
                       {i.atribuidoNome && i.status !== "encerrada" && <span className="badge badge-brand" title="Responsável pela conversa">{i.atribuidoA === meuId ? "Você" : i.atribuidoNome}</span>}
                       {j && (

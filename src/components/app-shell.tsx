@@ -17,6 +17,7 @@ import {
 import { logout } from "@/app/(app)/actions";
 import { Logo } from "@/components/logo";
 import MotionEffects from "@/components/motion-effects";
+import Aparencia from "@/components/aparencia";
 import { navGroupsForRole, type NavGroup, type Role } from "@/lib/nav";
 
 const MOBILE_PRIORITY = ["inicio", "conversas", "agenda", "clientes"];
@@ -284,6 +285,7 @@ export default function AppShell({
                       Conta e assinatura
                     </Link>
                   )}
+                  <Aparencia />
                   <form action={logout}>
                     <button
                       type="submit"
@@ -303,6 +305,7 @@ export default function AppShell({
       <div className="flex flex-1">
         {/* ---------- menu lateral (desktop) ---------- */}
         <div className={`relative hidden shrink-0 transition-[width] duration-200 md:block print:!hidden ${pinned ? "w-[248px]" : "w-[68px]"}`}>
+          <div className="sticky top-[58px] z-30 h-[calc(100dvh-58px)]">
           <nav
             aria-label="Menu principal"
             onMouseEnter={() => setHovered(true)}
@@ -311,12 +314,12 @@ export default function AppShell({
             onBlur={(e) => {
               if (!e.currentTarget.contains(e.relatedTarget as Node)) setHovered(false);
             }}
-            className={`absolute inset-y-0 left-0 z-30 flex flex-col overflow-hidden border-r border-border bg-white/80 px-3 py-4 backdrop-blur-xl transition-[width,box-shadow] duration-200 ${
-              expanded ? "w-[248px]" : "w-[68px]"
+            className={`absolute inset-y-0 left-0 z-30 flex flex-col overflow-y-auto overflow-x-hidden border-r border-border px-3 py-4 backdrop-blur-xl transition-[width,box-shadow,background-color] duration-200 ${
+              expanded ? "w-[248px] bg-white" : "w-[68px] bg-white/90"
             } ${expanded && !pinned ? "shadow-[8px_0_32px_-12px_rgba(20,18,27,0.25)]" : ""}`}
           >
             <div className="flex flex-col gap-1">{top.map(renderGroup)}</div>
-            <div className="mt-auto flex flex-col gap-1 border-t border-border pt-3">
+            <div className="mt-3 flex flex-col gap-1 border-t border-border pt-3">
               {bottom.map(renderGroup)}
               <button
                 type="button"
@@ -324,13 +327,14 @@ export default function AppShell({
                 title={pinned ? "Recolher menu" : "Fixar menu aberto"}
                 className="flex items-center gap-3 rounded-[10px] px-3 py-2.5 text-[13px] font-semibold text-ink-faint hover:bg-surface-soft hover:text-ink"
               >
-                {pinned ? <PanelLeftClose size={20} /> : <PanelLeftOpen size={20} />}
+                {pinned ? <PanelLeftClose size={20} className="shrink-0" /> : <PanelLeftOpen size={20} className="shrink-0" />}
                 <span className={`truncate transition-opacity ${expanded ? "opacity-100" : "opacity-0"}`}>
                   {pinned ? "Recolher menu" : "Fixar menu"}
                 </span>
               </button>
             </div>
           </nav>
+          </div>
         </div>
 
         {/* ---------- conteúdo ---------- */}
@@ -340,7 +344,7 @@ export default function AppShell({
       {/* ---------- barra inferior (celular) ---------- */}
       <nav
         aria-label="Menu principal"
-        className="fixed inset-x-0 bottom-0 z-40 flex border-t border-border print:hidden bg-white/85 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 flex border-t border-border print:hidden bg-white pb-[env(safe-area-inset-bottom)] md:hidden"
       >
         {mobileMain.map((g) => {
           const Icon = g.icon;

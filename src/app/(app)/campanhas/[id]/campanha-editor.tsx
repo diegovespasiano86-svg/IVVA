@@ -336,7 +336,7 @@ export default function CampanhaEditor({
       <aside className="lg:sticky lg:top-20">
         <p className="mb-3 text-center text-[12px] font-bold uppercase tracking-wide text-ink-faint">Como o cliente vai ver</p>
         <PreviewWhatsApp texto={corpoModelo} negocio={negocio} />
-        <button type="button" onClick={() => salvar().then((ok) => ok && setErro(null))} className="btn btn-ghost btn-sm mx-auto mt-4 flex" disabled={pendente}>
+        <button type="button" onClick={() => salvar().then((ok) => ok && setErro(null))} className="btn btn-secondary btn-sm mx-auto mt-4 flex" disabled={pendente}>
           Salvar rascunho
         </button>
       </aside>
