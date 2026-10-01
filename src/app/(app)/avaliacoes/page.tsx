@@ -1,3 +1,5 @@
+import EmptyState from "@/components/empty-state";
+import { Star } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { LineAreaChart, CardVazio } from "@/components/charts";
 
@@ -219,8 +221,8 @@ export default async function AvaliacoesPage() {
       </div>
 
       {total === 0 ? (
-        <div className="card px-6 py-14 text-center text-[13px] text-ink-faint">
-          Nenhuma avaliação recebida ainda.
+        <div className="card">
+          <EmptyState icon={Star} title="Nenhuma avaliação ainda" text={"Nenhuma avaliação recebida ainda."} />
         </div>
       ) : (
         <div className="flex flex-col gap-2">

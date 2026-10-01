@@ -1,3 +1,5 @@
+import EmptyState from "@/components/empty-state";
+import { Wallet } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { registrarPagamento } from "./actions";
 
@@ -246,8 +248,8 @@ export default async function CheckoutPage(props: {
       </form>
 
       {!pagamentos || pagamentos.length === 0 ? (
-        <div className="card px-6 py-14 text-center text-[13px] text-ink-faint">
-          Nenhum pagamento registrado ainda.
+        <div className="card">
+          <EmptyState icon={Wallet} title="Nenhum pagamento registrado" text={"Nenhum pagamento registrado ainda."} />
         </div>
       ) : (
         <div className="card overflow-hidden">

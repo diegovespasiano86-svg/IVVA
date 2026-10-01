@@ -1,3 +1,5 @@
+import EmptyState from "@/components/empty-state";
+import { Users } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { criarContato, confirmarContatoHistorico, ignorarContatoHistorico } from "./actions";
@@ -178,10 +180,9 @@ function HistoricoWhatsAppReview({
 }) {
   if (itens.length === 0) {
     return (
-      <div className="card px-6 py-14 text-center text-[13px] text-ink-faint">
-        Sem sugestões pendentes — o histórico do WhatsApp conectado (se
-        houver) já foi revisado, ou ainda está sendo processado.
-      </div>
+      <div className="card">
+          <EmptyState icon={Users} title="Nenhum contato no funil" text={"Sem sugestões pendentes — o histórico do WhatsApp conectado (se houver) já foi revisado, ou ainda está sendo processado."} />
+        </div>
     );
   }
 

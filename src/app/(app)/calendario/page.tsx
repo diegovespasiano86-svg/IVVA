@@ -55,8 +55,13 @@ export default async function CalendarioPage() {
         </p>
       </div>
 
-      <div className="card mb-4 px-4 py-4">
-        <p className="mb-3 text-[13px] font-bold">Novo agendamento manual</p>
+      <details className="card group mb-4">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 [&::-webkit-details-marker]:hidden">
+          <span className="text-[13.5px] font-extrabold">Novo agendamento manual</span>
+          <span className="btn btn-primary btn-sm pointer-events-none group-open:hidden">Novo agendamento</span>
+          <span className="hidden text-[12.5px] font-semibold text-ink-soft group-open:inline">Fechar</span>
+        </summary>
+        <div className="border-t border-border px-4 py-4">
         <form action={criarAgendamento} className="flex flex-wrap items-end gap-2">
           <div>
             <label htmlFor="contact_id" className="!mb-1">
@@ -131,11 +136,12 @@ export default async function CalendarioPage() {
               className="input"
             />
           </div>
-          <button type="submit" className="btn bg-ink px-4 py-2 text-[12.5px] text-white">
+          <button type="submit" className="btn btn-primary btn-md">
             Agendar
           </button>
         </form>
-      </div>
+        </div>
+      </details>
 
       <CalendarView eventos={eventos} profissionais={profissionais ?? []} />
     </div>

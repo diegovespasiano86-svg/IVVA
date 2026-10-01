@@ -1,3 +1,5 @@
+import EmptyState from "@/components/empty-state";
+import { ListChecks } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { criarTarefa } from "./actions";
 import StatusSelect from "./status-select";
@@ -140,9 +142,8 @@ export default async function TarefasPage() {
       </div>
 
       {!tarefas || tarefas.length === 0 ? (
-        <div className="card px-6 py-14 text-center text-[13px] text-ink-faint">
-          Nenhuma tarefa ainda. Quando o robô identificar oportunidade de
-          upsell ou cliente com prazo vencido, aparece aqui.
+        <div className="card">
+          <EmptyState icon={ListChecks} title="Nenhuma tarefa por aqui" text={"Nenhuma tarefa ainda. Quando o robô identificar oportunidade de upsell ou cliente com prazo vencido, aparece aqui."} />
         </div>
       ) : (
         <div className="flex flex-col gap-2">

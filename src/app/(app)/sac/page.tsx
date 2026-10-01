@@ -1,3 +1,5 @@
+import EmptyState from "@/components/empty-state";
+import { LifeBuoy } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 
@@ -79,10 +81,8 @@ export default async function SacPage() {
       </div>
 
       {(tickets ?? []).length === 0 ? (
-        <div className="card px-6 py-14 text-center text-[13px] text-ink-faint">
-          Nenhum encaminhamento pra humano nos últimos 14 dias. Quando o
-          robô não souber responder ou o cliente pedir uma pessoa, aparece
-          aqui.
+        <div className="card">
+          <EmptyState icon={LifeBuoy} title="Nenhum chamado aberto" text={"Nenhum encaminhamento pra humano nos últimos 14 dias. Quando o robô não souber responder ou o cliente pedir uma pessoa, aparece aqui."} />
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-3">

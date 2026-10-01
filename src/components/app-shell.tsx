@@ -189,7 +189,7 @@ export default function AppShell({
   return (
     <div className="flex min-h-screen flex-col">
       {/* ---------- topo ---------- */}
-      <header className="sticky top-0 z-40 bg-ink-deep text-white">
+      <header className="sticky top-0 z-40 bg-ink-deep text-white print:hidden">
         <div className="flex h-14 items-center gap-3 px-4 md:px-5">
           <Link href="/dashboard" className="shrink-0" aria-label="ivva, ir para o início">
             <Logo tone="light" />
@@ -302,7 +302,7 @@ export default function AppShell({
 
       <div className="flex flex-1">
         {/* ---------- menu lateral (desktop) ---------- */}
-        <div className={`relative hidden shrink-0 transition-[width] duration-200 md:block ${pinned ? "w-[248px]" : "w-[68px]"}`}>
+        <div className={`relative hidden shrink-0 transition-[width] duration-200 md:block print:!hidden ${pinned ? "w-[248px]" : "w-[68px]"}`}>
           <nav
             aria-label="Menu principal"
             onMouseEnter={() => setHovered(true)}
@@ -340,7 +340,7 @@ export default function AppShell({
       {/* ---------- barra inferior (celular) ---------- */}
       <nav
         aria-label="Menu principal"
-        className="fixed inset-x-0 bottom-0 z-40 flex border-t border-border bg-white/85 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 flex border-t border-border print:hidden bg-white/85 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden"
       >
         {mobileMain.map((g) => {
           const Icon = g.icon;

@@ -1,3 +1,5 @@
+import EmptyState from "@/components/empty-state";
+import { Package } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { criarProduto, ajustarEstoque } from "./actions";
 import { FeatureLock } from "@/components/feature-lock";
@@ -145,8 +147,8 @@ export default async function EstoquePage() {
       </div>
 
       {!produtos || produtos.length === 0 ? (
-        <div className="card px-6 py-14 text-center text-[13px] text-ink-faint">
-          Nenhum produto cadastrado ainda.
+        <div className="card">
+          <EmptyState icon={Package} title="Nenhum produto cadastrado" text={"Nenhum produto cadastrado ainda."} />
         </div>
       ) : (
         <div className="card overflow-hidden">

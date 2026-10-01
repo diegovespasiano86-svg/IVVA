@@ -1,4 +1,5 @@
 import {
+  BarChart3,
   Bot,
   CalendarDays,
   Home,
@@ -55,7 +56,8 @@ export const NAV_GROUPS: NavGroup[] = [
     label: "Clientes",
     icon: Users,
     items: [
-      { href: "/crm", label: "Base de clientes e funil", roles: DONO },
+      { href: "/clientes", label: "Base de clientes", roles: DONO },
+      { href: "/crm", label: "Funil de vendas", roles: DONO },
       { href: "/avaliacoes", label: "Avaliações", roles: AMBOS },
     ],
   },
@@ -87,6 +89,12 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: "/base-conhecimento", label: "Base de conhecimento", roles: DONO },
       { href: "/robo/simulador", label: "Simulador", roles: DONO },
     ],
+  },
+  {
+    id: "relatorios",
+    label: "Relatórios",
+    icon: BarChart3,
+    items: [{ href: "/relatorios", label: "Relatórios e exportação", roles: DONO }],
   },
   {
     id: "canais",
