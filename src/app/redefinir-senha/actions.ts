@@ -10,8 +10,8 @@ export async function redefinirSenha(
   const senha = String(formData.get("senha") ?? "");
   const confirmacao = String(formData.get("confirmacao") ?? "");
 
-  if (senha.length < 6) {
-    return "A senha precisa ter pelo menos 6 caracteres.";
+  if (senha.length < 8) {
+    return "A senha precisa ter pelo menos 8 caracteres.";
   }
   if (senha !== confirmacao) {
     return "As senhas não são iguais.";

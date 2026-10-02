@@ -10,8 +10,8 @@ export async function aceitarConvite(
   const token = String(formData.get("token") ?? "");
   const senha = String(formData.get("senha") ?? "");
 
-  if (!token || senha.length < 6) {
-    return "Crie uma senha com pelo menos 6 caracteres.";
+  if (!token || senha.length < 8) {
+    return "Crie uma senha com pelo menos 8 caracteres.";
   }
 
   const supabase = await createClient();

@@ -27,10 +27,13 @@ export async function assinarPlano(
     return { erro: "Pagamento ainda em configuração — volta em instantes.", clientSecret: null };
   }
 
+  // Em produção o retorno da Stripe é sempre o endereço oficial do app: não confiar
+  // no cabeçalho Origin/Host da requisição para montar a URL de retorno.
   const headerList = await headers();
   const origin =
-    headerList.get("origin") ??
-    `https://${headerList.get("host") ?? "localhost:3000"}`;
+    process.env.VERCEL_ENV === "production"
+      ? "https://app.ivva.app.br"
+      : (headerList.get("origin") ?? `https://${headerList.get("host") ?? "localhost:3000"}`);
 
   try {
     const session = await createCheckoutSession({

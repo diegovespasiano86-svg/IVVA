@@ -15,7 +15,7 @@ export default function RedefinirSenhaForm() {
           name="senha"
           type="password"
           required
-          minLength={6}
+          minLength={8}
           autoComplete="new-password"
           placeholder="••••••••"
           className="input !h-[46px]"
@@ -29,7 +29,7 @@ export default function RedefinirSenhaForm() {
           name="confirmacao"
           type="password"
           required
-          minLength={6}
+          minLength={8}
           autoComplete="new-password"
           placeholder="••••••••"
           className="input !h-[46px]"

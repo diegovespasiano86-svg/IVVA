@@ -15,7 +15,9 @@ export async function registrarPagamento(formData: FormData) {
     !contactId ||
     !professionalId ||
     !servico ||
-    !valorTotal ||
+    !Number.isFinite(valorTotal) ||
+    valorTotal <= 0 ||
+    valorTotal > 1_000_000 ||
     !formaPagamento
   ) {
     return;

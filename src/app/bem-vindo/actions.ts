@@ -14,8 +14,8 @@ export async function finalizarCadastro(
   const senha = String(formData.get("senha") ?? "");
   const segmentoId = String(formData.get("segmento") ?? "").trim();
 
-  if (!sessionId || !nome || senha.length < 6) {
-    return "Preencha seu nome e uma senha com pelo menos 6 caracteres.";
+  if (!sessionId || !nome || senha.length < 8) {
+    return "Preencha seu nome e uma senha com pelo menos 8 caracteres.";
   }
   if (!segmentoId) {
     return "Escolha o tipo do seu negócio antes de continuar.";

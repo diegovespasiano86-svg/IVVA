@@ -37,8 +37,8 @@ export default function SetupForm({ sessionId }: { sessionId: string }) {
             name="senha"
             type="password"
             required
-            minLength={6}
-            placeholder="Pelo menos 6 caracteres"
+            minLength={8}
+            placeholder="Pelo menos 8 caracteres"
             className="input"
           />
         </div>
