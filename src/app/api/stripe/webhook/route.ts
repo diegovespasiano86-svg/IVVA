@@ -1,7 +1,7 @@
 import { createHmac, timingSafeEqual } from "crypto";
 import { type NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { emailConfigurado, emailContaExistente, emailFinalizarCadastro, enviarEmail } from "@/lib/email";
+import { emailConfigurado, emailContaExistente, enviarEmail } from "@/lib/email";
 
 // A Stripe assina todo POST com HMAC-SHA256 do corpo bruto + timestamp,
 // usando o signing secret gerado ao registrar o endpoint no dashboard.
@@ -150,9 +150,9 @@ async function tratarCheckoutConcluido(event: StripeEvent) {
   // Só a primeira entrega envia e-mail; repetições da Stripe não duplicam.
   if (resultado?.novo && emailConfigurado()) {
     let mensagem: { assunto: string; html: string; texto: string } | null = null;
-    if (resultado.status === "aguardando") {
-      mensagem = emailFinalizarCadastro({ negocio: nome, plano, link: `https://app.ivva.app.br/bem-vindo?session_id=${s.id}` });
-    } else if (resultado.status === "conta_existente") {
+    // Quem acabou de pagar já cai na tela de criar a senha (return_url); mandar o mesmo passo por e-mail só duplica.
+    // Se a pessoa fechar a página sem criar o acesso, o alerta diário avisa a ivva (cadastros pendentes).
+    if (resultado.status === "conta_existente") {
       mensagem = emailContaExistente({ email });
     }
     if (mensagem) {
