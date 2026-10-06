@@ -5,6 +5,7 @@ import { processarResumosPendentes } from "@/lib/resumo-conversas";
 import { podeEnviarAutomatico } from "@/lib/automacao";
 import { processarResumosHistoricoPendentes } from "@/lib/whatsapp-historico";
 import { processarLotes } from "@/lib/campanhas-envio";
+import { emailAlertaCadastros, enviarEmail } from "@/lib/email";
 
 // Roda 1x por dia (limite do plano Hobby da Vercel — ver vercel.json).
 // Isso significa que os prazos "1h"/"2h" na prática viram "dentro do
@@ -232,6 +233,21 @@ export async function GET(request: NextRequest) {
     campanhas = await processarLotes({ maxMs: 25000 });
   } catch (err) {
     console.error("[cron pos-venda] erro nas campanhas", err);
+  }
+
+  // Avisa a ivva dos pagamentos que entraram e seguem sem negócio criado (a Hobby só permite 2 crons, então
+  // este aviso pega carona neste). Falha aqui nunca derruba o resto.
+  try {
+    const stripeSecret = process.env.STRIPE_WEBHOOK_INTERNAL_SECRET;
+    if (stripeSecret) {
+      const { data: pendentes } = await supabase.rpc("cadastros_pendentes_para_alertar", { p_secret: stripeSecret });
+      const lista = (pendentes ?? []) as { email: string; nome_negocio: string | null; plano: string | null; status: string; criado_em: string }[];
+      if (lista.length > 0) {
+        await enviarEmail({ para: "contato@ivva.app.br", ...emailAlertaCadastros(lista) });
+      }
+    }
+  } catch (err) {
+    console.error("[cron pos-venda] falha no alerta de cadastros pendentes", err);
   }
 
   return NextResponse.json({

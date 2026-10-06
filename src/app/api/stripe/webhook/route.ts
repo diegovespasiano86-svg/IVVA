@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from "crypto";
 import { type NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { emailConfigurado, emailContaExistente, emailFinalizarCadastro, enviarEmail } from "@/lib/email";
 
 // A Stripe assina todo POST com HMAC-SHA256 do corpo bruto + timestamp,
 // usando o signing secret gerado ao registrar o endpoint no dashboard.
@@ -36,8 +37,13 @@ type StripeEvent = {
   type: string;
   data: {
     object: {
+      id?: string;
+      mode?: string;
       customer?: string;
       status?: string;
+      customer_email?: string | null;
+      customer_details?: { email?: string | null } | null;
+      metadata?: { nome_negocio?: string; plano?: string; tipo?: string } | null;
     };
   };
 };
@@ -63,6 +69,12 @@ export async function POST(request: NextRequest) {
     event = JSON.parse(rawBody);
   } catch {
     return new NextResponse("Bad Request", { status: 400 });
+  }
+
+  // Pagamento da assinatura confirmado: registra o cadastro e avisa o cliente por e-mail, sem depender de ele
+  // voltar à tela de boas-vindas (se fechar a aba ou cair em erro, ninguém fica pago e sem acesso).
+  if (event.type === "checkout.session.completed") {
+    return tratarCheckoutConcluido(event);
   }
 
   if (!EVENTOS_RELEVANTES.has(event.type)) {
@@ -95,6 +107,57 @@ export async function POST(request: NextRequest) {
   if (error) {
     console.error("[stripe webhook] falha ao atualizar status da assinatura:", error.message);
     return new NextResponse("Internal Server Error", { status: 500 });
+  }
+
+  return NextResponse.json({ received: true });
+}
+
+async function tratarCheckoutConcluido(event: StripeEvent) {
+  const s = event.data.object;
+  // Compra avulsa de créditos usa outro caminho; aqui só entra assinatura nova.
+  if (s.mode !== "subscription" || s.metadata?.tipo === "creditos") {
+    return NextResponse.json({ received: true });
+  }
+  const email = (s.customer_details?.email ?? s.customer_email ?? "").trim().toLowerCase();
+  const internalSecret = process.env.STRIPE_WEBHOOK_INTERNAL_SECRET;
+  if (!s.id || !email || !internalSecret) {
+    console.error("[stripe webhook] checkout.session.completed sem dados suficientes", { id: s.id, temEmail: Boolean(email) });
+    return NextResponse.json({ received: true });
+  }
+
+  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
+  const nome = s.metadata?.nome_negocio ?? "seu negócio";
+  const plano = s.metadata?.plano ?? "essencial";
+
+  const { data, error } = await supabase.rpc("cadastro_pendente_registrar", {
+    p_secret: internalSecret,
+    p_session_id: s.id,
+    p_customer_id: s.customer ?? null,
+    p_email: email,
+    p_nome: nome,
+    p_plano: plano,
+  });
+  if (error) {
+    console.error("[stripe webhook] falha ao registrar cadastro pendente:", error.message);
+    // 500 faz a Stripe tentar de novo (ela repete por até 3 dias).
+    return new NextResponse("Internal Server Error", { status: 500 });
+  }
+
+  const resultado = data as { status: string; novo: boolean } | null;
+  // Só a primeira entrega envia e-mail; repetições da Stripe não duplicam.
+  if (resultado?.novo && emailConfigurado()) {
+    let mensagem: { assunto: string; html: string; texto: string } | null = null;
+    if (resultado.status === "aguardando") {
+      mensagem = emailFinalizarCadastro({ negocio: nome, plano, link: `https://app.ivva.app.br/bem-vindo?session_id=${s.id}` });
+    } else if (resultado.status === "conta_existente") {
+      mensagem = emailContaExistente({ email });
+    }
+    if (mensagem) {
+      const envio = await enviarEmail({ para: email, ...mensagem });
+      if (envio.ok) {
+        await supabase.rpc("cadastro_pendente_email_enviado", { p_secret: internalSecret, p_session_id: s.id });
+      }
+    }
   }
 
   return NextResponse.json({ received: true });

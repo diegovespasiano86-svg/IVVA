@@ -47,11 +47,18 @@ export default async function AdminPage() {
     redirect("/dashboard");
   }
 
-  const [{ data }, { data: chamadosData }, { data: usoData }] = await Promise.all([
+  const [{ data }, { data: chamadosData }, { data: usoData }, { data: pendentesData }] = await Promise.all([
     supabase.rpc("admin_tenants_overview"),
     supabase.rpc("admin_chamados_recentes"),
     supabase.rpc("admin_ia_uso_overview"),
+    supabase
+      .from("cadastros_pendentes")
+      .select("email, nome_negocio, plano, status, created_at")
+      .neq("status", "concluido")
+      .order("created_at", { ascending: false })
+      .limit(30),
   ]);
+  const pendentes = (pendentesData ?? []) as { email: string; nome_negocio: string | null; plano: string | null; status: string; created_at: string }[];
   const tenants = (data ?? []) as AdminTenantRow[];
   // Uso de conversas da IA no mês, por negócio (limite = valor negociado ou o do plano).
   const usoPorTenant = new Map(
@@ -130,6 +137,29 @@ export default async function AdminPage() {
             </p>
           </div>
         </div>
+
+        {pendentes.length > 0 && (
+          <div className="mb-6">
+            <p className="mb-3 text-[14px] font-bold">
+              Pagamentos sem negócio criado <span className="font-normal text-ink-faint">({pendentes.length})</span>
+            </p>
+            <div className="flex flex-col gap-2">
+              {pendentes.map((p) => (
+                <div key={p.email + p.created_at} className="card flex flex-wrap items-center justify-between gap-3 border-amber/40 px-4 py-3">
+                  <div>
+                    <p className="text-[13.5px] font-bold">{p.nome_negocio ?? "Sem nome"} · {p.email}</p>
+                    <p className="text-[12px] text-ink-faint">
+                      Plano {p.plano ?? "?"} · pago em {new Date(p.created_at).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}
+                    </p>
+                  </div>
+                  <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${p.status === "conta_existente" ? "bg-coral/10 text-coral" : "bg-amber/15 text-[#7a4a00]"}`}>
+                    {p.status === "conta_existente" ? "E-mail já tem conta" : "Cliente ainda não criou a senha"}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="mb-6">
           <div className="mb-3 flex items-baseline justify-between">
