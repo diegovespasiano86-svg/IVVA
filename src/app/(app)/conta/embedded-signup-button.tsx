@@ -55,7 +55,7 @@ declare global {
           config_id: string;
           response_type: string;
           override_default_response_type: boolean;
-          extras: { featureType: string; setup: Record<string, never> };
+          extras: { featureType: string; sessionInfoVersion?: string; setup: Record<string, never> };
         },
       ) => void;
     };
@@ -93,6 +93,9 @@ export default function EmbeddedSignupButton() {
 
   const [sdkErro, setSdkErro] = useState(false);
   const [tentativa, setTentativa] = useState(0);
+  // Passo a passo do que a Meta respondeu nesta tentativa (sem dados sensíveis): ajuda a achar onde parou.
+  const [diag, setDiag] = useState<string[]>([]);
+  const anotar = (msg: string) => setDiag((d) => [...d, `${new Date().toLocaleTimeString("pt-BR")} ${msg}`].slice(-12));
 
   // Carrega o login da Meta. Se não ficar pronto em 10 s (bloqueador de anúncios/privacidade, rede da
   // empresa, extensão), mostra o motivo provável e um botão para tentar de novo, em vez de deixar o
@@ -182,6 +185,7 @@ export default function EmbeddedSignupButton() {
         data?: { phone_number_id?: string; waba_id?: string };
       };
       if (payload.type !== "WA_EMBEDDED_SIGNUP") return;
+      anotar(`Meta enviou: ${payload.event ?? "evento sem nome"}`);
 
       if (payload.event === "ERROR") {
         sessaoRef.current.erro = "A Meta recusou o login. Tenta de novo.";
@@ -211,6 +215,8 @@ export default function EmbeddedSignupButton() {
     }
 
     setErro(null);
+    setDiag([]);
+    anotar("Janela da Meta aberta");
     setStatus("aguardando");
     sessaoRef.current = { phoneNumberId: null, wabaId: null, isCoexistence: false, finalizada: false, erro: null };
     codeRef.current = null;
@@ -219,18 +225,29 @@ export default function EmbeddedSignupButton() {
       (response) => {
         const code = response.authResponse?.code;
         if (!code) {
+          anotar(`Janela fechada sem autorização (status: ${response.status ?? "desconhecido"})`);
           setErro("Login cancelado ou não autorizado.");
           setStatus("erro");
           return;
         }
+        anotar("Autorização recebida");
         codeRef.current = code;
         void tentarFinalizar();
+        // A Meta deve enviar também o número escolhido. Se não vier, avisa em vez de ficar parado.
+        setTimeout(() => {
+          const s = sessaoRef.current;
+          if (!s.finalizada && (!s.phoneNumberId || !s.wabaId)) {
+            anotar("A Meta autorizou, mas não enviou os dados do número");
+            setErro("A Meta autorizou o login, mas não enviou o número escolhido. Tente de novo e, na janela da Meta, escolha a empresa IVVA e conecte o número do WhatsApp Business.");
+            setStatus("erro");
+          }
+        }, 25000);
       },
       {
         config_id: configId,
         response_type: "code",
         override_default_response_type: true,
-        extras: { featureType: "whatsapp_business_app_onboarding", setup: {} },
+        extras: { featureType: "whatsapp_business_app_onboarding", sessionInfoVersion: "3", setup: {} },
       },
     );
   }
@@ -328,6 +345,17 @@ export default function EmbeddedSignupButton() {
         <div className="mt-3 rounded-[10px] border border-coral/30 bg-coral/5 px-3.5 py-2.5">
           <p className="text-[12.5px] font-semibold text-coral">{erro}</p>
         </div>
+      )}
+
+      {diag.length > 0 && (
+        <details className="mt-3 rounded-[10px] border border-border bg-surface-soft/50 px-3.5 py-2.5" open={status === "erro"}>
+          <summary className="cursor-pointer text-[12px] font-bold text-ink-soft">Detalhes da conexão (para o suporte)</summary>
+          <ul className="mt-2 flex flex-col gap-0.5 text-[11.5px] text-ink-soft">
+            {diag.map((d, i) => (
+              <li key={i}>{d}</li>
+            ))}
+          </ul>
+        </details>
       )}
 
       <div className="mt-4 border-t border-border pt-4">
