@@ -110,3 +110,66 @@ export async function inscreverAppNaConta(
     return { ok: false, erro: "Não consegui falar com a Meta para ativar o recebimento das mensagens." };
   }
 }
+
+type NumeroDaMeta = {
+  wabaId: string;
+  phoneNumberId: string;
+  displayPhoneNumber: string | null;
+  isCoexistence: boolean;
+};
+
+// Quando a janela da Meta fecha sem devolver o número escolhido (acontece quando o cliente já autorizou
+// o app antes), o código do login ainda vale: com o token descobrimos quais contas de WhatsApp Business
+// (WABA) foram liberadas e qual número está nelas. Prefere o número que vive no app WhatsApp Business
+// do celular (coexistência).
+export async function descobrirNumeroLiberado(
+  accessToken: string,
+): Promise<{ numero: NumeroDaMeta | null; erro: string | null }> {
+  const appId = process.env.NEXT_PUBLIC_WHATSAPP_APP_ID;
+  const appSecret = process.env.WHATSAPP_APP_SECRET;
+  if (!appId || !appSecret) return { numero: null, erro: "Configuração do app Meta ausente." };
+
+  try {
+    const dbg = new URL(`${GRAPH_URL}/debug_token`);
+    dbg.searchParams.set("input_token", accessToken);
+    dbg.searchParams.set("access_token", `${appId}|${appSecret}`);
+    const dbgResp = await fetch(dbg.toString());
+    const dbgData = await dbgResp.json();
+    const escopos = (dbgData?.data?.granular_scopes ?? []) as { scope: string; target_ids?: string[] }[];
+    const wabaIds = [
+      ...new Set(
+        escopos
+          .filter((s) => s.scope === "whatsapp_business_management" || s.scope === "whatsapp_business_messaging")
+          .flatMap((s) => s.target_ids ?? []),
+      ),
+    ];
+    if (wabaIds.length === 0) {
+      return { numero: null, erro: "A Meta não liberou nenhuma conta de WhatsApp Business para a ivva." };
+    }
+
+    const achados: NumeroDaMeta[] = [];
+    for (const wabaId of wabaIds) {
+      const url = new URL(`${GRAPH_URL}/${wabaId}/phone_numbers`);
+      url.searchParams.set("fields", "id,display_phone_number,is_on_biz_app");
+      url.searchParams.set("access_token", accessToken);
+      const resp = await fetch(url.toString());
+      const data = await resp.json();
+      for (const n of (data?.data ?? []) as { id: string; display_phone_number?: string; is_on_biz_app?: boolean }[]) {
+        achados.push({
+          wabaId,
+          phoneNumberId: n.id,
+          displayPhoneNumber: n.display_phone_number ?? null,
+          isCoexistence: n.is_on_biz_app === true,
+        });
+      }
+    }
+    if (achados.length === 0) {
+      return { numero: null, erro: "Não encontrei nenhum número nas contas de WhatsApp Business liberadas." };
+    }
+    achados.sort((a, b) => Number(b.isCoexistence) - Number(a.isCoexistence));
+    return { numero: achados[0], erro: null };
+  } catch (err) {
+    console.error("[embedded-signup] falha ao descobrir o número liberado", err);
+    return { numero: null, erro: "Não consegui consultar a Meta para achar o número liberado." };
+  }
+}

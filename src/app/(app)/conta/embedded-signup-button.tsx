@@ -233,15 +233,29 @@ export default function EmbeddedSignupButton() {
         anotar("Autorização recebida");
         codeRef.current = code;
         void tentarFinalizar();
-        // A Meta deve enviar também o número escolhido. Se não vier, avisa em vez de ficar parado.
+        // A Meta deve enviar também o número escolhido. Se não vier em 6 s (acontece quando o login já foi
+        // autorizado antes e a janela fecha direto), o sistema busca sozinho o número que a Meta liberou.
         setTimeout(() => {
           const s = sessaoRef.current;
-          if (!s.finalizada && (!s.phoneNumberId || !s.wabaId)) {
-            anotar("A Meta autorizou, mas não enviou os dados do número");
-            setErro("A Meta autorizou o login, mas não enviou o número escolhido. Tente de novo e, na janela da Meta, escolha a empresa IVVA e conecte o número do WhatsApp Business.");
-            setStatus("erro");
-          }
-        }, 25000);
+          if (s.finalizada) return;
+          s.finalizada = true;
+          anotar("A Meta não enviou o número; buscando o número liberado");
+          setStatus("salvando");
+          void conectarWhatsAppEmbedded({
+            code,
+            phoneNumberId: s.phoneNumberId ?? undefined,
+            wabaId: s.wabaId ?? undefined,
+            isCoexistence: s.isCoexistence,
+          }).then((r) => {
+            if (r.erro) {
+              anotar(`Falhou: ${r.erro}`);
+              setErro(r.erro);
+              setStatus("erro");
+            } else {
+              anotar("Número conectado");
+            }
+          });
+        }, 6000);
       },
       {
         config_id: configId,

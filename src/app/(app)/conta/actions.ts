@@ -11,6 +11,7 @@ import {
   buscarDetalhesNumero,
   solicitarSincronizacaoCoexistencia,
   inscreverAppNaConta,
+  descobrirNumeroLiberado,
   WhatsAppEmbeddedSignupError,
 } from "@/lib/whatsapp-embedded-signup";
 
@@ -97,13 +98,17 @@ export async function conectarWhatsApp(
 // evento da janela; aqui só troca o código pelo token e salva.
 export async function conectarWhatsAppEmbedded(params: {
   code: string;
-  phoneNumberId: string;
-  wabaId: string;
-  isCoexistence: boolean;
+  // Opcionais: quando a janela da Meta não devolve o número escolhido, buscamos o número liberado pelo token.
+  phoneNumberId?: string;
+  wabaId?: string;
+  isCoexistence?: boolean;
 }): Promise<{ erro: string | null }> {
-  const { code, phoneNumberId, wabaId, isCoexistence } = params;
+  const { code } = params;
+  let phoneNumberId = params.phoneNumberId;
+  let wabaId = params.wabaId;
+  let isCoexistence = params.isCoexistence ?? false;
 
-  if (!code || !phoneNumberId || !wabaId) {
+  if (!code) {
     return { erro: "Dados incompletos vindos do login com a Meta. Tenta de novo." };
   }
 
@@ -134,6 +139,16 @@ export async function conectarWhatsAppEmbedded(params: {
           ? err.message
           : "Falha ao concluir o login com a Meta. Tenta de novo.",
     };
+  }
+
+  if (!phoneNumberId || !wabaId) {
+    const achado = await descobrirNumeroLiberado(accessToken);
+    if (!achado.numero) {
+      return { erro: achado.erro ?? "Não encontrei o número liberado na Meta. Tenta de novo." };
+    }
+    phoneNumberId = achado.numero.phoneNumberId;
+    wabaId = achado.numero.wabaId;
+    isCoexistence = achado.numero.isCoexistence;
   }
 
   const { displayPhoneNumber } = await buscarDetalhesNumero(phoneNumberId, accessToken);
