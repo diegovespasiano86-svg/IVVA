@@ -30,9 +30,16 @@ export default function InviteForm({ rotuloBotao = "+ Convidar" }: { rotuloBotao
     }
   }
 
+  // Depois de enviar, o React limpa o formulário (o campo volta ao padrão). O estado acompanha, para a
+  // explicação mostrada embaixo nunca ficar diferente do tipo de acesso que o campo exibe.
+  function enviar(dados: FormData) {
+    formAction(dados);
+    setPapel("profissional");
+  }
+
   return (
     <div>
-      <form action={formAction} className="flex flex-col gap-3">
+      <form action={enviar} className="flex flex-col gap-3">
         <div className="flex flex-wrap items-end gap-2">
           <div>
             <label htmlFor="invite-nome" className="!mb-1">
