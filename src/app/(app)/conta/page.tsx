@@ -14,6 +14,9 @@ import {
 } from "@/lib/planos";
 import { estadoDoUso, obterResumoUso, reconciliarCreditos } from "@/lib/uso-ia";
 
+// As ações desta tela falam com a Meta (conexão do WhatsApp); damos mais tempo que o padrão da Vercel.
+export const maxDuration = 60;
+
 const PLANO_LABEL: Record<string, string> = {
   essencial: "Essencial",
   profissional: "Profissional",

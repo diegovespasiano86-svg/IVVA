@@ -242,13 +242,19 @@ export default function EmbeddedSignupButton() {
           s.finalizada = true;
           anotar("A Meta não enviou o número; buscando o número liberado");
           setStatus("salvando");
-          void conectarWhatsAppEmbedded({
-            code,
-            phoneNumberId: s.phoneNumberId ?? undefined,
-            wabaId: s.wabaId ?? undefined,
-            isCoexistence: s.isCoexistence,
-            paginaUrl: window.location.href,
-          }).then((r) => {
+          // Se o servidor não responder em 55 s, mostra erro em vez de ficar "conectando" para sempre.
+          void Promise.race([
+            conectarWhatsAppEmbedded({
+              code,
+              phoneNumberId: s.phoneNumberId ?? undefined,
+              wabaId: s.wabaId ?? undefined,
+              isCoexistence: s.isCoexistence,
+              paginaUrl: window.location.href,
+            }),
+            new Promise<{ erro: string }>((resolve) =>
+              setTimeout(() => resolve({ erro: "O servidor demorou demais para responder. Recarregue a página e confira se o número já aparece como conectado; se não, tente de novo." }), 55000),
+            ),
+          ]).then((r) => {
             if (r.erro) {
               anotar(`Falhou: ${r.erro}`);
               setErro(r.erro);

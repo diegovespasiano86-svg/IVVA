@@ -8,6 +8,12 @@ const GRAPH_URL = `https://graph.facebook.com/${GRAPH_VERSION}`;
 
 export class WhatsAppEmbeddedSignupError extends Error {}
 
+// Toda chamada à Meta tem limite de tempo: se ela não responder, o dono vê um erro claro em vez de a tela
+// ficar "conectando" para sempre.
+function graphFetch(input: string, init?: RequestInit): Promise<Response> {
+  return fetch(input, { ...init, signal: AbortSignal.timeout(12000) });
+}
+
 // O código do login com o SDK do JavaScript só é aceito se o redirect_uri da troca for igual ao que o SDK
 // usou na janela. Esse valor muda conforme o tipo de login (e a Meta responde "redirect_uri is identical to
 // the one you used in the OAuth dialog" quando erra), então tentamos os formatos conhecidos em sequência:
@@ -41,7 +47,7 @@ export async function exchangeEmbeddedSignupCode(code: string, paginaUrl?: strin
     if (redirectUri !== null) url.searchParams.set("redirect_uri", redirectUri);
     url.searchParams.set("code", code);
 
-    const resp = await fetch(url.toString());
+    const resp = await graphFetch(url.toString());
     const data = await resp.json();
     if (resp.ok && data.access_token) {
       console.log("[embedded-signup] troca do código aceita com redirect_uri =", JSON.stringify(redirectUri));
@@ -64,7 +70,7 @@ export async function buscarDetalhesNumero(
   url.searchParams.set("fields", "display_phone_number,verified_name");
   url.searchParams.set("access_token", accessToken);
 
-  const resp = await fetch(url.toString());
+  const resp = await graphFetch(url.toString());
   const data = await resp.json();
 
   if (!resp.ok) {
@@ -91,7 +97,7 @@ export async function solicitarSincronizacaoCoexistencia(
 
   for (const syncType of ["smb_app_state_sync", "history"] as const) {
     try {
-      await fetch(url, {
+      await graphFetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -117,7 +123,7 @@ export async function inscreverAppNaConta(
   accessToken: string,
 ): Promise<{ ok: boolean; erro: string | null }> {
   try {
-    const resp = await fetch(`${GRAPH_URL}/${wabaId}/subscribed_apps`, {
+    const resp = await graphFetch(`${GRAPH_URL}/${wabaId}/subscribed_apps`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
       body: JSON.stringify({}),
@@ -155,7 +161,7 @@ export async function descobrirNumeroLiberado(
     const dbg = new URL(`${GRAPH_URL}/debug_token`);
     dbg.searchParams.set("input_token", accessToken);
     dbg.searchParams.set("access_token", `${appId}|${appSecret}`);
-    const dbgResp = await fetch(dbg.toString());
+    const dbgResp = await graphFetch(dbg.toString());
     const dbgData = await dbgResp.json();
     const escopos = (dbgData?.data?.granular_scopes ?? []) as { scope: string; target_ids?: string[] }[];
     const wabaIds = [
@@ -174,7 +180,7 @@ export async function descobrirNumeroLiberado(
       const url = new URL(`${GRAPH_URL}/${wabaId}/phone_numbers`);
       url.searchParams.set("fields", "id,display_phone_number,is_on_biz_app");
       url.searchParams.set("access_token", accessToken);
-      const resp = await fetch(url.toString());
+      const resp = await graphFetch(url.toString());
       const data = await resp.json();
       for (const n of (data?.data ?? []) as { id: string; display_phone_number?: string; is_on_biz_app?: boolean }[]) {
         achados.push({

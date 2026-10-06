@@ -5,6 +5,9 @@ import { desconectarWhatsApp } from "../conta/actions";
 import EmbeddedSignupButton from "../conta/embedded-signup-button";
 import WhatsAppForm from "../conta/whatsapp-form";
 
+// As ações desta tela falam com a Meta (conexão do WhatsApp); damos mais tempo que o padrão da Vercel.
+export const maxDuration = 60;
+
 const EM_BREVE = [
   { nome: "Instagram", texto: "Atender as mensagens diretas do Instagram com o mesmo robô.", icon: Camera },
   { nome: "Facebook Messenger", texto: "Responder quem chama pela página do Facebook.", icon: MessagesSquare },
