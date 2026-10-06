@@ -10,6 +10,7 @@ import {
   exchangeEmbeddedSignupCode,
   buscarDetalhesNumero,
   solicitarSincronizacaoCoexistencia,
+  inscreverAppNaConta,
   WhatsAppEmbeddedSignupError,
 } from "@/lib/whatsapp-embedded-signup";
 
@@ -170,6 +171,21 @@ export async function conectarWhatsAppEmbedded(params: {
   });
   if (tokenError) {
     return { erro: "Não consegui salvar o token com segurança. Tenta de novo." };
+  }
+
+  // Inscreve o app na conta do WhatsApp do cliente. Sem isso a conexão parece ok, mas nenhuma mensagem
+  // chega ao robô. Se falhar, a conta fica marcada com erro (aparece o aviso de reconectar) e o dono é avisado.
+  const inscricao = await inscreverAppNaConta(wabaId, accessToken);
+  if (!inscricao.ok) {
+    await supabase
+      .from("whatsapp_accounts")
+      .update({ status: "erro", updated_at: new Date().toISOString() })
+      .eq("tenant_id", perfil.tenant_id);
+    revalidatePath("/canais");
+    revalidatePath("/", "layout");
+    return {
+      erro: `O número conectou, mas a Meta não liberou o recebimento das mensagens (${inscricao.erro}). Tente conectar de novo; se repetir, abra um chamado.`,
+    };
   }
 
   // Só faz sentido pedir sincronização de histórico quando o número já

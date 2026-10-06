@@ -8,9 +8,8 @@ const GRAPH_URL = `https://graph.facebook.com/${GRAPH_VERSION}`;
 
 export class WhatsAppEmbeddedSignupError extends Error {}
 
-// O SDK do JavaScript já resolve o popup na própria janela (sem redirect
-// de servidor), então redirect_uri some string vazia — é assim que a Meta
-// espera pra esse tipo de fluxo (Login com SDK do JavaScript).
+// O SDK do JavaScript resolve o popup na própria janela (sem redirect de servidor), então a troca
+// do código não leva redirect_uri — é assim que a Meta documenta esse fluxo.
 export async function exchangeEmbeddedSignupCode(code: string): Promise<string> {
   const appId = process.env.NEXT_PUBLIC_WHATSAPP_APP_ID;
   const appSecret = process.env.WHATSAPP_APP_SECRET;
@@ -21,7 +20,6 @@ export async function exchangeEmbeddedSignupCode(code: string): Promise<string> 
   const url = new URL(`${GRAPH_URL}/oauth/access_token`);
   url.searchParams.set("client_id", appId);
   url.searchParams.set("client_secret", appSecret);
-  url.searchParams.set("redirect_uri", "");
   url.searchParams.set("code", code);
 
   const resp = await fetch(url.toString());
@@ -86,5 +84,29 @@ export async function solicitarSincronizacaoCoexistencia(
       // bônus que dá pra pedir de novo depois.
       console.error(`[embedded-signup] falha ao pedir sync ${syncType}`, err);
     }
+  }
+}
+
+// Sem isto o app não recebe nenhuma mensagem do número do cliente: a Meta só envia os webhooks
+// (mensagens, status, eco do app do celular, histórico) para apps inscritos na conta do WhatsApp
+// Business (WABA) do cliente. Precisa rodar logo depois de conectar, e de novo se a conexão for refeita.
+export async function inscreverAppNaConta(
+  wabaId: string,
+  accessToken: string,
+): Promise<{ ok: boolean; erro: string | null }> {
+  try {
+    const resp = await fetch(`${GRAPH_URL}/${wabaId}/subscribed_apps`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+      body: JSON.stringify({}),
+    });
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok || data?.success === false) {
+      return { ok: false, erro: data?.error?.message ?? "A Meta não aceitou a inscrição do app." };
+    }
+    return { ok: true, erro: null };
+  } catch (err) {
+    console.error("[embedded-signup] falha ao inscrever o app na conta", err);
+    return { ok: false, erro: "Não consegui falar com a Meta para ativar o recebimento das mensagens." };
   }
 }
