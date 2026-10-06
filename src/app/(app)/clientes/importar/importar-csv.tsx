@@ -10,7 +10,9 @@ const CAMPOS = [
   { id: "nome", label: "Nome", obrigatorio: true },
   { id: "telefone", label: "Telefone / WhatsApp", obrigatorio: true },
   { id: "email", label: "E-mail", obrigatorio: false },
+  { id: "aniversario", label: "Aniversário", obrigatorio: false },
   { id: "instagram", label: "Instagram", obrigatorio: false },
+  { id: "comoConheceu", label: "Como conheceu", obrigatorio: false },
 ] as const;
 type CampoId = (typeof CAMPOS)[number]["id"];
 
@@ -18,7 +20,9 @@ const PISTAS: Record<CampoId, RegExp> = {
   nome: /nome|name|cliente|contato/i,
   telefone: /tel|cel|whats|fone|phone|numero|número/i,
   email: /mail/i,
+  aniversario: /anivers|nasc|birth/i,
   instagram: /insta/i,
+  comoConheceu: /conheceu|origem|indica/i,
 };
 
 const MAX_BYTES = 2 * 1024 * 1024;
@@ -65,6 +69,8 @@ export default function ImportarCsv() {
       telefone: r[mapa.telefone!] ?? "",
       email: mapa.email !== undefined ? r[mapa.email] ?? "" : "",
       instagram: mapa.instagram !== undefined ? r[mapa.instagram] ?? "" : "",
+      aniversario: mapa.aniversario !== undefined ? r[mapa.aniversario] ?? "" : "",
+      comoConheceu: mapa.comoConheceu !== undefined ? r[mapa.comoConheceu] ?? "" : "",
     }));
   }, [dados, mapa]);
 
@@ -112,7 +118,10 @@ export default function ImportarCsv() {
         <p className="mb-1 text-[11.5px] font-bold uppercase tracking-wide text-purple">Passo 1</p>
         <h2 className="mb-1 text-[16px] font-extrabold">Escolha o arquivo</h2>
         <p className="mb-4 text-[12.5px] text-ink-soft">
-          Planilha em <strong>.csv</strong> (no Excel: Arquivo, Salvar como, CSV). A primeira linha deve ter os títulos das colunas. Até 2.000 clientes por vez.
+          Planilha em <strong>.csv</strong> (no Excel: Arquivo, Salvar como, CSV). A primeira linha deve ter os títulos das colunas. Até 2.000 clientes por vez. Só <strong>nome</strong> e <strong>telefone</strong> são obrigatórios.
+          <a href="/modelo-importacao-clientes.csv" download className="ml-1 font-bold text-purple underline-offset-2 hover:underline">
+            Baixar a planilha modelo
+          </a>
         </p>
         <label className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-border bg-bg px-6 py-8 text-center transition-colors hover:border-purple hover:bg-[#f6f4fe]">
           <FileUp size={26} className="text-purple" />

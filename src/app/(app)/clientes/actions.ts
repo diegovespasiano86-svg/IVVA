@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { normalizarTelefone } from "@/lib/clientes";
+import { normalizarDataNascimento, normalizarTelefone } from "@/lib/clientes";
 
 type Sb = Awaited<ReturnType<typeof createClient>>;
 
@@ -36,7 +36,7 @@ export async function adicionarNotaCliente(formData: FormData) {
   revalidatePath(`/clientes/${contactId}`);
 }
 
-export type LinhaImportacao = { nome: string; telefone: string; email?: string; instagram?: string };
+export type LinhaImportacao = { nome: string; telefone: string; email?: string; instagram?: string; aniversario?: string; comoConheceu?: string };
 export type ResultadoImportacao = {
   ok: boolean;
   erro?: string;
@@ -103,6 +103,8 @@ export async function importarContatos(linhas: LinhaImportacao[], autorizado: bo
       telefone: tel,
       email: /^\S+@\S+\.\S+$/.test(email) ? email : null,
       instagram: instagram || null,
+      data_nascimento: normalizarDataNascimento(limpar(l?.aniversario, 20)),
+      como_conheceu: limpar(l?.comoConheceu, 120) || null,
       status_funil: etapa?.key ?? "sem_contato",
       // Importado não tem consentimento comprovado: só liga se o dono declarar.
       aceita_mensagem_automatica: autorizado === true,

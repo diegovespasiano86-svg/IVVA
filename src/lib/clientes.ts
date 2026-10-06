@@ -24,6 +24,31 @@ export function formatarTelefone(t: string | null | undefined): string {
   return num.length === 9 ? `(${ddd}) ${num.slice(0, 5)}-${num.slice(5)}` : `(${ddd}) ${num.slice(0, 4)}-${num.slice(4)}`;
 }
 
+/** Aniversário vindo de planilha: aceita DD/MM/AAAA, AAAA-MM-DD ou só DD/MM (sem ano, grava 2000). Devolve AAAA-MM-DD ou null. */
+export function normalizarDataNascimento(bruto: string | null | undefined): string | null {
+  const s = String(bruto ?? "").trim();
+  let d: number, m: number, a: number;
+  let r = s.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{2,4})$/);
+  if (r) {
+    d = Number(r[1]);
+    m = Number(r[2]);
+    a = Number(r[3]);
+    if (r[3].length === 2) a += a > 30 ? 1900 : 2000;
+  } else if ((r = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/))) {
+    a = Number(r[1]);
+    m = Number(r[2]);
+    d = Number(r[3]);
+  } else if ((r = s.match(/^(\d{1,2})[/.-](\d{1,2})$/))) {
+    d = Number(r[1]);
+    m = Number(r[2]);
+    a = 2000;
+  } else return null;
+  const dt = new Date(Date.UTC(a, m - 1, d));
+  if (dt.getUTCFullYear() !== a || dt.getUTCMonth() !== m - 1 || dt.getUTCDate() !== d) return null;
+  if (a < 1900 || a > new Date().getUTCFullYear()) return null;
+  return `${a}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+}
+
 /** Lê CSV (detecta ; , ou tab; aceita aspas e quebras de linha dentro de aspas). */
 export function lerCsv(texto: string): string[][] {
   const t = texto.replace(/^﻿/, "");
