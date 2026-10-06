@@ -3,7 +3,8 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { loadStripe, type StripeEmbeddedCheckout } from "@stripe/stripe-js";
-import { assinarPlano, type AssinarPlanoState } from "./actions";
+import { iniciarCadastro, type CadastroState } from "./actions";
+import { SEGMENTOS } from "@/lib/segmentos";
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? "");
 
@@ -24,49 +25,123 @@ function fmt(n: number) {
   return n.toLocaleString("pt-BR");
 }
 
-const ESTADO_INICIAL: AssinarPlanoState = { erro: null, clientSecret: null };
+const ESTADO_INICIAL: CadastroState = { erro: null, clientSecret: null };
 
-function CardForm({
+// Cartão do plano: só escolhe o plano. Os dados do cliente são pedidos na etapa seguinte (CadastroPanel),
+// ANTES do pagamento, para que quem desistir no meio fique registrado.
+function CardForm({ destaque, onEscolher }: { destaque?: boolean; onEscolher: () => void }) {
+  return (
+    <div className="mt-6 flex flex-col gap-2">
+      <button
+        type="button"
+        onClick={onEscolher}
+        className={`rounded-full py-3 text-[13.5px] font-semibold transition-shadow ${
+          destaque
+            ? "bg-[linear-gradient(100deg,#2fbf9f,#8b7fe8)] text-white shadow-[0_10px_30px_-8px_rgba(139,127,232,0.65)] hover:shadow-[0_14px_40px_-8px_rgba(139,127,232,0.85)]"
+            : "bg-[#0e0e13] text-white hover:bg-[#23222c]"
+        }`}
+      >
+        Assinar
+      </button>
+      <p className={`text-center text-[11.5px] ${destaque ? "text-[#a5a3b0]" : "text-[#8a8896]"}`}>
+        14 dias grátis. Cancele quando quiser.
+      </p>
+    </div>
+  );
+}
+
+const CAMPO =
+  "w-full rounded-xl border border-[rgba(14,14,19,0.16)] bg-white px-4 py-2.5 text-[14px] text-[#0e0e13] outline-none placeholder:text-[#8a8896] focus:ring-2 focus:ring-[#2fbf9f]";
+const ROTULO = "mb-1 block text-[12.5px] font-bold text-[#0e0e13]";
+
+// Etapa de cadastro antes do pagamento. Os valores ficam guardados no estado para não sumirem se der erro.
+function CadastroPanel({
   plano,
-  destaque,
   onClientSecret,
+  onVoltar,
 }: {
-  plano: string;
-  destaque?: boolean;
+  plano: Plano;
   onClientSecret: (clientSecret: string) => void;
+  onVoltar: () => void;
 }) {
-  const [state, formAction, pending] = useActionState(assinarPlano, ESTADO_INICIAL);
+  const [state, formAction, pending] = useActionState(iniciarCadastro, ESTADO_INICIAL);
+  const [v, setV] = useState({ nome: "", email: "", telefone: "", nome_negocio: "", segmento: "", aceite: false });
+  const set = (k: keyof typeof v) => (e: { target: { value: string; checked?: boolean; type?: string } }) =>
+    setV((x) => ({ ...x, [k]: k === "aceite" ? Boolean(e.target.checked) : e.target.value }));
 
   useEffect(() => {
     if (state.clientSecret) onClientSecret(state.clientSecret);
   }, [state.clientSecret, onClientSecret]);
 
   return (
-    <form action={formAction} className="mt-6 flex flex-col gap-2">
-      <input type="hidden" name="plano" value={plano} />
-      <input
-        name="nome_negocio"
-        required
-        placeholder="Nome do seu negócio"
-        className={`rounded-xl border px-4 py-2.5 text-[13px] outline-none focus:ring-2 focus:ring-[#2fbf9f] ${
-          destaque
-            ? "border-white/15 bg-white/5 text-[#f7f6f2] placeholder:text-[#a5a3b0]"
-            : "border-[rgba(14,14,19,0.16)] bg-white text-[#0e0e13] placeholder:text-[#8a8896]"
-        }`}
-      />
-      <button
-        type="submit"
-        disabled={pending}
-        className={`rounded-full py-3 text-[13.5px] font-semibold transition-shadow disabled:opacity-60 ${
-          destaque
-            ? "bg-[linear-gradient(100deg,#2fbf9f,#8b7fe8)] text-white shadow-[0_10px_30px_-8px_rgba(139,127,232,0.65)] hover:shadow-[0_14px_40px_-8px_rgba(139,127,232,0.85)]"
-            : "bg-[#0e0e13] text-white hover:bg-[#23222c]"
-        }`}
-      >
-        {pending ? "Abrindo pagamento…" : "Assinar"}
+    <div className="mx-auto max-w-[560px]">
+      <p className="mb-4 text-center text-[13px] text-[#a5a3b0]">
+        Assinando <strong className="text-[#f7f6f2]">{plano.nome}</strong> · R$ {plano.preco}/mês · 14 dias grátis
+      </p>
+      <div className="rounded-3xl bg-white p-7 shadow-[0_40px_90px_-30px_rgba(0,0,0,0.6)]">
+        <h2 className="text-[20px] font-extrabold text-[#0e0e13]">Conte um pouco sobre você e o seu negócio</h2>
+        <p className="mt-1 text-[13px] text-[#6b6577]">Leva 1 minuto. Em seguida vem o pagamento, com 14 dias grátis.</p>
+
+        <form action={formAction} className="mt-5 flex flex-col gap-3.5">
+          <input type="hidden" name="plano" value={plano.key} />
+          <div>
+            <label htmlFor="cad-nome" className={ROTULO}>Seu nome</label>
+            <input id="cad-nome" name="nome" required autoComplete="name" placeholder="Como podemos te chamar" className={CAMPO} defaultValue={v.nome} onChange={set("nome")} />
+          </div>
+          <div className="grid gap-3.5 sm:grid-cols-2">
+            <div>
+              <label htmlFor="cad-email" className={ROTULO}>E-mail</label>
+              <input id="cad-email" name="email" type="email" required autoComplete="email" placeholder="voce@empresa.com" className={CAMPO} defaultValue={v.email} onChange={set("email")} />
+            </div>
+            <div>
+              <label htmlFor="cad-tel" className={ROTULO}>WhatsApp</label>
+              <input id="cad-tel" name="telefone" type="tel" required autoComplete="tel" placeholder="(11) 99999-9999" className={CAMPO} defaultValue={v.telefone} onChange={set("telefone")} />
+            </div>
+          </div>
+          <div>
+            <label htmlFor="cad-negocio" className={ROTULO}>Nome do seu negócio</label>
+            <input id="cad-negocio" name="nome_negocio" required autoComplete="organization" placeholder="Ex.: Studio Bella" className={CAMPO} defaultValue={v.nome_negocio} onChange={set("nome_negocio")} />
+          </div>
+          <div>
+            <label htmlFor="cad-segmento" className={ROTULO}>Tipo de negócio</label>
+            <select id="cad-segmento" name="segmento" required className={CAMPO} defaultValue={v.segmento} onChange={set("segmento")}>
+              <option value="" disabled>Escolha o seu tipo de negócio</option>
+              {SEGMENTOS.map((s) => (
+                <option key={s.id} value={s.id}>{s.nome}</option>
+              ))}
+            </select>
+            <p className="mt-1 text-[11.5px] text-[#8a8896]">Com isso já deixamos o robô com um modelo pronto para o seu nicho.</p>
+          </div>
+          <label className="flex cursor-pointer items-start gap-2.5 text-[12.5px] leading-snug text-[#6b6577]">
+            <input type="checkbox" name="aceite" required className="mt-0.5 h-4 w-4 accent-[#2fbf9f]" defaultChecked={v.aceite} onChange={set("aceite")} />
+            <span>
+              Li e aceito os{" "}
+              <a href="https://ivva.app.br/termos" target="_blank" rel="noreferrer" className="font-semibold text-[#6d5be0] underline">Termos de Uso</a>{" "}
+              e a{" "}
+              <a href="https://ivva.app.br/privacidade" target="_blank" rel="noreferrer" className="font-semibold text-[#6d5be0] underline">Política de Privacidade</a>
+              , e que a ivva pode entrar em contato sobre o meu cadastro.
+            </span>
+          </label>
+
+          {state.erro && (
+            <p role="alert" className="rounded-xl bg-[#fdece9] px-3.5 py-2.5 text-[13px] font-semibold text-[#8f2a1c]">
+              {state.erro}
+            </p>
+          )}
+
+          <button
+            type="submit"
+            disabled={pending}
+            className="mt-1 rounded-full bg-[linear-gradient(100deg,#2fbf9f,#8b7fe8)] py-3 text-[14px] font-semibold text-white shadow-[0_10px_30px_-8px_rgba(139,127,232,0.65)] disabled:opacity-60"
+          >
+            {pending ? "Preparando o pagamento…" : "Continuar para o pagamento"}
+          </button>
+        </form>
+      </div>
+      <button onClick={onVoltar} className="mx-auto mt-6 block text-[13px] text-[#a5a3b0] hover:text-[#f7f6f2]">
+        ← Voltar pros planos
       </button>
-      {state.erro && <p className="text-[12px] font-semibold text-[#ff6b5b]">{state.erro}</p>}
-    </form>
+    </div>
   );
 }
 
@@ -99,6 +174,7 @@ function EmbeddedPanel({ clientSecret }: { clientSecret: string }) {
 
 export default function PlanosClient({ planos }: { planos: Plano[] }) {
   const [checkout, setCheckout] = useState<{ clientSecret: string; plano: Plano } | null>(null);
+  const [escolhido, setEscolhido] = useState<Plano | null>(null);
   const [volume, setVolume] = useState<number | null>(null);
   // Menor plano que comporta o volume escolhido (acima do maior, indica o maior).
   const indicado =
@@ -119,12 +195,25 @@ export default function PlanosClient({ planos }: { planos: Plano[] }) {
           <EmbeddedPanel clientSecret={checkout.clientSecret} />
         </div>
         <button
-          onClick={() => setCheckout(null)}
+          onClick={() => {
+            setCheckout(null);
+            setEscolhido(null);
+          }}
           className="mx-auto mt-6 block text-[13px] text-[#a5a3b0] hover:text-[#f7f6f2]"
         >
           ← Voltar pros planos
         </button>
       </div>
+    );
+  }
+
+  if (escolhido) {
+    return (
+      <CadastroPanel
+        plano={escolhido}
+        onClientSecret={(clientSecret) => setCheckout({ clientSecret, plano: escolhido })}
+        onVoltar={() => setEscolhido(null)}
+      />
     );
   }
 
@@ -223,11 +312,7 @@ export default function PlanosClient({ planos }: { planos: Plano[] }) {
               ))}
             </ul>
 
-            <CardForm
-              plano={p.key}
-              destaque={p.destaque}
-              onClientSecret={(clientSecret) => setCheckout({ clientSecret, plano: p })}
-            />
+            <CardForm destaque={p.destaque} onEscolher={() => setEscolhido(p)} />
           </div>
         </motion.div>
       ))}

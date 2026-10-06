@@ -26,9 +26,13 @@ export default async function BemVindoPage(props: {
   }
 
   let nomeNegocio = "seu negócio";
+  let nomeInicial = "";
+  let segmentoInicial: string | null = null;
   try {
     const session = await getCheckoutSession(sessionId);
     nomeNegocio = session.metadata?.nome_negocio ?? nomeNegocio;
+    nomeInicial = session.metadata?.nome ?? "";
+    segmentoInicial = session.metadata?.segmento ?? null;
   } catch {
     return (
       <main className="flex min-h-screen items-center justify-center px-4 text-center">
@@ -59,7 +63,7 @@ export default async function BemVindoPage(props: {
             Falta pouco pra {nomeNegocio} começar a usar a ivva — só criar
             seu acesso.
           </p>
-          <SetupForm sessionId={sessionId} />
+          <SetupForm sessionId={sessionId} nomeInicial={nomeInicial} segmentoInicial={segmentoInicial} />
         </div>
       </div>
     </main>

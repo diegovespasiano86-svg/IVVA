@@ -143,6 +143,9 @@ async function tratarCheckoutConcluido(event: StripeEvent) {
     return new NextResponse("Internal Server Error", { status: 500 });
   }
 
+  // O lead (cadastro feito antes do pagamento) passa a "pago".
+  await supabase.rpc("lead_pago", { p_secret: internalSecret, p_email: email, p_session_id: s.id });
+
   const resultado = data as { status: string; novo: boolean } | null;
   // Só a primeira entrega envia e-mail; repetições da Stripe não duplicam.
   if (resultado?.novo && emailConfigurado()) {

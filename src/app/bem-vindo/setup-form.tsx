@@ -6,12 +6,20 @@ import { finalizarCadastro } from "./actions";
 import { SEGMENTOS } from "@/lib/segmentos";
 import { SegmentoIcon } from "@/lib/segmento-icons";
 
-export default function SetupForm({ sessionId }: { sessionId: string }) {
+export default function SetupForm({
+  sessionId,
+  nomeInicial = "",
+  segmentoInicial = null,
+}: {
+  sessionId: string;
+  nomeInicial?: string;
+  segmentoInicial?: string | null;
+}) {
   const [error, formAction, pending] = useActionState(
     finalizarCadastro,
     undefined,
   );
-  const [segmento, setSegmento] = useState<string | null>(null);
+  const [segmento, setSegmento] = useState<string | null>(segmentoInicial);
 
   return (
     <form action={formAction} className="mt-6 flex flex-col gap-5">
@@ -25,6 +33,7 @@ export default function SetupForm({ sessionId }: { sessionId: string }) {
             id="nome"
             name="nome"
             required
+            defaultValue={nomeInicial}
             placeholder="Como podemos te chamar"
             className="input"
           />

@@ -21,6 +21,10 @@ export async function createCheckoutSession(params: {
   plano: string;
   nomeNegocio: string;
   returnUrl: string;
+  /** E-mail já informado no cadastro: vem preenchido (e travado) no pagamento. */
+  email?: string;
+  /** Dados do cadastro (nome, telefone, tipo de negócio) guardados na sessão. */
+  extraMetadata?: Record<string, string>;
 }) {
   const body = new URLSearchParams({
     mode: "subscription",
@@ -32,6 +36,10 @@ export async function createCheckoutSession(params: {
     "metadata[nome_negocio]": params.nomeNegocio,
     "metadata[plano]": params.plano,
   });
+  if (params.email) body.set("customer_email", params.email);
+  for (const [k, v] of Object.entries(params.extraMetadata ?? {})) {
+    if (v) body.set(`metadata[${k}]`, v.slice(0, 480));
+  }
 
   const res = await fetch(`${STRIPE_API}/checkout/sessions`, {
     method: "POST",
@@ -188,7 +196,7 @@ export async function getCheckoutSession(sessionId: string) {
     customer_details?: { email?: string };
     customer?: string;
     subscription?: string;
-    metadata?: { nome_negocio?: string; plano?: string; tipo?: string; tenant_id?: string };
+    metadata?: { nome_negocio?: string; plano?: string; tipo?: string; tenant_id?: string; nome?: string; segmento?: string; telefone?: string };
     payment_status: string;
     amount_total?: number;
   };

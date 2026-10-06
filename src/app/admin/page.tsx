@@ -47,7 +47,7 @@ export default async function AdminPage() {
     redirect("/dashboard");
   }
 
-  const [{ data }, { data: chamadosData }, { data: usoData }, { data: pendentesData }] = await Promise.all([
+  const [{ data }, { data: chamadosData }, { data: usoData }, { data: pendentesData }, { data: leadsData }] = await Promise.all([
     supabase.rpc("admin_tenants_overview"),
     supabase.rpc("admin_chamados_recentes"),
     supabase.rpc("admin_ia_uso_overview"),
@@ -57,7 +57,15 @@ export default async function AdminPage() {
       .neq("status", "concluido")
       .order("created_at", { ascending: false })
       .limit(30),
+    // Quem começou o cadastro e não pagou/finalizou: base para repescagem (WhatsApp, e-mail ou n8n).
+    supabase
+      .from("leads_cadastro")
+      .select("nome, email, telefone, nome_negocio, segmento, plano, status, updated_at")
+      .in("status", ["cadastro_iniciado", "pagamento_aberto"])
+      .order("updated_at", { ascending: false })
+      .limit(50),
   ]);
+  const leads = (leadsData ?? []) as { nome: string; email: string; telefone: string | null; nome_negocio: string | null; segmento: string | null; plano: string | null; status: string; updated_at: string }[];
   const pendentes = (pendentesData ?? []) as { email: string; nome_negocio: string | null; plano: string | null; status: string; created_at: string }[];
   const tenants = (data ?? []) as AdminTenantRow[];
   // Uso de conversas da IA no mês, por negócio (limite = valor negociado ou o do plano).
@@ -137,6 +145,39 @@ export default async function AdminPage() {
             </p>
           </div>
         </div>
+
+        {leads.length > 0 && (
+          <div className="mb-6">
+            <p className="mb-1 text-[14px] font-bold">
+              Cadastros não finalizados <span className="font-normal text-ink-faint">({leads.length})</span>
+            </p>
+            <p className="mb-3 text-[12px] text-ink-faint">
+              Preencheram o cadastro e não concluíram o pagamento. Dá para chamar pelo WhatsApp ou por e-mail.
+            </p>
+            <div className="flex flex-col gap-2">
+              {leads.map((l) => (
+                <div key={l.email} className="card flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+                  <div className="min-w-0">
+                    <p className="text-[13.5px] font-bold">{l.nome} · {l.nome_negocio ?? "sem nome de negócio"}</p>
+                    <p className="text-[12px] text-ink-faint">
+                      {l.email} · tipo {l.segmento ?? "?"} · plano {l.plano ?? "?"} · {new Date(l.updated_at).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${l.status === "pagamento_aberto" ? "bg-purple/10 text-purple" : "bg-surface-soft text-ink-soft"}`}>
+                      {l.status === "pagamento_aberto" ? "Parou no pagamento" : "Parou no cadastro"}
+                    </span>
+                    {l.telefone && (
+                      <a href={`https://wa.me/${l.telefone.startsWith("55") ? l.telefone : "55" + l.telefone}`} target="_blank" rel="noreferrer" className="text-[12px] font-bold text-teal hover:underline">
+                        WhatsApp
+                      </a>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {pendentes.length > 0 && (
           <div className="mb-6">
