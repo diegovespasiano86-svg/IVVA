@@ -24,8 +24,9 @@ export async function finalizarCadastro(
   let session;
   try {
     session = await getCheckoutSession(sessionId);
-  } catch {
-    return "Não encontramos esse pagamento. Fale com a gente.";
+  } catch (err) {
+    console.error("[cadastro] não leu o checkout", err instanceof Error ? err.message : err);
+    return "Não encontramos esse pagamento. Fale com a gente e informe o código CAD-1.";
   }
 
   if (session.payment_status !== "paid" && session.payment_status !== "no_payment_required") {
@@ -44,9 +45,18 @@ export async function finalizarCadastro(
     await supabase.auth.signUp({ email, password: senha });
 
   if (signUpError || !signUpData.user) {
+    console.error("[cadastro] falha no signUp", signUpError?.message);
     return signUpError?.message === "User already registered"
       ? "Já existe conta com esse e-mail. Faça login."
       : (signUpError?.message ?? "Falha ao criar sua conta.");
+  }
+
+  // Com confirmação de e-mail ligada, o Supabase NÃO devolve erro quando o e-mail já tem conta: devolve um
+  // usuário de mentira, sem identidades. Sem esta checagem, o passo seguinte falhava com a mensagem genérica
+  // de "problema ao configurar seu negócio".
+  if (Array.isArray(signUpData.user.identities) && signUpData.user.identities.length === 0) {
+    console.error("[cadastro] e-mail do pagamento já tem conta:", email);
+    return `Já existe uma conta da ivva com o e-mail ${email}. Entre em app.ivva.app.br/login com ele, ou refaça o cadastro usando outro e-mail.`;
   }
 
   const plano = session.metadata?.plano ?? "essencial";
@@ -71,7 +81,8 @@ export async function finalizarCadastro(
   });
 
   if (rpcError) {
-    return "Conta criada, mas houve um problema ao configurar seu negócio. Fale com a gente.";
+    console.error("[cadastro] provision_tenant falhou", rpcError.message);
+    return "Conta criada, mas houve um problema ao configurar seu negócio. Fale com a gente e informe o código CAD-3.";
   }
 
   // Se o Supabase exige confirmação de e-mail, o signUp() acima não deixou
