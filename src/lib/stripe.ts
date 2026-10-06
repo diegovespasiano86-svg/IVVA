@@ -41,11 +41,18 @@ export async function createCheckoutSession(params: {
     if (v) body.set(`metadata[${k}]`, v.slice(0, 480));
   }
 
-  const res = await fetch(`${STRIPE_API}/checkout/sessions`, {
-    method: "POST",
-    headers: stripeHeaders(),
-    body,
-  });
+  // Visual do pagamento com as cores da ivva. Se a Stripe recusar esses campos, cria sem eles (só perde o visual).
+  const comMarca = new URLSearchParams(body);
+  comMarca.set("branding_settings[display_name]", "ivva");
+  comMarca.set("branding_settings[button_color]", "#6d5be0");
+  comMarca.set("branding_settings[background_color]", "#ffffff");
+  comMarca.set("branding_settings[border_style]", "rounded");
+  comMarca.set("branding_settings[font_family]", "inter");
+
+  let res = await fetch(`${STRIPE_API}/checkout/sessions`, { method: "POST", headers: stripeHeaders(), body: comMarca });
+  if (!res.ok) {
+    res = await fetch(`${STRIPE_API}/checkout/sessions`, { method: "POST", headers: stripeHeaders(), body });
+  }
 
   const data = await res.json();
   if (!res.ok) {

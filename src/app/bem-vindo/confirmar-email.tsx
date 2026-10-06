@@ -9,17 +9,17 @@ export default function ConfirmarEmail({ email, sessionId }: { email: string; se
   const [pendente, iniciar] = useTransition();
 
   return (
-    <div className="mt-6 flex flex-col gap-4">
-      <div className="rounded-2xl border border-teal/30 bg-teal/5 px-5 py-5 text-center">
-        <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-teal/15 text-teal">
+    <div className="mt-5 flex flex-col gap-4">
+      <div className="rounded-2xl border border-[#2fbf9f]/30 bg-[#2fbf9f]/5 px-5 py-5 text-center">
+        <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#2fbf9f]/15 text-[#1f9a80]">
           <MailCheck size={24} />
         </span>
         <h2 className="text-[17px] font-extrabold">Falta confirmar o seu e-mail</h2>
-        <p className="mt-1.5 text-[13.5px] leading-relaxed text-ink-soft">
-          Enviamos um e-mail para <strong className="text-ink">{email}</strong>. Abra e clique em{" "}
-          <strong className="text-ink">Confirmar meu e-mail</strong> para ativar o seu acesso. Sem esse clique, o sistema não libera o seu negócio.
+        <p className="mt-1.5 text-[13.5px] leading-relaxed text-[#6b6577]">
+          Enviamos um e-mail para <strong className="text-[#0e0e13]">{email}</strong>. Abra e clique em{" "}
+          <strong className="text-[#0e0e13]">Confirmar meu e-mail</strong> para ativar o seu acesso. Sem esse clique, o sistema não libera o seu negócio.
         </p>
-        <p className="mt-2 text-[12px] text-ink-faint">Pode levar 1 ou 2 minutos. Confira também a caixa de spam.</p>
+        <p className="mt-2 text-[12px] text-[#8a8896]">Pode levar 1 ou 2 minutos. Confira também a caixa de spam.</p>
       </div>
 
       <button
@@ -31,12 +31,12 @@ export default function ConfirmarEmail({ email, sessionId }: { email: string; se
             setMsg({ ok: r.ok, texto: r.mensagem });
           })
         }
-        className="btn btn-secondary btn-md w-full justify-center disabled:opacity-60"
+        className="w-full rounded-full border border-[rgba(14,14,19,0.16)] py-3 text-[14px] font-semibold text-[#0e0e13] disabled:opacity-60"
       >
         {pendente ? "Reenviando…" : "Não chegou? Reenviar o e-mail"}
       </button>
       {msg && (
-        <p role="status" className={`text-center text-[12.5px] font-semibold ${msg.ok ? "text-teal" : "text-coral"}`}>
+        <p role="status" className={`text-center text-[12.5px] font-semibold ${msg.ok ? "text-[#1f9a80]" : "text-[#c2402c]"}`}>
           {msg.texto}
         </p>
       )}

@@ -1,28 +1,30 @@
 import { getCheckoutSession } from "@/lib/stripe";
 import SetupForm from "./setup-form";
 
+const CARTAO = "rounded-3xl bg-white p-7 text-[#0e0e13] shadow-[0_40px_90px_-30px_rgba(0,0,0,0.6)]";
+
+function Aviso({ titulo, children }: { titulo: string; children: React.ReactNode }) {
+  return (
+    <div className={`${CARTAO} text-center`}>
+      <h1 className="text-[20px] font-extrabold">{titulo}</h1>
+      <p className="mt-2 text-[13.5px] text-[#6b6577]">{children}</p>
+    </div>
+  );
+}
+
+const LinkPlanos = (
+  <a href="/planos" className="font-semibold text-[#6d5be0] underline">
+    página de planos
+  </a>
+);
+
 export default async function BemVindoPage(props: {
   searchParams: Promise<{ session_id?: string }>;
 }) {
   const { session_id: sessionId } = await props.searchParams;
 
   if (!sessionId) {
-    return (
-      <main className="flex min-h-screen items-center justify-center px-4 text-center">
-        <div>
-          <h1 className="font-display text-[19px] font-bold">
-            Link inválido
-          </h1>
-          <p className="mt-2 text-[13.5px] text-ink-soft">
-            Volte pra{" "}
-            <a href="/planos" className="font-semibold text-ink">
-              página de planos
-            </a>{" "}
-            e assine de novo.
-          </p>
-        </div>
-      </main>
-    );
+    return <Aviso titulo="Link inválido">Volte pra {LinkPlanos} e assine de novo.</Aviso>;
   }
 
   let nomeNegocio = "seu negócio";
@@ -34,38 +36,16 @@ export default async function BemVindoPage(props: {
     nomeInicial = session.metadata?.nome ?? "";
     segmentoInicial = session.metadata?.segmento ?? null;
   } catch {
-    return (
-      <main className="flex min-h-screen items-center justify-center px-4 text-center">
-        <div>
-          <h1 className="font-display text-[19px] font-bold">
-            Não encontramos esse pagamento
-          </h1>
-          <p className="mt-2 text-[13.5px] text-ink-soft">
-            Volte pra{" "}
-            <a href="/planos" className="font-semibold text-ink">
-              página de planos
-            </a>{" "}
-            e tente de novo.
-          </p>
-        </div>
-      </main>
-    );
+    return <Aviso titulo="Não encontramos esse pagamento">Volte pra {LinkPlanos} e tente de novo.</Aviso>;
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center px-4 py-10">
-      <div className="w-full max-w-[560px]">
-        <div className="rounded-2xl border border-border bg-surface p-8 shadow-[0_1px_2px_rgba(36,31,46,0.04)]">
-          <h1 className="font-display text-[20px] font-bold">
-            Pagamento confirmado 🎉
-          </h1>
-          <p className="mt-1 text-[13.5px] text-ink-soft">
-            Falta pouco pra {nomeNegocio} começar a usar a ivva — só criar
-            seu acesso.
-          </p>
-          <SetupForm sessionId={sessionId} nomeInicial={nomeInicial} segmentoInicial={segmentoInicial} />
-        </div>
-      </div>
-    </main>
+    <div className={CARTAO}>
+      <h1 className="text-[20px] font-extrabold">Pagamento confirmado 🎉</h1>
+      <p className="mt-1 text-[13.5px] text-[#6b6577]">
+        Falta pouco pra {nomeNegocio} começar a usar a ivva — só criar seu acesso.
+      </p>
+      <SetupForm sessionId={sessionId} nomeInicial={nomeInicial} segmentoInicial={segmentoInicial} />
+    </div>
   );
 }

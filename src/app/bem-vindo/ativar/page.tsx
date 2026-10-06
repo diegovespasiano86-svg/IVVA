@@ -6,17 +6,18 @@ import { getSegmento } from "@/lib/segmentos";
 
 function Painel({ titulo, texto, acao }: { titulo: string; texto: string; acao?: { href: string; rotulo: string } }) {
   return (
-    <main className="flex min-h-screen items-center justify-center px-4 py-10">
-      <div className="w-full max-w-[520px] rounded-2xl border border-border bg-surface p-8 text-center shadow-[0_1px_2px_rgba(36,31,46,0.04)]">
-        <h1 className="font-display text-[20px] font-bold">{titulo}</h1>
-        <p className="mt-2 text-[13.5px] text-ink-soft">{texto}</p>
-        {acao && (
-          <Link href={acao.href} className="btn mt-6 inline-flex bg-ink px-5 py-2.5 text-[13.5px] text-white">
-            {acao.rotulo}
-          </Link>
-        )}
-      </div>
-    </main>
+    <div className="rounded-3xl bg-white p-7 text-center text-[#0e0e13] shadow-[0_40px_90px_-30px_rgba(0,0,0,0.6)]">
+      <h1 className="text-[20px] font-extrabold">{titulo}</h1>
+      <p className="mt-2 text-[13.5px] text-[#6b6577]">{texto}</p>
+      {acao && (
+        <Link
+          href={acao.href}
+          className="mt-6 inline-flex rounded-full bg-[linear-gradient(100deg,#2fbf9f,#8b7fe8)] px-6 py-3 text-[14px] font-semibold text-white shadow-[0_10px_30px_-8px_rgba(139,127,232,0.65)]"
+        >
+          {acao.rotulo}
+        </Link>
+      )}
+    </div>
   );
 }
 
