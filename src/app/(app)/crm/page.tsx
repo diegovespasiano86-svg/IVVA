@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { criarContato, confirmarContatoHistorico, ignorarContatoHistorico } from "./actions";
 import CrmBoard from "./board";
 import StageManager from "./stage-manager";
+import { filtroContatosDoProfissional } from "@/lib/escopo-profissional";
 
 const MESES = [
   "jan", "fev", "mar", "abr", "mai", "jun",
@@ -29,8 +30,6 @@ export default async function CrmPage({
   searchParams: Promise<{ view?: string }>;
 }) {
   const { view } = await searchParams;
-  const aba = view === "dashboard" ? "dashboard" : view === "historico" ? "historico" : "funil";
-
   const supabase = await createClient();
 
   const {
@@ -39,29 +38,46 @@ export default async function CrmPage({
   const { data: perfil } = user
     ? await supabase
         .from("users")
-        .select("role")
+        .select("role, professional_id")
         .eq("id", user.id)
         .maybeSingle()
     : { data: null };
   const souDono = perfil?.role === "dono";
+  // Histórico do WhatsApp (importação) é do administrador.
+  const aba = view === "dashboard" ? "dashboard" : view === "historico" && souDono ? "historico" : "funil";
+
+  // Profissional: base própria (contatos que cadastrou + os que já atendeu na agenda).
+  const semCadastroProfissional = !souDono && !perfil?.professional_id;
+  const filtroBase =
+    !souDono && perfil?.professional_id
+      ? await filtroContatosDoProfissional(supabase, perfil.professional_id)
+      : null;
+  let consultaContatos = supabase
+    .from("contacts")
+    .select(
+      "id, nome, telefone, tags, status_funil, email, data_nascimento, estado_civil, como_conheceu, created_at",
+    )
+    .order("created_at", { ascending: false });
+  if (!souDono) {
+    consultaContatos = filtroBase
+      ? consultaContatos.or(filtroBase)
+      : consultaContatos.eq("id", "00000000-0000-0000-0000-000000000000");
+  }
 
   const [{ data: estagios }, { data: contatos }, { data: historicoPendente }] = await Promise.all([
     supabase
       .from("funnel_stages")
       .select("id, key, label, posicao")
       .order("posicao", { ascending: true }),
-    supabase
-      .from("contacts")
-      .select(
-        "id, nome, telefone, tags, status_funil, email, data_nascimento, estado_civil, como_conheceu, created_at",
-      )
-      .order("created_at", { ascending: false }),
-    supabase
-      .from("whatsapp_historico_contatos")
-      .select("id, telefone, nome_sugerido, resumo, classificacao_sugerida, total_mensagens, ultima_mensagem_em")
-      .eq("confirmado", false)
-      .not("resumo", "is", null)
-      .order("ultima_mensagem_em", { ascending: false }),
+    consultaContatos,
+    souDono
+      ? supabase
+          .from("whatsapp_historico_contatos")
+          .select("id, telefone, nome_sugerido, resumo, classificacao_sugerida, total_mensagens, ultima_mensagem_em")
+          .eq("confirmado", false)
+          .not("resumo", "is", null)
+          .order("ultima_mensagem_em", { ascending: false })
+      : Promise.resolve({ data: [] as never[] }),
   ]);
 
   const listaEstagios = estagios ?? [];
@@ -74,7 +90,7 @@ export default async function CrmPage({
         <div>
           <h1 className="font-display text-[22px] font-extrabold">CRM</h1>
           <p className="text-[13.5px] text-ink-soft">
-            Funil de clientes — {listaContatos.length}{" "}
+            {souDono ? "Funil de clientes" : "Seus contatos"} — {listaContatos.length}{" "}
             {listaContatos.length === 1 ? "contato" : "contatos"} no total.
           </p>
         </div>
@@ -83,7 +99,7 @@ export default async function CrmPage({
           {souDono && aba === "funil" && (
             <StageManager estagios={listaEstagios} />
           )}
-          {aba === "funil" && (
+          {aba === "funil" && !semCadastroProfissional && (
             <form action={criarContato} className="flex gap-2">
               <input
                 name="nome"
@@ -99,7 +115,7 @@ export default async function CrmPage({
               />
               <button
                 type="submit"
-                className="btn bg-ink px-4 py-2 text-[13px] text-white"
+                className="btn shrink-0 whitespace-nowrap bg-ink px-4 py-2 text-[13px] text-white"
               >
                 + Novo contato
               </button>
@@ -129,6 +145,7 @@ export default async function CrmPage({
         >
           Dashboard
         </Link>
+        {souDono && (
         <Link
           href="/crm?view=historico"
           className={`flex items-center gap-1.5 px-3.5 py-2 text-[13px] font-bold ${
@@ -144,7 +161,15 @@ export default async function CrmPage({
             </span>
           )}
         </Link>
+        )}
       </div>
+
+      {semCadastroProfissional && (
+        <div className="mb-4 rounded-[12px] border border-amber/30 bg-[#fdf0dc] px-4 py-3 text-[13px] font-semibold text-[#7a4a00]">
+          Seu acesso ainda não está ligado a um cadastro de profissional, então o CRM fica sem contatos por enquanto.
+          Peça ao administrador para ligar o seu acesso (Calendário → Profissionais da equipe).
+        </div>
+      )}
 
       {aba === "funil" && (
         <CrmBoard estagios={listaEstagios} contatosIniciais={listaContatos} />

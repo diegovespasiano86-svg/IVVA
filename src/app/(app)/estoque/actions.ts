@@ -6,6 +6,7 @@ import { temRecurso } from "@/lib/planos";
 
 async function tenantComEstoqueLiberado(
   supabase: Awaited<ReturnType<typeof createClient>>,
+  opcoes: { apenasDono?: boolean } = {},
 ): Promise<string | null> {
   const {
     data: { user },
@@ -14,10 +15,12 @@ async function tenantComEstoqueLiberado(
 
   const { data: perfil } = await supabase
     .from("users")
-    .select("tenant_id, tenants(plano)")
+    .select("tenant_id, role, tenants(plano)")
     .eq("id", user.id)
     .maybeSingle();
   if (!perfil) return null;
+  // Cadastrar produto e preço é do administrador; ajustar a quantidade, qualquer usuário do negócio.
+  if (opcoes.apenasDono && perfil.role !== "dono") return null;
 
   const plano = (perfil.tenants as unknown as { plano: string } | null)?.plano;
   if (!temRecurso(plano, "estoque")) return null;
@@ -35,7 +38,7 @@ export async function criarProduto(formData: FormData) {
   if (!nome) return;
 
   const supabase = await createClient();
-  const tenantId = await tenantComEstoqueLiberado(supabase);
+  const tenantId = await tenantComEstoqueLiberado(supabase, { apenasDono: true });
   if (!tenantId) return;
 
   await supabase.from("products").insert({

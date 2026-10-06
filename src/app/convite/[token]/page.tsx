@@ -46,6 +46,10 @@ export default async function ConvitePage(props: {
             <span className="font-semibold text-ink">{data.tenant_nome}</span>{" "}
             na ivva. Só falta criar sua senha.
           </p>
+          <p className="mt-2 text-[12px] text-ink-soft">
+            Seu acesso é de profissional: você vê a agenda, as conversas e os seus contatos. As configurações do
+            negócio ficam com o administrador.
+          </p>
           <p className="mt-3 text-[12px] text-ink-faint">
             E-mail: <span className="font-semibold">{data.email}</span>
           </p>

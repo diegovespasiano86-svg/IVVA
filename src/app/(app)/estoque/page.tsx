@@ -13,9 +13,10 @@ export default async function EstoquePage() {
   } = await supabase.auth.getUser();
   const { data: perfil } = await supabase
     .from("users")
-    .select("tenants(plano)")
+    .select("role, tenants(plano)")
     .eq("id", user?.id ?? "")
     .maybeSingle();
+  const souDono = perfil?.role === "dono";
   const plano = (perfil?.tenants as unknown as { plano: string } | null)?.plano ?? "essencial";
   const liberado = temRecurso(plano, "estoque");
 
@@ -61,7 +62,7 @@ export default async function EstoquePage() {
             Estoque
           </h1>
           <p className="text-[13.5px] text-ink-soft">
-            {produtos?.length ?? 0} produtos
+            {produtos?.length ?? 0} {produtos?.length === 1 ? "produto" : "produtos"}
             {emAlerta.length > 0 && (
               <span className="ml-1.5 font-semibold text-coral">
                 · {emAlerta.length} em alerta de estoque mínimo
@@ -70,6 +71,7 @@ export default async function EstoquePage() {
           </p>
         </div>
 
+        {souDono && (
         <form
           action={criarProduto}
           className="card flex flex-wrap items-end gap-2 px-3.5 py-3"
@@ -144,11 +146,16 @@ export default async function EstoquePage() {
             + Adicionar
           </button>
         </form>
+        )}
       </div>
 
       {!produtos || produtos.length === 0 ? (
         <div className="card">
-          <EmptyState icon={Package} title="Nenhum produto cadastrado" text={"Nenhum produto cadastrado ainda."} />
+          <EmptyState
+            icon={Package}
+            title="Nenhum produto cadastrado"
+            text={souDono ? "Cadastre o primeiro produto no formulário acima." : "O administrador ainda não cadastrou produtos."}
+          />
         </div>
       ) : (
         <div className="card overflow-hidden">

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { contatoNoEscopo, type Escopo } from "@/lib/escopo-profissional";
 
 async function contexto() {
   const supabase = await createClient();
@@ -12,12 +13,27 @@ async function contexto() {
 
   const { data: perfil } = await supabase
     .from("users")
-    .select("tenant_id, role, nome")
+    .select("tenant_id, role, nome, professional_id")
     .eq("id", user.id)
     .maybeSingle();
   if (!perfil) return null;
 
   return { supabase, userId: user.id, ...perfil };
+}
+
+type Contexto = NonNullable<Awaited<ReturnType<typeof contexto>>>;
+
+// Profissional só mexe nos contatos da própria base (os que cadastrou ou já atendeu).
+async function podeMexerNoContato(ctx: Contexto, contactId: string): Promise<boolean> {
+  if (ctx.role === "dono") return true;
+  const escopo: Escopo = {
+    role: "profissional",
+    tenantId: ctx.tenant_id,
+    userId: ctx.userId,
+    nome: ctx.nome,
+    professionalId: ctx.professional_id ?? null,
+  };
+  return contatoNoEscopo(ctx.supabase, escopo, contactId);
 }
 
 export async function criarContato(formData: FormData) {
@@ -27,6 +43,8 @@ export async function criarContato(formData: FormData) {
 
   const ctx = await contexto();
   if (!ctx) return;
+  // Profissional cadastra contatos para a própria base; sem cadastro de profissional ligado, não dá.
+  if (ctx.role === "profissional" && !ctx.professional_id) return;
 
   const { data: primeiraEtapa } = await ctx.supabase
     .from("funnel_stages")
@@ -41,6 +59,7 @@ export async function criarContato(formData: FormData) {
     nome,
     telefone,
     status_funil: primeiraEtapa?.key ?? "sem_contato",
+    professional_id: ctx.role === "profissional" ? ctx.professional_id : null,
   });
 
   revalidatePath("/crm");
@@ -51,6 +70,7 @@ export async function criarContato(formData: FormData) {
 export async function moverContato(contactId: string, novoEstagio: string) {
   const ctx = await contexto();
   if (!ctx) return;
+  if (!(await podeMexerNoContato(ctx, contactId))) return;
 
   const { data: contato } = await ctx.supabase
     .from("contacts")
@@ -88,6 +108,7 @@ export async function moverContato(contactId: string, novoEstagio: string) {
 export async function buscarHistorico(contactId: string) {
   const ctx = await contexto();
   if (!ctx) return [];
+  if (!(await podeMexerNoContato(ctx, contactId))) return [];
 
   const { data } = await ctx.supabase
     .from("contact_notes")
@@ -111,6 +132,7 @@ export async function adicionarNota(formData: FormData) {
 
   const ctx = await contexto();
   if (!ctx) return;
+  if (!(await podeMexerNoContato(ctx, contactId))) return;
 
   await ctx.supabase.from("contact_notes").insert({
     tenant_id: ctx.tenant_id,
@@ -137,6 +159,7 @@ export async function atualizarContato(formData: FormData) {
 
   const ctx = await contexto();
   if (!ctx) return;
+  if (!(await podeMexerNoContato(ctx, contactId))) return;
 
   const nome = String(formData.get("nome") ?? "").trim();
   const telefone = String(formData.get("telefone") ?? "").trim();
@@ -267,7 +290,7 @@ export async function confirmarContatoHistorico(formData: FormData) {
   if (!historicoId) return;
 
   const ctx = await contexto();
-  if (!ctx) return;
+  if (!ctx || ctx.role !== "dono") return;
 
   const { data: item } = await ctx.supabase
     .from("whatsapp_historico_contatos")
@@ -313,7 +336,7 @@ export async function ignorarContatoHistorico(formData: FormData) {
   if (!historicoId) return;
 
   const ctx = await contexto();
-  if (!ctx) return;
+  if (!ctx || ctx.role !== "dono") return;
 
   await ctx.supabase
     .from("whatsapp_historico_contatos")

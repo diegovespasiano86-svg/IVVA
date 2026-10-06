@@ -58,10 +58,10 @@ export const NAV_GROUPS: NavGroup[] = [
     icon: Users,
     items: [
       { href: "/clientes", label: "Base de clientes", roles: DONO },
-      { href: "/crm", label: "Funil de vendas", roles: DONO },
+      { href: "/crm", label: "Funil de vendas", roles: AMBOS },
       { href: "/clientes/etiquetas", label: "Etiquetas", roles: DONO },
       { href: "/clientes/listas", label: "Listas", roles: DONO },
-      { href: "/avaliacoes", label: "Avaliações", roles: AMBOS },
+      { href: "/avaliacoes", label: "Avaliações", roles: DONO },
     ],
   },
   {
@@ -79,7 +79,7 @@ export const NAV_GROUPS: NavGroup[] = [
     icon: CalendarDays,
     items: [
       { href: "/calendario", label: "Calendário", roles: AMBOS },
-      { href: "/tarefas", label: "Tarefas", roles: AMBOS },
+      { href: "/tarefas", label: "Tarefas", roles: DONO },
     ],
   },
   {
@@ -89,7 +89,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/checkout", label: "Checkout", roles: AMBOS },
       { href: "/faturamento", label: "Faturamento e comissões", roles: DONO },
-      { href: "/estoque", label: "Estoque", roles: DONO },
+      { href: "/estoque", label: "Estoque", roles: AMBOS },
     ],
   },
   {
@@ -129,4 +129,22 @@ export function navGroupsForRole(role: Role): NavGroup[] {
     ...g,
     items: g.items.filter((i) => i.roles.includes(role)),
   })).filter((g) => g.items.length > 0);
+}
+
+/**
+ * Trava de rotas no servidor (usada pelo middleware): o menu esconde o que o perfil não vê, mas
+ * quem digita o endereço também precisa ser barrado. Vale o item de menu mais específico que
+ * casa com o caminho (ex.: /conversas libera, /conversas/desempenho é só do dono). Caminho que
+ * não casa com nenhum item e não é /dashboard fica restrito ao dono (inclui /admin).
+ */
+export function rotaPermitida(role: Role, pathname: string): boolean {
+  if (role === "dono") return true;
+  let melhor: NavLeaf | null = null;
+  for (const grupo of NAV_GROUPS) {
+    for (const item of grupo.items) {
+      const casa = pathname === item.href || pathname.startsWith(item.href + "/");
+      if (casa && (!melhor || item.href.length > melhor.href.length)) melhor = item;
+    }
+  }
+  return melhor ? melhor.roles.includes(role) : false;
 }

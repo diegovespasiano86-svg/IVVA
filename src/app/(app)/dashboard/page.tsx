@@ -195,11 +195,12 @@ export default async function DashboardPage() {
 
       {ehDono && <PrimeirosPassos />}
 
-      <div className="grid grid-cols-2 gap-3.5 md:grid-cols-4">
+      <div className={`grid grid-cols-2 gap-3.5 ${ehDono ? "md:grid-cols-4" : "md:grid-cols-3"}`}>
         <KpiCard label="Conversas este mês" numero={conversas ?? 0} icon={MessageSquare} spark={pontosLinha.map((p) => p.valor)} />
         <KpiCard label="Contatos no CRM" numero={contatos ?? 0} icon={Users} />
         <KpiCard label="Agendamentos futuros" numero={agendamentos ?? 0} icon={CalendarDays} />
-        <KpiCard label="Faturamento do mês" value={money.format(faturamentoMes)} icon={Wallet} accent />
+        {/* Valores do negócio são do administrador. */}
+        {ehDono && <KpiCard label="Faturamento do mês" value={money.format(faturamentoMes)} icon={Wallet} accent />}
       </div>
 
       <div className="mt-4 grid gap-3.5 lg:grid-cols-[1.4fr_1fr]">
@@ -278,10 +279,12 @@ export default async function DashboardPage() {
             {notas.length} {notas.length === 1 ? "avaliação recebida" : "avaliações recebidas"}
           </p>
         </FeatureLock>
+        {ehDono && (
         <div className="card px-5 py-4.5">
           <StatusTile label="Faturamento do mês" valor={money.format(faturamentoMes)} tom="bom" />
           <p className="mt-1.5 text-[11.5px] text-ink-faint">Somando todos os profissionais</p>
         </div>
+        )}
       </div>
 
       <div className="card mt-3.5 px-5 py-5">

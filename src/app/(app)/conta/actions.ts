@@ -5,6 +5,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createBillingPortalSession, cancelarAssinaturasAtivas } from "@/lib/stripe";
+import { criarConviteProfissional } from "@/lib/convites";
 import {
   exchangeEmbeddedSignupCode,
   buscarDetalhesNumero,
@@ -207,15 +208,23 @@ export async function pedirAjudaWhatsApp(formData: FormData) {
   revalidatePath("/conta");
 }
 
+export type ConviteState = {
+  erro: string | null;
+  link: string | null;
+  emailEnviado: boolean;
+  emailMotivo: string | null;
+};
+
 export async function criarConvite(
-  _prevState: { erro: string | null; link: string | null },
+  _prevState: ConviteState,
   formData: FormData,
-) {
+): Promise<ConviteState> {
+  const falha = (erro: string): ConviteState => ({ erro, link: null, emailEnviado: false, emailMotivo: null });
   const nome = String(formData.get("nome") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
 
   if (!nome || !email) {
-    return { erro: "Preencha nome e e-mail.", link: null };
+    return falha("Preencha nome e e-mail.");
   }
 
   const supabase = await createClient();
@@ -223,7 +232,7 @@ export async function criarConvite(
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { erro: "Sessão expirada, faça login de novo.", link: null };
+  if (!user) return falha("Sessão expirada, faça login de novo.");
 
   const { data: perfil } = await supabase
     .from("users")
@@ -232,22 +241,7 @@ export async function criarConvite(
     .maybeSingle();
 
   if (!perfil || perfil.role !== "dono") {
-    return { erro: "Só o dono do negócio pode convidar profissionais.", link: null };
-  }
-
-  const { data: convite, error } = await supabase
-    .from("invites")
-    .insert({
-      tenant_id: perfil.tenant_id,
-      nome,
-      email,
-      created_by: user.id,
-    })
-    .select("token")
-    .single();
-
-  if (error || !convite) {
-    return { erro: "Não consegui criar o convite. Tenta de novo.", link: null };
+    return falha("Só o dono do negócio pode convidar profissionais.");
   }
 
   const headerList = await headers();
@@ -255,8 +249,19 @@ export async function criarConvite(
     headerList.get("origin") ??
     `https://${headerList.get("host") ?? "localhost:3000"}`;
 
+  // Convite sem cadastro prévio: o profissional nasce quando a pessoa aceita (acesso de profissional).
+  const r = await criarConviteProfissional({
+    supabase,
+    tenantId: perfil.tenant_id,
+    donoUserId: user.id,
+    nome,
+    email,
+    professionalId: null,
+    origin,
+  });
+
   revalidatePath("/conta");
-  return { erro: null, link: `${origin}/convite/${convite.token}` };
+  return r;
 }
 
 export async function revogarConvite(formData: FormData) {

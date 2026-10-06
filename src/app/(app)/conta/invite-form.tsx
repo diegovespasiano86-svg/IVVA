@@ -1,11 +1,13 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { criarConvite } from "./actions";
+import { criarConvite, type ConviteState } from "./actions";
 
-const initialState: { erro: string | null; link: string | null } = {
+const initialState: ConviteState = {
   erro: null,
   link: null,
+  emailEnviado: false,
+  emailMotivo: null,
 };
 
 export default function InviteForm() {
@@ -71,8 +73,13 @@ export default function InviteForm() {
       {state.link && (
         <div className="mt-3 rounded-[10px] border border-teal/30 bg-teal/5 px-3.5 py-3">
           <p className="mb-1.5 text-[12px] font-bold text-teal">
-            Convite criado — envie esse link pra pessoa pelo WhatsApp
+            {state.emailEnviado
+              ? "Convite enviado por e-mail. Se preferir, o link também pode ir pelo WhatsApp:"
+              : "Convite criado — envie esse link pra pessoa pelo WhatsApp"}
           </p>
+          {!state.emailEnviado && state.emailMotivo && (
+            <p className="mb-1.5 text-[11.5px] text-ink-soft">O e-mail não saiu: {state.emailMotivo}.</p>
+          )}
           <div className="flex items-center gap-2">
             <code className="flex-1 truncate rounded-md bg-surface px-2.5 py-1.5 text-[12px]">
               {state.link}
