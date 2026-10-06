@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { CreditCard, FileText, Repeat } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { sincronizarPlanoTenant } from "@/lib/sincronizar-plano";
@@ -90,11 +89,11 @@ export default async function AssinaturaPage(props: { searchParams: Promise<{ er
 
       <div className="grid gap-3 sm:grid-cols-3">
         {acoes.map((a) => (
-          <Link key={a.titulo} href={a.href} prefetch={false} className="card flex flex-col gap-2 px-4 py-4 transition-colors hover:border-purple/50">
+          <a key={a.titulo} href={a.href} className="card flex flex-col gap-2 px-4 py-4 transition-colors hover:border-purple/50">
             <a.icon size={20} className="text-purple" />
             <span className="text-[13.5px] font-bold">{a.titulo}</span>
             <span className="text-[12px] text-ink-soft">{a.texto}</span>
-          </Link>
+          </a>
         ))}
       </div>
       <p className="mt-4 text-[12px] text-ink-faint">
