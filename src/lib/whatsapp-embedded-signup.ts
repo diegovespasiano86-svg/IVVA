@@ -204,3 +204,28 @@ export async function descobrirNumeroLiberado(
     return { numero: null, erro: "Não consegui consultar a Meta para achar o número liberado." };
   }
 }
+
+// Confere se um token da Meta ainda vale (existe, é do nosso app, não expirou) e devolve o motivo em português.
+export async function verificarToken(accessToken: string): Promise<{ valido: boolean; motivo: string | null }> {
+  const appId = process.env.NEXT_PUBLIC_WHATSAPP_APP_ID;
+  const appSecret = process.env.WHATSAPP_APP_SECRET;
+  if (!appId || !appSecret) return { valido: false, motivo: "Configuração do app Meta ausente." };
+  try {
+    const url = new URL(`${GRAPH_URL}/debug_token`);
+    url.searchParams.set("input_token", accessToken);
+    url.searchParams.set("access_token", `${appId}|${appSecret}`);
+    const resp = await graphFetch(url.toString());
+    const data = (await resp.json())?.data;
+    if (!data) return { valido: false, motivo: "A Meta não reconheceu esse token." };
+    if (data.app_id && String(data.app_id) !== String(appId)) {
+      return { valido: false, motivo: "Esse token pertence a outro app da Meta (não é o IVVA). Gere o token escolhendo o app IVVA." };
+    }
+    if (data.is_valid === false) {
+      return { valido: false, motivo: `Esse token não vale mais: ${data.error?.message ?? "inválido ou expirado"}. Gere um novo.` };
+    }
+    return { valido: true, motivo: null };
+  } catch (err) {
+    console.error("[embedded-signup] falha ao verificar o token", err);
+    return { valido: false, motivo: "Não consegui consultar a Meta para verificar o token. Tente de novo." };
+  }
+}

@@ -12,6 +12,7 @@ import {
   solicitarSincronizacaoCoexistencia,
   inscreverAppNaConta,
   descobrirNumeroLiberado,
+  verificarToken,
   WhatsAppEmbeddedSignupError,
 } from "@/lib/whatsapp-embedded-signup";
 
@@ -83,6 +84,49 @@ export async function conectarWhatsApp(
   });
   if (tokenError) {
     return "Não consegui salvar o token com segurança. Tenta de novo.";
+  }
+
+  // Completa o que o login com a Meta faz sozinho: confere o token, acha o número/conta, e INSCREVE o app na
+  // conta do WhatsApp (sem isso a conexão parece ok, mas nenhuma mensagem chega ao robô).
+  const token = await verificarToken(accessToken);
+  if (!token.valido) {
+    await supabase.from("whatsapp_accounts").update({ status: "erro", updated_at: new Date().toISOString() }).eq("tenant_id", perfil.tenant_id);
+    revalidatePath("/canais");
+    revalidatePath("/", "layout");
+    return token.motivo ?? "A Meta não aceitou esse token. Gere um novo e tente de novo.";
+  }
+
+  const detalhes = await buscarDetalhesNumero(phoneNumberId, accessToken);
+  let wabaId = businessAccountId;
+  let isCoexistence = false;
+  const achado = await descobrirNumeroLiberado(accessToken);
+  if (achado.numero && achado.numero.phoneNumberId === phoneNumberId) {
+    wabaId = wabaId || achado.numero.wabaId;
+    isCoexistence = achado.numero.isCoexistence;
+  }
+  if (!wabaId) {
+    return "O token funciona, mas não achei a conta do WhatsApp (WABA) desse número. Preencha também o campo ID da conta do WhatsApp Business.";
+  }
+
+  const inscricao = await inscreverAppNaConta(wabaId, accessToken);
+  if (!inscricao.ok) {
+    await supabase.from("whatsapp_accounts").update({ status: "erro", updated_at: new Date().toISOString() }).eq("tenant_id", perfil.tenant_id);
+    revalidatePath("/canais");
+    revalidatePath("/", "layout");
+    return `Conectou, mas a Meta não liberou o recebimento das mensagens (${inscricao.erro}). Confira se o token tem as permissões whatsapp_business_management e whatsapp_business_messaging e se a conta do WhatsApp foi atribuída ao usuário do sistema.`;
+  }
+
+  await supabase
+    .from("whatsapp_accounts")
+    .update({
+      business_account_id: wabaId,
+      display_phone_number: displayNumber || detalhes.displayPhoneNumber,
+      is_coexistence: isCoexistence,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("tenant_id", perfil.tenant_id);
+  if (isCoexistence) {
+    await solicitarSincronizacaoCoexistencia(phoneNumberId, accessToken);
   }
 
   revalidatePath("/conta");
