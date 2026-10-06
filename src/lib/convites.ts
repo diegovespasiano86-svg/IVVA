@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { emailConfigurado, emailConviteProfissional, enviarEmail } from "./email";
+import type { PapelConvite } from "./acessos";
 
 export type ResultadoConvite = {
   erro: string | null;
@@ -13,12 +14,11 @@ export type ResultadoConvite = {
 const EMAIL_VALIDO = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 /**
- * Cria o convite de um profissional e tenta mandar por e-mail. O acesso criado pelo convite é
- * SEMPRE o de profissional (accept_invite no banco), nunca administrador. Chamar só depois de
- * confirmar que quem pede é o dono do negócio.
+ * Cria o convite de um membro da equipe e tenta mandar por e-mail. O papel (usuário ou
+ * administrador) é escolhido pelo dono e gravado no convite; a conta nasce com esse papel quando a
+ * pessoa aceita (accept_invite no banco). Chamar só depois de confirmar que quem pede é o dono.
  *
- * Com professionalId, o convite liga a conta ao profissional já cadastrado; sem ele (fluxo
- * antigo em Conta), o profissional nasce quando o convite é aceito.
+ * Usuário comum sempre vira profissional na agenda; administrador só se "atende" for true.
  */
 export async function criarConviteProfissional(params: {
   supabase: SupabaseClient;
@@ -26,10 +26,13 @@ export async function criarConviteProfissional(params: {
   donoUserId: string;
   nome: string;
   email: string;
+  papel: PapelConvite;
+  atende: boolean;
   professionalId: string | null;
   origin: string;
 }): Promise<ResultadoConvite> {
-  const { supabase, tenantId, donoUserId, nome, professionalId, origin } = params;
+  const { supabase, tenantId, donoUserId, nome, professionalId, origin, papel } = params;
+  const atende = papel === "profissional" ? true : params.atende;
   const email = params.email.trim().toLowerCase();
 
   if (!EMAIL_VALIDO.test(email)) {
@@ -59,6 +62,8 @@ export async function criarConviteProfissional(params: {
       nome,
       email,
       professional_id: professionalId,
+      role: papel,
+      atende,
       created_by: donoUserId,
     })
     .select("token")
@@ -71,7 +76,7 @@ export async function criarConviteProfissional(params: {
   const link = `${origin}/convite/${convite.token}`;
 
   const { data: negocio } = await supabase.from("tenants").select("nome").eq("id", tenantId).maybeSingle();
-  const modelo = emailConviteProfissional({ nome, negocio: negocio?.nome ?? "seu negócio", link });
+  const modelo = emailConviteProfissional({ nome, negocio: negocio?.nome ?? "seu negócio", link, papel });
   const envio = await enviarEmail({ para: email, assunto: modelo.assunto, html: modelo.html, texto: modelo.texto });
 
   return {

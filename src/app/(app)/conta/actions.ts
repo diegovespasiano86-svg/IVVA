@@ -220,8 +220,11 @@ export async function criarConvite(
   formData: FormData,
 ): Promise<ConviteState> {
   const falha = (erro: string): ConviteState => ({ erro, link: null, emailEnviado: false, emailMotivo: null });
-  const nome = String(formData.get("nome") ?? "").trim();
+  const nome = String(formData.get("nome") ?? "").trim().slice(0, 80);
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  // O dono escolhe o acesso: usuário comum ("profissional") ou administrador ("dono").
+  const papel = formData.get("papel") === "dono" ? "dono" : "profissional";
+  const atende = formData.get("atende") === "on";
 
   if (!nome || !email) {
     return falha("Preencha nome e e-mail.");
@@ -256,11 +259,14 @@ export async function criarConvite(
     donoUserId: user.id,
     nome,
     email,
+    papel,
+    atende,
     professionalId: null,
     origin,
   });
 
   revalidatePath("/conta");
+  revalidatePath("/calendario");
   return r;
 }
 
@@ -272,6 +278,7 @@ export async function revogarConvite(formData: FormData) {
   await supabase.from("invites").update({ status: "revogado" }).eq("id", id);
 
   revalidatePath("/conta");
+  revalidatePath("/calendario");
 }
 
 export async function desconectarWhatsApp() {

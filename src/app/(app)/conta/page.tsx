@@ -134,7 +134,7 @@ export default async function ContaPage({
       // pra profissional a consulta sempre volta vazia.
       supabase
         .from("invites")
-        .select("id, nome, email, status, created_at")
+        .select("id, nome, email, status, created_at, role")
         .eq("status", "pendente")
         .order("created_at", { ascending: false }),
     ]);
@@ -382,7 +382,7 @@ export default async function ContaPage({
                     <p className="text-[11.5px] text-ink-faint">{u.email}</p>
                   </div>
                   <span className="rounded-full bg-surface-soft px-2.5 py-0.5 text-[11px] font-bold text-ink-soft">
-                    {u.role === "dono" ? "Dono" : "Profissional"}
+                    {u.role === "dono" ? "Administrador" : "Usuário"}
                   </span>
                 </div>
               ))}
@@ -390,7 +390,7 @@ export default async function ContaPage({
             {isDono && (
               <div className="mt-4 border-t border-border pt-4">
                 <p className="mb-3 text-[13px] font-bold">
-                  Convidar profissional
+                  Convidar para a equipe
                 </p>
                 <InviteForm />
 
@@ -407,7 +407,9 @@ export default async function ContaPage({
                         >
                           <div>
                             <p className="text-[13px] font-semibold">{c.nome}</p>
-                            <p className="text-[11.5px] text-ink-faint">{c.email}</p>
+                            <p className="text-[11.5px] text-ink-faint">
+                              {c.email} · {c.role === "dono" ? "Administrador" : "Usuário"}
+                            </p>
                           </div>
                           <form action={revogarConvite}>
                             <input type="hidden" name="id" value={c.id} />

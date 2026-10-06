@@ -3,7 +3,7 @@ import { CalendarDays } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { criarAgendamento } from "./actions";
 import CalendarView, { type EventoAgenda } from "./calendar-view";
-import ProfissionaisCard, { type ProfissionalItem } from "./profissionais-card";
+import ProfissionaisCard, { type ProfissionalItem, type ConvitePendenteItem } from "./profissionais-card";
 import { obterEscopo, filtroContatosDoProfissional } from "@/lib/escopo-profissional";
 import { temRecurso } from "@/lib/planos";
 
@@ -50,13 +50,16 @@ export default async function CalendarioPage() {
         ? supabase.from("users").select("id, professional_id")
         : Promise.resolve({ data: [] as { id: string; professional_id: string | null }[] }),
       souDono
-        ? supabase.from("invites").select("professional_id").eq("status", "pendente").gt("expires_at", new Date().toISOString())
-        : Promise.resolve({ data: [] as { professional_id: string | null }[] }),
+        ? supabase
+            .from("invites")
+            .select("id, nome, email, role")
+            .eq("status", "pendente")
+            .gt("expires_at", new Date().toISOString())
+            .order("created_at", { ascending: false })
+        : Promise.resolve({ data: [] as { id: string; nome: string; email: string; role: string }[] }),
       supabase.from("tenants").select("plano").maybeSingle(),
     ]);
 
-  const comAcesso = new Set((usuariosEquipe ?? []).map((u) => u.professional_id).filter(Boolean) as string[]);
-  const comConvite = new Set((convitesPendentes ?? []).map((i) => i.professional_id).filter(Boolean) as string[]);
   const donoProfissionalId = (usuariosEquipe ?? []).find((u) => u.id === escopo?.userId)?.professional_id ?? null;
   const itensEquipe: ProfissionalItem[] = (profissionais ?? []).map((p) => ({
     id: p.id,
@@ -64,7 +67,12 @@ export default async function CalendarioPage() {
     cor: p.cor,
     comissao_pct: Number(p.comissao_pct ?? 0),
     ehDono: p.id === donoProfissionalId,
-    acesso: p.id === donoProfissionalId || comAcesso.has(p.id) ? "ativo" : comConvite.has(p.id) ? "convite" : "nenhum",
+  }));
+  const itensConvites: ConvitePendenteItem[] = (convitesPendentes ?? []).map((c) => ({
+    id: c.id,
+    nome: c.nome,
+    email: c.email,
+    papel: c.role === "dono" ? "dono" : "profissional",
   }));
 
   const eventos: EventoAgenda[] = (agendamentos ?? []).map((ag) => {
@@ -92,6 +100,7 @@ export default async function CalendarioPage() {
       {souDono && (
         <ProfissionaisCard
           profissionais={itensEquipe}
+          convites={itensConvites}
           mostrarComissao={temRecurso(tenantPlano?.plano, "comissao_automatica")}
         />
       )}

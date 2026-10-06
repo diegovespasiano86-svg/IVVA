@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import AcceptForm from "./accept-form";
+import { ACESSOS, type PapelConvite } from "@/lib/acessos";
 
 export default async function ConvitePage(props: {
   params: Promise<{ token: string }>;
@@ -16,6 +17,7 @@ export default async function ConvitePage(props: {
     email: string;
     tenant_nome: string;
     valido: boolean;
+    papel: string;
   } | null;
 
   if (error || !data || !data.valido) {
@@ -34,6 +36,8 @@ export default async function ConvitePage(props: {
     );
   }
 
+  const acesso = ACESSOS[(data.papel === "dono" ? "dono" : "profissional") as PapelConvite];
+
   return (
     <main className="flex min-h-screen items-center justify-center px-4 py-10">
       <div className="w-full max-w-[380px]">
@@ -46,10 +50,22 @@ export default async function ConvitePage(props: {
             <span className="font-semibold text-ink">{data.tenant_nome}</span>{" "}
             na ivva. Só falta criar sua senha.
           </p>
-          <p className="mt-2 text-[12px] text-ink-soft">
-            Seu acesso é de profissional: você vê a agenda, as conversas e os seus contatos. As configurações do
-            negócio ficam com o administrador.
-          </p>
+          <div className="mt-3 rounded-[12px] border border-border bg-surface-soft/50 px-3.5 py-3 text-[12.5px]">
+            <p className="font-bold">
+              Seu acesso: {acesso.rotulo}
+            </p>
+            <p className="mt-0.5 text-ink-soft">{acesso.resumo}</p>
+            <ul className="mt-2 list-disc pl-5 text-ink-soft">
+              {acesso.pode.map((i) => (
+                <li key={i}>{i}</li>
+              ))}
+            </ul>
+            {acesso.naoPode.length > 0 && (
+              <p className="mt-2 text-[11.5px] text-ink-faint">
+                Fica com o administrador: {acesso.naoPode.join("; ").toLowerCase()}.
+              </p>
+            )}
+          </div>
           <p className="mt-3 text-[12px] text-ink-faint">
             E-mail: <span className="font-semibold">{data.email}</span>
           </p>
