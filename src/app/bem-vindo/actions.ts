@@ -41,20 +41,41 @@ export async function finalizarCadastro(
 
   const supabase = await createClient();
 
+  const segredoInterno = process.env.WHATSAPP_WEBHOOK_INTERNAL_SECRET;
+  if (!segredoInterno) {
+    return "Configuração do servidor incompleta. Fale com a gente e informe o código CAD-2.";
+  }
+
+  // Tentativa anterior que falhou no meio deixa um login sem negócio. Limpa esse resto para a pessoa
+  // conseguir terminar; se o e-mail já tem um negócio de verdade, avisa.
+  const { data: preparo } = await supabase.rpc("cadastro_preparar", { p_secret: segredoInterno, p_email: email });
+  if (preparo === "conta_existente") {
+    return `Já existe uma conta da ivva com o e-mail ${email}. Entre em app.ivva.app.br/login com ele, ou refaça o cadastro usando outro e-mail.`;
+  }
+
   const { data: signUpData, error: signUpError } =
     await supabase.auth.signUp({ email, password: senha });
 
-  if (signUpError || !signUpData.user) {
+  let novoUsuarioId: string | null = signUpData?.user?.id ?? null;
+
+  if (signUpError || !signUpData?.user) {
     console.error("[cadastro] falha no signUp", signUpError?.message);
-    return signUpError?.message === "User already registered"
-      ? "Já existe conta com esse e-mail. Faça login."
-      : (signUpError?.message ?? "Falha ao criar sua conta.");
+    // O Supabase cria o login mesmo quando falha o envio do e-mail de confirmação (que nem usamos aqui,
+    // pois o negócio confirma o e-mail sozinho). Se o login existe, segue em frente.
+    const { data: recente } = await supabase.rpc("cadastro_usuario_recente", { p_secret: segredoInterno, p_email: email });
+    if (typeof recente === "string") {
+      novoUsuarioId = recente;
+    } else {
+      return signUpError?.message === "User already registered"
+        ? "Já existe conta com esse e-mail. Faça login."
+        : `Não foi possível criar o seu acesso agora. Tente de novo em instantes. Se repetir, fale com a gente e informe o código CAD-4. (${signUpError?.message ?? "sem detalhe"})`;
+    }
   }
 
   // Com confirmação de e-mail ligada, o Supabase NÃO devolve erro quando o e-mail já tem conta: devolve um
   // usuário de mentira, sem identidades. Sem esta checagem, o passo seguinte falhava com a mensagem genérica
   // de "problema ao configurar seu negócio".
-  if (Array.isArray(signUpData.user.identities) && signUpData.user.identities.length === 0) {
+  if (signUpData?.user && Array.isArray(signUpData.user.identities) && signUpData.user.identities.length === 0) {
     console.error("[cadastro] e-mail do pagamento já tem conta:", email);
     return `Já existe uma conta da ivva com o e-mail ${email}. Entre em app.ivva.app.br/login com ele, ou refaça o cadastro usando outro e-mail.`;
   }
@@ -73,7 +94,7 @@ export async function finalizarCadastro(
     p_nome: nomeNegocio,
     p_plano: plano,
     p_stripe_customer_id: session.customer ?? null,
-    p_user_id: signUpData.user.id,
+    p_user_id: novoUsuarioId as string,
     p_user_nome: nome,
     p_user_email: email,
     p_segmento: segmentoId,
