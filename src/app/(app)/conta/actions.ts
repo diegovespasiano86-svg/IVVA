@@ -84,6 +84,8 @@ export async function conectarWhatsApp(
   }
 
   revalidatePath("/conta");
+  revalidatePath("/canais");
+  revalidatePath("/", "layout");
   return undefined;
 }
 
@@ -178,6 +180,8 @@ export async function conectarWhatsAppEmbedded(params: {
   }
 
   revalidatePath("/conta");
+  revalidatePath("/canais");
+  revalidatePath("/", "layout");
   return { erro: null };
 }
 
@@ -206,6 +210,8 @@ export async function pedirAjudaWhatsApp(formData: FormData) {
   });
 
   revalidatePath("/conta");
+  revalidatePath("/canais");
+  revalidatePath("/", "layout");
 }
 
 export type ConviteState = {
@@ -266,6 +272,8 @@ export async function criarConvite(
   });
 
   revalidatePath("/conta");
+  revalidatePath("/canais");
+  revalidatePath("/", "layout");
   revalidatePath("/calendario");
   return r;
 }
@@ -278,6 +286,8 @@ export async function revogarConvite(formData: FormData) {
   await supabase.from("invites").update({ status: "revogado" }).eq("id", id);
 
   revalidatePath("/conta");
+  revalidatePath("/canais");
+  revalidatePath("/", "layout");
   revalidatePath("/calendario");
 }
 
@@ -302,6 +312,8 @@ export async function desconectarWhatsApp() {
     .eq("tenant_id", perfil.tenant_id);
 
   revalidatePath("/conta");
+  revalidatePath("/canais");
+  revalidatePath("/", "layout");
 }
 
 // Manda o dono pro portal de cobrança hospedado pela própria Stripe — lá

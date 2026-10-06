@@ -27,7 +27,7 @@ export default async function PrimeirosPassos() {
     {
       titulo: "Conectar o WhatsApp",
       texto: "Ligue o número do seu negócio para o robô começar a atender.",
-      href: "/conta",
+      href: "/canais",
       feito: conta?.status === "ativo",
       icon: MessageCircle,
     },

@@ -3,6 +3,7 @@ import { Camera, CheckCircle2, Mail, MessageCircle, MessagesSquare, Plug, Triang
 import { createClient } from "@/lib/supabase/server";
 import { desconectarWhatsApp } from "../conta/actions";
 import EmbeddedSignupButton from "../conta/embedded-signup-button";
+import WhatsAppForm from "../conta/whatsapp-form";
 
 const EM_BREVE = [
   { nome: "Instagram", texto: "Atender as mensagens diretas do Instagram com o mesmo robô.", icon: Camera },
@@ -120,13 +121,14 @@ export default async function CanaisPage() {
               ))}
             </ol>
             <EmbeddedSignupButton />
-            <p className="mt-4 text-[12px] text-ink-faint">
-              Prefere conectar com os seus próprios dados de desenvolvedor da Meta? A opção manual continua disponível em{" "}
-              <Link href="/conta" className="font-bold text-purple underline-offset-2 hover:underline">
-                Conta e assinatura
-              </Link>
-              .
-            </p>
+            <details className="mt-4 border-t border-border pt-4">
+              <summary className="cursor-pointer text-[12.5px] font-bold text-ink-soft hover:text-ink">
+                Prefiro conectar manualmente com meus próprios dados de desenvolvedor da Meta
+              </summary>
+              <div className="mt-3">
+                <WhatsAppForm />
+              </div>
+            </details>
           </div>
         )}
       </section>

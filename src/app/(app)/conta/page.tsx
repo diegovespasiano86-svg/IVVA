@@ -1,10 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
-import WhatsAppForm from "./whatsapp-form";
-import EmbeddedSignupButton from "./embedded-signup-button";
 import InviteForm from "./invite-form";
 import BillingPortalButton from "./billing-portal-button";
 import ApagarConta from "./apagar-conta";
-import { desconectarWhatsApp, revogarConvite } from "./actions";
+import { revogarConvite } from "./actions";
 import { sincronizarPlanoTenant } from "@/lib/sincronizar-plano";
 import ComprarCreditosButton from "@/components/comprar-creditos-button";
 import Alert from "@/components/alert";
@@ -316,56 +314,30 @@ export default async function ContaPage({
               </span>
             )}
           </div>
-
-          {conta ? (
-            <div>
-              <p className="text-[13.5px] font-semibold">
-                {conta.display_phone_number ?? conta.phone_number_id}
-              </p>
-              <p className="mt-0.5 text-[12px] text-ink-faint">
-                Conectado em{" "}
-                {new Date(conta.connected_at).toLocaleDateString("pt-BR")}
-              </p>
-              <form action={desconectarWhatsApp} className="mt-4">
-                <button
-                  type="submit"
-                  className="rounded-[10px] border border-border px-3.5 py-2 text-[12.5px] font-semibold text-coral hover:bg-coral/5"
-                >
-                  Desconectar
-                </button>
-              </form>
-            </div>
-          ) : (
-            <>
-              <p className="mb-4 text-[12.5px] text-ink-soft">
-                Conecte o WhatsApp Business do seu negócio pra ivva começar
-                a atender seus clientes.
-              </p>
-              <EmbeddedSignupButton />
-              <details className="mt-4 border-t border-border pt-4">
-                <summary className="cursor-pointer text-[12.5px] font-bold text-ink-soft hover:text-ink">
-                  Prefiro conectar manualmente com meus próprios dados de
-                  desenvolvedor
-                </summary>
-                <div className="mt-3">
-                  <WhatsAppForm />
-                </div>
-              </details>
-            </>
-          )}
-
-          {isDono && conta && (
-            <div className="mt-4 border-t border-border pt-4">
+          <p className="text-[12.5px] text-ink-soft">
+            {conta
+              ? `Número conectado: ${conta.display_phone_number ?? conta.phone_number_id}.`
+              : "Nenhum número conectado ainda."}{" "}
+            Conectar, trocar ou desconectar o número fica em Canais; a personalidade e as automações do robô ficam em Configuração do robô.
+          </p>
+          <div className="mt-4 flex flex-col gap-2">
+            <a
+              href="/canais"
+              className="flex items-center justify-between rounded-[10px] bg-surface-soft px-3.5 py-2.5 text-[12.5px] font-semibold text-ink-soft hover:text-ink"
+            >
+              Canais: conectar o WhatsApp
+              <span aria-hidden>→</span>
+            </a>
+            {isDono && (
               <a
                 href="/robo"
                 className="flex items-center justify-between rounded-[10px] bg-surface-soft px-3.5 py-2.5 text-[12.5px] font-semibold text-ink-soft hover:text-ink"
               >
-                Personalidade, tom e automações do robô ficam em
                 Configuração do robô
                 <span aria-hidden>→</span>
               </a>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         <div className="flex flex-col gap-4">

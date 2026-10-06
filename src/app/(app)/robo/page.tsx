@@ -62,12 +62,12 @@ export default async function RoboPage() {
 
       {!conta && (
         <a
-          href="/conta"
+          href="/canais"
           className="mb-4 block rounded-[12px] border border-purple/30 bg-purple/5 px-4 py-3 text-[13px] font-semibold text-purple"
         >
           Seu WhatsApp ainda não está conectado — pode configurar tudo aqui
           antes, mas o robô só atende de verdade depois de conectar em
-          Conta e assinatura →
+          Canais →
         </a>
       )}
 

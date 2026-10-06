@@ -253,7 +253,7 @@ export default function AppShell({
             </button>
             {roboStatus && (
               <Link
-                href={roboStatus === "sem-whatsapp" ? "/conta" : "/robo"}
+                href={roboStatus === "sem-whatsapp" ? "/canais" : "/robo"}
                 title={
                   roboStatus === "ativo"
                     ? "O robô está atendendo seus clientes"
