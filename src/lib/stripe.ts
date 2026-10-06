@@ -33,6 +33,10 @@ export async function createCheckoutSession(params: {
     "line_items[0][quantity]": "1",
     return_url: params.returnUrl,
     "subscription_data[trial_period_days]": "14",
+    // Teste de 14 dias SEM cartão: a Stripe só pede o cartão quando houver cobrança. Se o teste acabar sem cartão
+    // cadastrado, a assinatura é cancelada (o webhook bloqueia o acesso) em vez de ficar cobrando em falso.
+    payment_method_collection: "if_required",
+    "subscription_data[trial_settings][end_behavior][missing_payment_method]": "cancel",
     "metadata[nome_negocio]": params.nomeNegocio,
     "metadata[plano]": params.plano,
   });
