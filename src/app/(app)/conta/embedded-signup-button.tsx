@@ -158,6 +158,7 @@ export default function EmbeddedSignupButton() {
       phoneNumberId: sessao.phoneNumberId,
       wabaId: sessao.wabaId,
       isCoexistence: sessao.isCoexistence,
+      paginaUrl: window.location.href,
     });
 
     if (resultado.erro) {
@@ -246,6 +247,7 @@ export default function EmbeddedSignupButton() {
             phoneNumberId: s.phoneNumberId ?? undefined,
             wabaId: s.wabaId ?? undefined,
             isCoexistence: s.isCoexistence,
+            paginaUrl: window.location.href,
           }).then((r) => {
             if (r.erro) {
               anotar(`Falhou: ${r.erro}`);

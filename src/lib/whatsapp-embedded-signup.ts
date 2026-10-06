@@ -8,33 +8,52 @@ const GRAPH_URL = `https://graph.facebook.com/${GRAPH_VERSION}`;
 
 export class WhatsAppEmbeddedSignupError extends Error {}
 
-// O SDK do JavaScript resolve o popup na própria janela (sem redirect de servidor); por isso o
-// redirect_uri da troca do código é vazio.
-export async function exchangeEmbeddedSignupCode(code: string): Promise<string> {
+// O código do login com o SDK do JavaScript só é aceito se o redirect_uri da troca for igual ao que o SDK
+// usou na janela. Esse valor muda conforme o tipo de login (e a Meta responde "redirect_uri is identical to
+// the one you used in the OAuth dialog" quando erra), então tentamos os formatos conhecidos em sequência:
+// uma tentativa que falha não consome o código. O primeiro que a Meta aceitar vale.
+export async function exchangeEmbeddedSignupCode(code: string, paginaUrl?: string): Promise<string> {
   const appId = process.env.NEXT_PUBLIC_WHATSAPP_APP_ID;
   const appSecret = process.env.WHATSAPP_APP_SECRET;
   if (!appId || !appSecret) {
     throw new WhatsAppEmbeddedSignupError("Configuração do app Meta ausente.");
   }
 
-  const url = new URL(`${GRAPH_URL}/oauth/access_token`);
-  url.searchParams.set("client_id", appId);
-  url.searchParams.set("client_secret", appSecret);
-  // Código vindo do FB.login do SDK do JavaScript: a Meta exige redirect_uri VAZIO (sem o parâmetro dá o erro
-  // "redirect_uri is identical to the one you used in the OAuth dialog").
-  url.searchParams.set("redirect_uri", "");
-  url.searchParams.set("code", code);
+  let origem: string | null = null;
+  try {
+    if (paginaUrl) origem = new URL(paginaUrl).origin;
+  } catch {
+    origem = null;
+  }
+  const variantes: (string | null)[] = [
+    "", // parâmetro vazio
+    null, // sem o parâmetro
+    ...(origem ? [origem + "/", origem, paginaUrl ?? ""] : []),
+    "https://www.facebook.com/connect/login_success.html",
+    "https://business.facebook.com/",
+  ].filter((v, i, arr) => arr.indexOf(v) === i);
 
-  const resp = await fetch(url.toString());
-  const data = await resp.json();
+  let primeiroErro: string | null = null;
+  for (const redirectUri of variantes) {
+    const url = new URL(`${GRAPH_URL}/oauth/access_token`);
+    url.searchParams.set("client_id", appId);
+    url.searchParams.set("client_secret", appSecret);
+    if (redirectUri !== null) url.searchParams.set("redirect_uri", redirectUri);
+    url.searchParams.set("code", code);
 
-  if (!resp.ok || !data.access_token) {
-    throw new WhatsAppEmbeddedSignupError(
-      data?.error?.message ?? "Falha ao trocar o código pelo token de acesso.",
-    );
+    const resp = await fetch(url.toString());
+    const data = await resp.json();
+    if (resp.ok && data.access_token) {
+      console.log("[embedded-signup] troca do código aceita com redirect_uri =", JSON.stringify(redirectUri));
+      return data.access_token as string;
+    }
+    primeiroErro ??= data?.error?.message ?? "Falha ao trocar o código pelo token de acesso.";
+    // Só vale tentar o próximo formato quando o erro é de redirect_uri; outros erros (segredo, código
+    // expirado) não mudam com outro formato.
+    if (!/redirect_uri/i.test(String(data?.error?.message ?? ""))) break;
   }
 
-  return data.access_token as string;
+  throw new WhatsAppEmbeddedSignupError(primeiroErro ?? "Falha ao trocar o código pelo token de acesso.");
 }
 
 export async function buscarDetalhesNumero(

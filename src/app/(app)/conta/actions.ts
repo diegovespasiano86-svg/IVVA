@@ -102,6 +102,8 @@ export async function conectarWhatsAppEmbedded(params: {
   phoneNumberId?: string;
   wabaId?: string;
   isCoexistence?: boolean;
+  // Endereço da página onde o login foi feito (a Meta compara com o usado na janela ao trocar o código).
+  paginaUrl?: string;
 }): Promise<{ erro: string | null }> {
   const { code } = params;
   let phoneNumberId = params.phoneNumberId;
@@ -131,7 +133,7 @@ export async function conectarWhatsAppEmbedded(params: {
 
   let accessToken: string;
   try {
-    accessToken = await exchangeEmbeddedSignupCode(code);
+    accessToken = await exchangeEmbeddedSignupCode(code, params.paginaUrl);
   } catch (err) {
     return {
       erro:
