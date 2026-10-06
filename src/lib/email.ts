@@ -129,7 +129,7 @@ export function emailFinalizarCadastro(params: { negocio: string; plano: string;
   const html = moldura(
     "Pagamento confirmado: falta só criar a sua senha",
     par(`Recebemos a assinatura do plano <strong>${esc(plano)}</strong> para <strong>${esc(params.negocio)}</strong>. Seus 14 dias de teste grátis já começaram.`) +
-      par("Falta um passo: criar a sua senha e escolher o tipo do seu negócio. Leva 1 minuto.") +
+      par("Falta um passo: criar a sua senha e escolher o tipo do seu negócio. Em seguida você recebe um e-mail para confirmar o seu e-mail e ativar o acesso.") +
       botao(params.link, "Finalizar meu cadastro") +
       nota(`Se o botão não abrir, copie este endereço no navegador:<br><span style="word-break:break-all">${esc(params.link)}</span>`) +
       nota("Já finalizou o cadastro? É só ignorar este e-mail. Qualquer dúvida, responda esta mensagem."),

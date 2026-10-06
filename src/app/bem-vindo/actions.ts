@@ -1,24 +1,42 @@
 "use server";
 
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCheckoutSession } from "@/lib/stripe";
 import { getSegmento } from "@/lib/segmentos";
 
-export async function finalizarCadastro(
-  _prevState: string | undefined,
-  formData: FormData,
-) {
+export type EstadoCadastro = { erro: string | null; confirmar: string | null };
+
+const ESTADO_ERRO = (erro: string): EstadoCadastro => ({ erro, confirmar: null });
+
+async function origemDoApp(): Promise<string> {
+  if (process.env.VERCEL_ENV === "production") return "https://app.ivva.app.br";
+  const h = await headers();
+  return h.get("origin") ?? `https://${h.get("host") ?? "localhost:3000"}`;
+}
+
+function linkDeAtivacao(origem: string, sessionId: string) {
+  const destino = `/bem-vindo/ativar?session_id=${encodeURIComponent(sessionId)}`;
+  return `${origem}/auth/callback?next=${encodeURIComponent(destino)}`;
+}
+
+/**
+ * Passo 1 do acesso: a pessoa cria a senha. O e-mail só é considerado dela depois que clicar no botão do
+ * e-mail de confirmação da ivva; é esse clique que ativa o negócio (ver /bem-vindo/ativar). Por isso aqui
+ * NÃO criamos o negócio: a tela passa a avisar que falta confirmar o e-mail.
+ */
+export async function finalizarCadastro(_prevState: EstadoCadastro | undefined, formData: FormData): Promise<EstadoCadastro> {
   const sessionId = String(formData.get("session_id") ?? "");
   const nome = String(formData.get("nome") ?? "").trim();
   const senha = String(formData.get("senha") ?? "");
   const segmentoId = String(formData.get("segmento") ?? "").trim();
 
   if (!sessionId || !nome || senha.length < 8) {
-    return "Preencha seu nome e uma senha com pelo menos 8 caracteres.";
+    return ESTADO_ERRO("Preencha seu nome e uma senha com pelo menos 8 caracteres.");
   }
-  if (!segmentoId) {
-    return "Escolha o tipo do seu negócio antes de continuar.";
+  if (!segmentoId || !getSegmento(segmentoId)) {
+    return ESTADO_ERRO("Escolha o tipo do seu negócio antes de continuar.");
   }
 
   let session;
@@ -26,92 +44,61 @@ export async function finalizarCadastro(
     session = await getCheckoutSession(sessionId);
   } catch (err) {
     console.error("[cadastro] não leu o checkout", err instanceof Error ? err.message : err);
-    return "Não encontramos esse pagamento. Fale com a gente e informe o código CAD-1.";
+    return ESTADO_ERRO("Não encontramos esse pagamento. Fale com a gente e informe o código CAD-1.");
   }
-
   if (session.payment_status !== "paid" && session.payment_status !== "no_payment_required") {
-    return "Pagamento ainda não confirmado.";
+    return ESTADO_ERRO("Pagamento ainda não confirmado.");
   }
 
-  const email = session.customer_details?.email ?? session.customer_email;
-  const nomeNegocio = session.metadata?.nome_negocio ?? "Meu negócio";
-  if (!email) {
-    return "Não conseguimos ler o e-mail do pagamento.";
-  }
+  const email = (session.customer_details?.email ?? session.customer_email ?? "").trim().toLowerCase();
+  if (!email) return ESTADO_ERRO("Não conseguimos ler o e-mail do pagamento.");
+
+  const segredo = process.env.WHATSAPP_WEBHOOK_INTERNAL_SECRET;
+  if (!segredo) return ESTADO_ERRO("Configuração do servidor incompleta. Fale com a gente e informe o código CAD-2.");
 
   const supabase = await createClient();
 
-  const segredoInterno = process.env.WHATSAPP_WEBHOOK_INTERNAL_SECRET;
-  if (!segredoInterno) {
-    return "Configuração do servidor incompleta. Fale com a gente e informe o código CAD-2.";
-  }
-
-  // Tentativa anterior que falhou no meio deixa um login sem negócio. Limpa esse resto para a pessoa
-  // conseguir terminar; se o e-mail já tem um negócio de verdade, avisa.
-  const { data: preparo } = await supabase.rpc("cadastro_preparar", { p_secret: segredoInterno, p_email: email });
+  // Resto de uma tentativa anterior que ficou sem confirmar: limpa para a pessoa poder refazer.
+  const { data: preparo } = await supabase.rpc("cadastro_preparar", { p_secret: segredo, p_email: email });
   if (preparo === "conta_existente") {
-    return `Já existe uma conta da ivva com o e-mail ${email}. Entre em app.ivva.app.br/login com ele, ou refaça o cadastro usando outro e-mail.`;
+    return ESTADO_ERRO(`Já existe uma conta da ivva com o e-mail ${email}. Entre em app.ivva.app.br/login com ele, ou refaça o cadastro usando outro e-mail.`);
   }
 
-  const { data: signUpData, error: signUpError } =
-    await supabase.auth.signUp({ email, password: senha });
-
-  let novoUsuarioId: string | null = signUpData?.user?.id ?? null;
-
-  if (signUpError || !signUpData?.user) {
-    console.error("[cadastro] falha no signUp", signUpError?.message);
-    // O Supabase cria o login mesmo quando falha o envio do e-mail de confirmação (que nem usamos aqui,
-    // pois o negócio confirma o e-mail sozinho). Se o login existe, segue em frente.
-    const { data: recente } = await supabase.rpc("cadastro_usuario_recente", { p_secret: segredoInterno, p_email: email });
-    if (typeof recente === "string") {
-      novoUsuarioId = recente;
-    } else {
-      return signUpError?.message === "User already registered"
-        ? "Já existe conta com esse e-mail. Faça login."
-        : `Não foi possível criar o seu acesso agora. Tente de novo em instantes. Se repetir, fale com a gente e informe o código CAD-4. (${signUpError?.message ?? "sem detalhe"})`;
-    }
-  }
-
-  // Com confirmação de e-mail ligada, o Supabase NÃO devolve erro quando o e-mail já tem conta: devolve um
-  // usuário de mentira, sem identidades. Sem esta checagem, o passo seguinte falhava com a mensagem genérica
-  // de "problema ao configurar seu negócio".
-  if (signUpData?.user && Array.isArray(signUpData.user.identities) && signUpData.user.identities.length === 0) {
-    console.error("[cadastro] e-mail do pagamento já tem conta:", email);
-    return `Já existe uma conta da ivva com o e-mail ${email}. Entre em app.ivva.app.br/login com ele, ou refaça o cadastro usando outro e-mail.`;
-  }
-
-  const plano = session.metadata?.plano ?? "essencial";
-
-  const secret = process.env.WHATSAPP_WEBHOOK_INTERNAL_SECRET;
-  if (!secret) {
-    return "Configuração do servidor incompleta. Fale com a gente.";
-  }
-
-  const segmento = getSegmento(segmentoId);
-
-  const { error: rpcError } = await supabase.rpc("provision_tenant", {
-    p_secret: secret,
-    p_nome: nomeNegocio,
-    p_plano: plano,
-    p_stripe_customer_id: session.customer ?? null,
-    p_user_id: novoUsuarioId as string,
-    p_user_nome: nome,
-    p_user_email: email,
-    p_segmento: segmentoId,
-    p_conhecimento_inicial: segmento?.baseConhecimento ?? null,
+  const origem = await origemDoApp();
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password: senha,
+    options: { emailRedirectTo: linkDeAtivacao(origem, sessionId), data: { nome, segmento: segmentoId } },
   });
-
-  if (rpcError) {
-    console.error("[cadastro] provision_tenant falhou", rpcError.message);
-    return "Conta criada, mas houve um problema ao configurar seu negócio. Fale com a gente e informe o código CAD-3.";
+  if (error || !data.user) {
+    console.error("[cadastro] falha no signUp", error?.message);
+    return ESTADO_ERRO(
+      `Não foi possível criar o seu acesso agora. Tente de novo em instantes. Se repetir, fale com a gente e informe o código CAD-4. (${error?.message ?? "sem detalhe"})`,
+    );
+  }
+  if (Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+    return ESTADO_ERRO(`Já existe uma conta da ivva com o e-mail ${email}. Entre em app.ivva.app.br/login com ele, ou refaça o cadastro usando outro e-mail.`);
   }
 
-  // Se o Supabase exige confirmação de e-mail, o signUp() acima não deixou
-  // sessão ativa (cookies não foram setados). O provision_tenant já
-  // confirmou o e-mail no banco, então um signIn explícito aqui resolve —
-  // sem isso o middleware manda o usuário de volta pro /login mesmo com
-  // tudo certo.
-  await supabase.auth.signInWithPassword({ email, password: senha });
+  // Se o projeto estiver configurado sem confirmação de e-mail, já há sessão: ativa na hora.
+  if (data.session) redirect(`/bem-vindo/ativar?session_id=${encodeURIComponent(sessionId)}`);
 
-  redirect("/dashboard");
+  return { erro: null, confirmar: email };
+}
+
+/** Reenvia o e-mail de confirmação (mesmo link de ativação). */
+export async function reenviarConfirmacao(sessionId: string, email: string): Promise<{ ok: boolean; mensagem: string }> {
+  if (!sessionId || !email) return { ok: false, mensagem: "Faltam dados para reenviar." };
+  const supabase = await createClient();
+  const origem = await origemDoApp();
+  const { error } = await supabase.auth.resend({
+    type: "signup",
+    email,
+    options: { emailRedirectTo: linkDeAtivacao(origem, sessionId) },
+  });
+  if (error) {
+    console.error("[cadastro] falha ao reenviar confirmação", error.message);
+    return { ok: false, mensagem: "Não consegui reenviar agora. Espere um minuto e tente de novo." };
+  }
+  return { ok: true, mensagem: "E-mail reenviado. Confira também a caixa de spam." };
 }

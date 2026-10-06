@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useActionState } from "react";
 import { finalizarCadastro } from "./actions";
+import ConfirmarEmail from "./confirmar-email";
 import { SEGMENTOS } from "@/lib/segmentos";
 import { SegmentoIcon } from "@/lib/segmento-icons";
 
@@ -15,11 +16,11 @@ export default function SetupForm({
   nomeInicial?: string;
   segmentoInicial?: string | null;
 }) {
-  const [error, formAction, pending] = useActionState(
-    finalizarCadastro,
-    undefined,
-  );
+  const [estado, formAction, pending] = useActionState(finalizarCadastro, undefined);
+  const error = estado?.erro ?? null;
   const [segmento, setSegmento] = useState<string | null>(segmentoInicial);
+
+  if (estado?.confirmar) return <ConfirmarEmail email={estado.confirmar} sessionId={sessionId} />;
 
   return (
     <form action={formAction} className="mt-6 flex flex-col gap-5">
@@ -109,7 +110,7 @@ export default function SetupForm({
         className="btn mt-1 w-full justify-center bg-ink py-3 text-[14px] text-white disabled:opacity-60"
       >
         {pending
-          ? "Configurando…"
+          ? "Criando o seu acesso…"
           : !segmento
             ? "Escolha seu tipo de negócio"
             : "Começar a usar a ivva"}
