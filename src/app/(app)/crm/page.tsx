@@ -172,7 +172,12 @@ export default async function CrmPage({
       )}
 
       {aba === "funil" && (
-        <CrmBoard estagios={listaEstagios} contatosIniciais={listaContatos} />
+        // A chave refaz o quadro quando entra ou sai contato (o quadro guarda a própria cópia da lista).
+        <CrmBoard
+          key={`${listaContatos.length}-${listaContatos[0]?.id ?? ""}`}
+          estagios={listaEstagios}
+          contatosIniciais={listaContatos}
+        />
       )}
       {aba === "dashboard" && (
         <CrmDashboard estagios={listaEstagios} contatos={listaContatos} />

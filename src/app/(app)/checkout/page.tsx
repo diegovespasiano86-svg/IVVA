@@ -249,7 +249,7 @@ export default async function CheckoutPage(props: {
 
       {!pagamentos || pagamentos.length === 0 ? (
         <div className="card">
-          <EmptyState icon={Wallet} title="Nenhum pagamento registrado" text={"Nenhum pagamento registrado ainda."} />
+          <EmptyState icon={Wallet} title="Nenhum pagamento registrado" text="Quando um pagamento for registrado, ele aparece aqui com a comissão calculada." />
         </div>
       ) : (
         <div className="card overflow-hidden">
