@@ -30,10 +30,14 @@ export async function finalizarCadastro(_prevState: EstadoCadastro | undefined, 
   const sessionId = String(formData.get("session_id") ?? "");
   const nome = String(formData.get("nome") ?? "").trim();
   const senha = String(formData.get("senha") ?? "");
+  const senha2 = String(formData.get("senha2") ?? "");
   const segmentoId = String(formData.get("segmento") ?? "").trim();
 
   if (!sessionId || !nome || senha.length < 8) {
     return ESTADO_ERRO("Preencha seu nome e uma senha com pelo menos 8 caracteres.");
+  }
+  if (senha !== senha2) {
+    return ESTADO_ERRO("As duas senhas precisam ser iguais. Digite de novo.");
   }
   if (!segmentoId || !getSegmento(segmentoId)) {
     return ESTADO_ERRO("Escolha o tipo do seu negócio antes de continuar.");

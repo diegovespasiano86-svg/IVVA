@@ -19,6 +19,9 @@ export default function SetupForm({
   const [estado, formAction, pending] = useActionState(finalizarCadastro, undefined);
   const error = estado?.erro ?? null;
   const [segmento, setSegmento] = useState<string | null>(segmentoInicial);
+  const [senha, setSenha] = useState("");
+  const [senha2, setSenha2] = useState("");
+  const senhasIguais = senha.length >= 8 && senha === senha2;
 
   if (estado?.confirmar) return <ConfirmarEmail email={estado.confirmar} sessionId={sessionId} />;
 
@@ -48,9 +51,35 @@ export default function SetupForm({
             type="password"
             required
             minLength={8}
+            autoComplete="new-password"
             placeholder="Pelo menos 8 caracteres"
             className="input"
+            value={senha}
+            onChange={(e) => setSenha(e.target.value)}
           />
+        </div>
+
+        <div>
+          <label htmlFor="senha2">Repita a senha</label>
+          <input
+            id="senha2"
+            name="senha2"
+            type="password"
+            required
+            minLength={8}
+            autoComplete="new-password"
+            placeholder="Digite a mesma senha de novo"
+            className="input"
+            value={senha2}
+            onChange={(e) => setSenha2(e.target.value)}
+            aria-invalid={senha2.length > 0 && senha !== senha2}
+          />
+          {senha2.length > 0 && senha !== senha2 && (
+            <p role="alert" className="mt-1.5 text-[12.5px] font-semibold text-coral">
+              As senhas não são iguais. Confira e digite de novo.
+            </p>
+          )}
+          {senhasIguais && <p className="mt-1.5 text-[12.5px] font-semibold text-teal">As senhas conferem.</p>}
         </div>
       </div>
 
@@ -106,13 +135,15 @@ export default function SetupForm({
 
       <button
         type="submit"
-        disabled={pending || !segmento}
+        disabled={pending || !segmento || !senhasIguais}
         className="btn mt-1 w-full justify-center bg-ink py-3 text-[14px] text-white disabled:opacity-60"
       >
         {pending
           ? "Criando o seu acesso…"
           : !segmento
             ? "Escolha seu tipo de negócio"
+            : !senhasIguais
+              ? "Digite a mesma senha nos dois campos"
             : "Começar a usar a ivva"}
       </button>
     </form>
