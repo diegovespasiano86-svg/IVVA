@@ -1,20 +1,6 @@
-import ConversasDashboard from "../dashboard";
+import { redirect } from "next/navigation";
 
-export default async function DesempenhoPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ periodo?: string }>;
-}) {
-  const { periodo } = await searchParams;
-  return (
-    <div>
-      <div className="mb-5">
-        <h1 className="text-[22px] font-extrabold">Desempenho do atendimento</h1>
-        <p className="text-[13.5px] text-ink-soft">
-          Como o robô está atendendo: clientes, assuntos, fechamentos e conversas que precisam de resgate.
-        </p>
-      </div>
-      <ConversasDashboard periodo={periodo === "dia" || periodo === "mes" ? periodo : "semana"} />
-    </div>
-  );
+// O desempenho do robô agora fica em Relatórios. Este endereço continua valendo para links antigos.
+export default function DesempenhoPage() {
+  redirect("/relatorios?aba=robo");
 }

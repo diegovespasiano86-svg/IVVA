@@ -7,6 +7,8 @@ import EmptyState from "@/components/empty-state";
 import Barras from "@/components/barras";
 import PrintButton from "@/components/print-button";
 import AvaliacoesAba from "./avaliacoes-aba";
+import DesempenhoRobo from "../conversas/dashboard";
+import FaturamentoAba from "./faturamento-aba";
 import { LineAreaChart } from "@/components/charts";
 import { CATEGORIA_LABEL, type CategoriaResumo } from "@/lib/resumo-conversas";
 import { PERIODOS, agrupar, brl, formatarDuracao, lerPeriodo, mediana, serieDiaria } from "@/lib/relatorios";
@@ -19,6 +21,8 @@ const ABAS = [
   { id: "financeiro", label: "Financeiro" },
   { id: "clientes", label: "Clientes" },
   { id: "avaliacoes", label: "Avaliações" },
+  { id: "robo", label: "Desempenho do robô" },
+  { id: "faturamento", label: "Faturamento e comissões" },
 ] as const;
 type Aba = (typeof ABAS)[number]["id"];
 
@@ -27,7 +31,7 @@ const MINUTOS_POR_RESPOSTA = 1;
 
 const FORMA: Record<string, string> = { pix: "Pix", credito: "Crédito", debito: "Débito", dinheiro: "Dinheiro" };
 
-export default async function RelatoriosPage({ searchParams }: { searchParams: Promise<{ aba?: string; periodo?: string }> }) {
+export default async function RelatoriosPage({ searchParams }: { searchParams: Promise<{ aba?: string; periodo?: string; profissional?: string }> }) {
   const sp = await searchParams;
   const aba: Aba = ABAS.some((a) => a.id === sp.aba) ? (sp.aba as Aba) : "geral";
   const periodo = lerPeriodo(sp.periodo);
@@ -83,6 +87,10 @@ export default async function RelatoriosPage({ searchParams }: { searchParams: P
       {aba === "financeiro" && <Financeiro supabase={supabase} desde={desde} periodo={periodo} />}
       {aba === "clientes" && <Clientes supabase={supabase} desde={desde} periodo={periodo} />}
       {aba === "avaliacoes" && <AvaliacoesAba supabase={supabase} desde={desde} />}
+      {aba === "robo" && <DesempenhoRobo desde={desde} />}
+      {aba === "faturamento" && (
+        <FaturamentoAba supabase={supabase} desde={desde} periodoChave={periodo.chave} profissionalId={sp.profissional} />
+      )}
 
       <section className="card mt-6 px-5 py-5 print:hidden">
         <h2 className="flex items-center gap-2 text-[15px] font-extrabold">

@@ -48,7 +48,6 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/conversas", label: "Caixa de atendimento", roles: AMBOS },
       { href: "/conversas/monitor", label: "Monitor do robô", roles: AMBOS },
-      { href: "/conversas/desempenho", label: "Desempenho", roles: DONO },
       { href: "/sac", label: "SAC", roles: AMBOS },
     ],
   },
@@ -87,7 +86,6 @@ export const NAV_GROUPS: NavGroup[] = [
     icon: Wallet,
     items: [
       { href: "/checkout", label: "Checkout", roles: AMBOS },
-      { href: "/faturamento", label: "Faturamento e comissões", roles: DONO },
       { href: "/estoque", label: "Estoque", roles: AMBOS },
     ],
   },
@@ -133,7 +131,7 @@ export function navGroupsForRole(role: Role): NavGroup[] {
 /**
  * Trava de rotas no servidor (usada pelo middleware): o menu esconde o que o perfil não vê, mas
  * quem digita o endereço também precisa ser barrado. Vale o item de menu mais específico que
- * casa com o caminho (ex.: /conversas libera, /conversas/desempenho é só do dono). Caminho que
+ * casa com o caminho (ex.: /conversas libera, /relatorios é só do dono). Caminho que
  * não casa com nenhum item e não é /dashboard fica restrito ao dono (inclui /admin).
  */
 export function rotaPermitida(role: Role, pathname: string): boolean {

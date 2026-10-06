@@ -2,19 +2,6 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { CATEGORIA_LABEL, type CategoriaResumo } from "@/lib/resumo-conversas";
 
-type Periodo = "dia" | "semana" | "mes";
-
-const PERIODO_LABEL: Record<Periodo, string> = {
-  dia: "Últimas 24h",
-  semana: "Últimos 7 dias",
-  mes: "Últimos 30 dias",
-};
-
-function cutoffPara(periodo: Periodo) {
-  const horas = periodo === "dia" ? 24 : periodo === "semana" ? 24 * 7 : 24 * 30;
-  return new Date(Date.now() - horas * 60 * 60 * 1000).toISOString();
-}
-
 function statusResgate(c: {
   proposta_pendente_em: string | null;
   recuperacao_1_enviada_em: string | null;
@@ -26,9 +13,10 @@ function statusResgate(c: {
   return { texto: "Resgate agendado", tom: "teal" as const };
 }
 
-export default async function ConversasDashboard({ periodo }: { periodo: Periodo }) {
+/** Desempenho do robô: o período vem do seletor de Relatórios (aba "Desempenho do robô"). */
+export default async function ConversasDashboard({ desde }: { desde: string }) {
   const supabase = await createClient();
-  const cutoff = cutoffPara(periodo);
+  const cutoff = desde;
 
   const { data: conversasPeriodo } = await supabase
     .from("conversations")
@@ -72,20 +60,6 @@ export default async function ConversasDashboard({ periodo }: { periodo: Periodo
 
   return (
     <div>
-      <div className="mb-4 flex gap-1.5">
-        {(["dia", "semana", "mes"] as Periodo[]).map((p) => (
-          <Link
-            key={p}
-            href={`/conversas/desempenho?periodo=${p}`}
-            className={`rounded-full px-3 py-1.5 text-[12.5px] font-bold ${
-              periodo === p ? "bg-ink text-white" : "bg-surface-soft text-ink-soft"
-            }`}
-          >
-            {PERIODO_LABEL[p]}
-          </Link>
-        ))}
-      </div>
-
       <div className="grid grid-cols-2 gap-3.5 md:grid-cols-4">
         <div className="card px-5 py-4.5">
           <p className="mb-2.5 text-[11.5px] font-bold uppercase tracking-wide text-ink-faint">

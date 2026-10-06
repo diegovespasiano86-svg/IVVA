@@ -69,5 +69,5 @@ export async function registrarPagamento(formData: FormData) {
   revalidatePath("/checkout");
   revalidatePath("/dashboard");
   revalidatePath("/calendario");
-  revalidatePath("/faturamento");
+  revalidatePath("/relatorios");
 }
