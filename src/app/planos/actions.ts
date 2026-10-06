@@ -1,6 +1,7 @@
 "use server";
 
-import { headers } from "next/headers";
+import { origemDoApp } from "@/lib/origem";
+
 import { createClient } from "@supabase/supabase-js";
 import { createCheckoutSession } from "@/lib/stripe";
 import { getSegmento } from "@/lib/segmentos";
@@ -64,11 +65,7 @@ export async function iniciarCadastro(_prev: CadastroState, formData: FormData):
   }
 
   // Em produção o retorno da Stripe é sempre o endereço oficial do app.
-  const headerList = await headers();
-  const origin =
-    process.env.VERCEL_ENV === "production"
-      ? "https://app.ivva.app.br"
-      : (headerList.get("origin") ?? `https://${headerList.get("host") ?? "localhost:3000"}`);
+  const origin = await origemDoApp();
 
   try {
     const session = await createCheckoutSession({

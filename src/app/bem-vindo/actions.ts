@@ -1,6 +1,6 @@
 "use server";
 
-import { headers } from "next/headers";
+import { origemDoApp } from "@/lib/origem";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCheckoutSession } from "@/lib/stripe";
@@ -9,12 +9,6 @@ import { getSegmento } from "@/lib/segmentos";
 export type EstadoCadastro = { erro: string | null; confirmar: string | null };
 
 const ESTADO_ERRO = (erro: string): EstadoCadastro => ({ erro, confirmar: null });
-
-async function origemDoApp(): Promise<string> {
-  if (process.env.VERCEL_ENV === "production") return "https://app.ivva.app.br";
-  const h = await headers();
-  return h.get("origin") ?? `https://${h.get("host") ?? "localhost:3000"}`;
-}
 
 function linkDeAtivacao(origem: string, sessionId: string) {
   const destino = `/bem-vindo/ativar?session_id=${encodeURIComponent(sessionId)}`;

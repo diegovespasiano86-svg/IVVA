@@ -1,6 +1,7 @@
 "use server";
 
-import { headers } from "next/headers";
+import { origemDoApp } from "@/lib/origem";
+
 import { createClient } from "@/lib/supabase/server";
 
 export type EsqueciSenhaState = { erro: string | null; enviado: boolean };
@@ -16,8 +17,7 @@ export async function solicitarRecuperacaoSenha(
   }
 
   const supabase = await createClient();
-  const headerList = await headers();
-  const origin = headerList.get("origin") ?? `https://${headerList.get("host") ?? "localhost:3000"}`;
+  const origin = await origemDoApp();
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${origin}/auth/callback?next=/redefinir-senha`,

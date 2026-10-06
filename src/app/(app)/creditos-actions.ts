@@ -1,6 +1,7 @@
 "use server";
 
-import { headers } from "next/headers";
+import { origemDoApp } from "@/lib/origem";
+
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createCreditosCheckoutSession } from "@/lib/stripe";
@@ -34,8 +35,7 @@ export async function comprarCreditos(_prevState: string | undefined): Promise<s
     .eq("tenant_id", perfil.tenant_id)
     .maybeSingle();
 
-  const headerList = await headers();
-  const origin = headerList.get("origin") ?? `https://${headerList.get("host") ?? "localhost:3000"}`;
+  const origin = await origemDoApp();
 
   let session;
   try {

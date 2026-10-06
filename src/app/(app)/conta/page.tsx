@@ -1,6 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
 import InviteForm from "./invite-form";
-import BillingPortalButton from "./billing-portal-button";
 import ApagarConta from "./apagar-conta";
 import { revogarConvite } from "./actions";
 import { sincronizarPlanoTenant } from "@/lib/sincronizar-plano";
@@ -232,7 +231,7 @@ export default async function ContaPage({
               </p>
             </div>
             <div className="w-full sm:w-[200px]">
-              <BillingPortalButton label="Gerenciar assinatura" />
+              <a href="/assinatura" className="btn w-full justify-center bg-ink px-4 py-2.5 text-[12.5px] text-white">Gerenciar assinatura</a>
             </div>
           </div>
 

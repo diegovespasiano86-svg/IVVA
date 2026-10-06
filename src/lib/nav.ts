@@ -122,7 +122,8 @@ export const NAV_GROUPS: NavGroup[] = [
     label: "Configurações",
     icon: Settings,
     bottom: true,
-    items: [{ href: "/conta", label: "Conta e assinatura", roles: DONO }],
+    items: [{ href: "/conta", label: "Conta e equipe", roles: DONO },
+      { href: "/assinatura", label: "Minha assinatura", roles: DONO }],
   },
 ];
 

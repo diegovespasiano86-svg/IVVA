@@ -1,8 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { origemDoApp } from "@/lib/origem";
 import { createClient } from "@/lib/supabase/server";
 import { createBillingPortalSession, cancelarAssinaturasAtivas } from "@/lib/stripe";
 import { criarConviteProfissional } from "@/lib/convites";
@@ -330,10 +330,7 @@ export async function criarConvite(
     return falha("Só o dono do negócio pode convidar profissionais.");
   }
 
-  const headerList = await headers();
-  const origin =
-    headerList.get("origin") ??
-    `https://${headerList.get("host") ?? "localhost:3000"}`;
+  const origin = await origemDoApp();
 
   // Convite sem cadastro prévio: o profissional nasce quando a pessoa aceita (acesso de profissional).
   const r = await criarConviteProfissional({
@@ -425,16 +422,13 @@ export async function abrirPortalCobranca(
     return "Ainda não encontramos sua cobrança na Stripe. Fale com a gente.";
   }
 
-  const headerList = await headers();
-  const origin =
-    headerList.get("origin") ??
-    `https://${headerList.get("host") ?? "localhost:3000"}`;
+  const origin = await origemDoApp();
 
   let session;
   try {
     session = await createBillingPortalSession({
       customerId: assinatura.stripe_customer_id,
-      returnUrl: `${origin}/conta`,
+      returnUrl: `${origin}/assinatura`,
     });
   } catch (err) {
     return err instanceof Error ? err.message : "Falha ao abrir o portal de cobrança.";

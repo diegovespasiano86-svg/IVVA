@@ -111,11 +111,17 @@ export async function createPixPaymentIntent(params: {
 export async function createBillingPortalSession(params: {
   customerId: string;
   returnUrl: string;
+  fluxo?: "payment_method_update";
 }) {
   const body = new URLSearchParams({
     customer: params.customerId,
     return_url: params.returnUrl,
   });
+  if (params.fluxo) {
+    body.set("flow_data[type]", params.fluxo);
+    body.set("flow_data[after_completion][type]", "redirect");
+    body.set("flow_data[after_completion][redirect][return_url]", params.returnUrl);
+  }
 
   const res = await fetch(`${STRIPE_API}/billing_portal/sessions`, {
     method: "POST",
