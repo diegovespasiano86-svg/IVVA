@@ -5,7 +5,11 @@ import { useRouter } from "next/navigation";
 import {
   adicionarNota,
   atualizarContato,
+  alternarTarefaCrm,
   buscarHistorico,
+  criarTarefaCrm,
+  excluirTarefaCrm,
+  listarTarefasContato,
   excluirContatoLgpd,
   moverContato,
 } from "./actions";
@@ -70,6 +74,7 @@ export default function CrmBoard({
   const [arrastando, setArrastando] = useState<string | null>(null);
   const [colunaAlvo, setColunaAlvo] = useState<string | null>(null);
   const [selecionado, setSelecionado] = useState<Contato | null>(null);
+  const [modo, setModo] = useState<"cartoes" | "lista">("cartoes");
   const [, startTransition] = useTransition();
 
   const porEstagio = useMemo(() => {
@@ -96,6 +101,61 @@ export default function CrmBoard({
 
   return (
     <>
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <p className="text-[12.5px] text-ink-soft">
+          {modo === "cartoes" ? "Arraste os cartões entre as fases. Clique para ver e preencher os detalhes." : "Todos os contatos e o que está preenchido. Clique numa linha para abrir os detalhes."}
+        </p>
+        <div className="inline-flex shrink-0 rounded-[10px] border border-border bg-surface p-0.5" role="group" aria-label="Modo de visualização">
+          {(["cartoes", "lista"] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => setModo(m)}
+              aria-pressed={modo === m}
+              className={`rounded-[8px] px-3 py-1.5 text-[12.5px] font-bold ${modo === m ? "bg-ink text-white" : "text-ink-soft hover:text-ink"}`}
+            >
+              {m === "cartoes" ? "Cartões" : "Lista"}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {modo === "lista" && (
+        <div className="card overflow-x-auto">
+          {contatos.length === 0 ? (
+            <p className="px-5 py-8 text-center text-[13px] text-ink-faint">Nenhum contato ainda.</p>
+          ) : (
+            <table className="table-clean min-w-[820px]">
+              <thead>
+                <tr>
+                  <th>Nome</th>
+                  <th>Telefone</th>
+                  <th>E-mail</th>
+                  <th>Aniversário</th>
+                  <th>Fase</th>
+                  <th>Como conheceu</th>
+                  <th>Etiquetas</th>
+                </tr>
+              </thead>
+              <tbody>
+                {contatos.map((c) => (
+                  <tr key={c.id} onClick={() => setSelecionado(c)} className="cursor-pointer hover:bg-surface-soft/60">
+                    <td className="font-bold">{c.nome}</td>
+                    <td>{formatTelefone(c.telefone)}</td>
+                    <td>{c.email || "—"}</td>
+                    <td>{c.data_nascimento ? c.data_nascimento.split("-").reverse().slice(0, 2).join("/") : "—"}</td>
+                    <td>{estagios.find((e) => e.key === c.status_funil)?.label ?? c.status_funil}</td>
+                    <td>{c.como_conheceu || "—"}</td>
+                    <td>{c.tags && c.tags.length > 0 ? c.tags.join(", ") : "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+
+      {modo === "cartoes" && (
       <div className="flex gap-3.5 overflow-x-auto pb-2">
         {estagios.map((estagio) => {
           const lista = porEstagio.get(estagio.key) ?? [];
@@ -180,6 +240,7 @@ export default function CrmBoard({
           );
         })}
       </div>
+      )}
 
       {selecionado && (
         <ContactDrawer
@@ -383,6 +444,8 @@ function ContactDrawer({
           </button>
         </form>
 
+        <TarefasDoContato contactId={contato.id} />
+
         <div className="mt-5">
           <p className="mb-2.5 text-[12.5px] font-bold uppercase tracking-wide text-ink-faint">
             Histórico e anotações
@@ -493,6 +556,124 @@ function ContactDrawer({
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+type TarefaItem = Awaited<ReturnType<typeof listarTarefasContato>>[number];
+
+function TarefasDoContato({ contactId }: { contactId: string }) {
+  const [itens, setItens] = useState<TarefaItem[] | null>(null);
+  const [tipo, setTipo] = useState<"tarefa" | "lembrete">("tarefa");
+  const [enviando, setEnviando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+  const hoje = new Date().toLocaleDateString("sv-SE", { timeZone: "America/Sao_Paulo" });
+
+  async function recarregar() {
+    setItens(await listarTarefasContato(contactId));
+  }
+
+  useEffect(() => {
+    let ativo = true;
+    listarTarefasContato(contactId).then((r) => {
+      if (ativo) setItens(r);
+    });
+    return () => {
+      ativo = false;
+    };
+  }, [contactId]);
+
+  async function salvar(formData: FormData, form: HTMLFormElement) {
+    setEnviando(true);
+    setErro(null);
+    const r = await criarTarefaCrm(formData);
+    setEnviando(false);
+    if (r.erro) {
+      setErro(r.erro);
+      return;
+    }
+    form.reset();
+    setTipo("tarefa");
+    await recarregar();
+  }
+
+  async function alternar(t: TarefaItem) {
+    await alternarTarefaCrm(t.id, t.status === "pendente");
+    await recarregar();
+  }
+
+  async function apagar(t: TarefaItem) {
+    await excluirTarefaCrm(t.id);
+    await recarregar();
+  }
+
+  return (
+    <div className="mt-5">
+      <p className="mb-2.5 text-[12.5px] font-bold uppercase tracking-wide text-ink-faint">Tarefas e lembretes</p>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          salvar(new FormData(e.currentTarget), e.currentTarget);
+        }}
+        className="mb-3 flex flex-col gap-2 rounded-[12px] border border-border bg-surface-soft/50 p-3"
+      >
+        <input type="hidden" name="contact_id" value={contactId} />
+        <div className="flex gap-2">
+          <select
+            name="tipo"
+            value={tipo}
+            onChange={(e) => setTipo(e.target.value as "tarefa" | "lembrete")}
+            className="select w-[120px]"
+            aria-label="Tipo"
+          >
+            <option value="tarefa">Tarefa</option>
+            <option value="lembrete">Lembrete</option>
+          </select>
+          <input type="date" name="data" required min={hoje} defaultValue={hoje} className="input flex-1" aria-label="Data" />
+        </div>
+        <input
+          name="titulo"
+          required
+          maxLength={200}
+          placeholder={tipo === "tarefa" ? "Ex.: ligar para o cliente e chamar para jantar" : "Ex.: mandar WhatsApp convidando para o evento"}
+          className="input"
+        />
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-[11.5px] text-ink-faint">No dia, o aviso aparece no topo do sistema.</p>
+          <button type="submit" disabled={enviando} className="btn bg-purple px-3.5 py-2 text-[12.5px] text-white disabled:opacity-60">
+            {enviando ? "…" : tipo === "tarefa" ? "Criar tarefa" : "Criar lembrete"}
+          </button>
+        </div>
+        {erro && <p className="text-[12px] font-semibold text-coral">{erro}</p>}
+      </form>
+
+      {itens === null ? (
+        <p className="text-[12.5px] text-ink-faint">Carregando…</p>
+      ) : itens.length === 0 ? (
+        <p className="rounded-[10px] bg-surface-soft px-4 py-4 text-center text-[12.5px] text-ink-faint">Nenhuma tarefa ou lembrete para este cliente.</p>
+      ) : (
+        <ul className="flex flex-col gap-2">
+          {itens.map((t) => {
+            const feita = t.status === "concluida";
+            const atrasada = !feita && t.data < hoje;
+            return (
+              <li key={t.id} className="flex items-start gap-2.5 rounded-[10px] border border-border px-3 py-2.5 text-[12.5px]">
+                <input type="checkbox" checked={feita} onChange={() => alternar(t)} className="mt-0.5 h-4 w-4" aria-label="Marcar como feita" />
+                <div className="min-w-0 flex-1">
+                  <p className={feita ? "text-ink-faint line-through" : "font-semibold"}>{t.titulo}</p>
+                  <p className={`mt-0.5 text-[11.5px] ${atrasada ? "font-bold text-coral" : "text-ink-faint"}`}>
+                    {t.tipo === "tarefa" ? "Tarefa" : "Lembrete"} · {t.data.split("-").reverse().join("/")}
+                    {atrasada ? " · atrasada" : ""}
+                  </p>
+                </div>
+                <button type="button" onClick={() => apagar(t)} className="text-[11.5px] text-ink-faint hover:text-coral" aria-label="Apagar">
+                  Apagar
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </div>
   );
 }

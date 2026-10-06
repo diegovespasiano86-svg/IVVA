@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import AppShell from "@/components/app-shell";
 import Alert from "@/components/alert";
+import { ListChecks } from "lucide-react";
+import { resumoTarefasCrm } from "@/lib/crm-tarefas";
 import UsoIaAviso from "@/components/uso-ia-aviso";
 import { obterResumoUso, reconciliarCreditos, type ResumoUso } from "@/lib/uso-ia";
 import type { Role } from "@/lib/nav";
@@ -111,10 +113,20 @@ export default async function AppLayout({
     .eq("status", "humano");
   const aguardandoHumano = aguardandoHumanoCount ?? 0;
 
+  // Tarefas e lembretes do CRM marcados para hoje (ou atrasados): sobem como aviso no topo e no sino.
+  // A RLS já limita: administrador vê as do negócio, usuário só as dele. Falha aqui nunca derruba a tela.
+  let tarefasCrm = { hoje: 0, atrasadas: 0, mes: 0 };
+  try {
+    tarefasCrm = await resumoTarefasCrm(supabase);
+  } catch (err) {
+    console.error("[layout] falha ao ler tarefas do CRM", err);
+  }
+
   const alertHrefs = [
     ...(chamadosAbertos > 0 ? ["/conta"] : []),
     ...(aguardandoHumano > 0 ? ["/sac"] : []),
     ...(sugestoesPendentes > 0 ? ["/base-conhecimento"] : []),
+    ...(tarefasCrm.hoje + tarefasCrm.atrasadas > 0 ? ["/crm"] : []),
   ];
 
   return (
@@ -126,6 +138,15 @@ export default async function AppLayout({
       roboStatus={roboStatus}
     >
         {resumoUso && <UsoIaAviso resumo={resumoUso} />}
+        {tarefasCrm.hoje + tarefasCrm.atrasadas > 0 && (
+          <Alert tone="info" icon={ListChecks} action={{ href: "/crm?view=tarefas", label: "Ver tarefas" }}>
+            {tarefasCrm.hoje > 0
+              ? `Você tem ${tarefasCrm.hoje} ${tarefasCrm.hoje === 1 ? "tarefa ou lembrete" : "tarefas e lembretes"} do CRM para hoje`
+              : "Você tem tarefas do CRM atrasadas"}
+            {tarefasCrm.atrasadas > 0 && tarefasCrm.hoje > 0 ? ` e ${tarefasCrm.atrasadas} atrasada${tarefasCrm.atrasadas === 1 ? "" : "s"}` : ""}
+            {tarefasCrm.mes > 0 ? `. No mês, são ${tarefasCrm.mes} a fazer.` : "."}
+          </Alert>
+        )}
         {aguardandoHumano > 0 && (
           <Alert tone="danger" pulse action={{ href: "/sac", label: "Abrir o SAC" }}>
             {aguardandoHumano === 1

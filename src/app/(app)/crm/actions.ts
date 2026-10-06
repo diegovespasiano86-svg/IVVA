@@ -407,3 +407,82 @@ export async function moverEstagioOrdem(formData: FormData) {
 
   revalidatePath("/crm");
 }
+
+// ---------- Tarefas e lembretes ----------
+
+const DATA_ISO = /^\d{4}-\d{2}-\d{2}$/;
+
+export type ResultadoTarefa = { erro?: string };
+
+export async function listarTarefasContato(contactId: string) {
+  const ctx = await contexto();
+  if (!ctx) return [];
+  if (!(await podeMexerNoContato(ctx, contactId))) return [];
+  const { data } = await ctx.supabase
+    .from("crm_tarefas")
+    .select("id, contact_id, tipo, titulo, data, status")
+    .eq("contact_id", contactId)
+    .order("status", { ascending: false })
+    .order("data", { ascending: true });
+  return (data ?? []) as {
+    id: string;
+    contact_id: string;
+    tipo: "tarefa" | "lembrete";
+    titulo: string;
+    data: string;
+    status: "pendente" | "concluida";
+  }[];
+}
+
+export async function criarTarefaCrm(formData: FormData): Promise<ResultadoTarefa> {
+  const contactId = String(formData.get("contact_id") ?? "");
+  const tipo = String(formData.get("tipo") ?? "");
+  const titulo = String(formData.get("titulo") ?? "").trim().slice(0, 200);
+  const data = String(formData.get("data") ?? "");
+  if (tipo !== "tarefa" && tipo !== "lembrete") return { erro: "Escolha tarefa ou lembrete." };
+  if (!titulo) return { erro: "Escreva o que precisa ser feito." };
+  if (!DATA_ISO.test(data) || Number.isNaN(Date.parse(`${data}T12:00:00Z`))) return { erro: "Escolha a data." };
+
+  const ctx = await contexto();
+  if (!ctx) return { erro: "Sessão expirada. Entre de novo." };
+  if (!(await podeMexerNoContato(ctx, contactId))) return { erro: "Esse cliente não está na sua base." };
+
+  const { error } = await ctx.supabase.from("crm_tarefas").insert({
+    tenant_id: ctx.tenant_id,
+    contact_id: contactId,
+    criado_por: ctx.userId,
+    tipo,
+    titulo,
+    data,
+  });
+  if (error) return { erro: "Não foi possível salvar. Tente de novo." };
+  revalidatePath("/crm");
+  revalidatePath("/dashboard");
+  return {};
+}
+
+export async function alternarTarefaCrm(id: string, concluida: boolean): Promise<ResultadoTarefa> {
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return { erro: "Tarefa inválida." };
+  const ctx = await contexto();
+  if (!ctx) return { erro: "Sessão expirada." };
+  // A RLS já garante que só o dono ou quem criou consegue alterar.
+  const { error } = await ctx.supabase
+    .from("crm_tarefas")
+    .update({ status: concluida ? "concluida" : "pendente", concluida_em: concluida ? new Date().toISOString() : null })
+    .eq("id", id);
+  if (error) return { erro: "Não foi possível atualizar." };
+  revalidatePath("/crm");
+  revalidatePath("/dashboard");
+  return {};
+}
+
+export async function excluirTarefaCrm(id: string): Promise<ResultadoTarefa> {
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return { erro: "Tarefa inválida." };
+  const ctx = await contexto();
+  if (!ctx) return { erro: "Sessão expirada." };
+  const { error } = await ctx.supabase.from("crm_tarefas").delete().eq("id", id);
+  if (error) return { erro: "Não foi possível apagar." };
+  revalidatePath("/crm");
+  revalidatePath("/dashboard");
+  return {};
+}

@@ -58,7 +58,7 @@ export const NAV_GROUPS: NavGroup[] = [
     icon: Users,
     items: [
       { href: "/clientes", label: "Base de clientes", roles: DONO },
-      { href: "/crm", label: "Funil de vendas", roles: AMBOS },
+      { href: "/crm", label: "CRM + Funil de Vendas", roles: AMBOS },
       { href: "/clientes/etiquetas", label: "Etiquetas", roles: DONO },
       { href: "/clientes/listas", label: "Listas", roles: DONO },
       { href: "/avaliacoes", label: "Avaliações", roles: DONO },

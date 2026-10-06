@@ -6,6 +6,8 @@ import { criarContato, confirmarContatoHistorico, ignorarContatoHistorico } from
 import CrmBoard from "./board";
 import StageManager from "./stage-manager";
 import { filtroContatosDoProfissional } from "@/lib/escopo-profissional";
+import TarefasLista, { type TarefaLinhaDados } from "./tarefas-lista";
+import { fimDaSemana, fimDoMes, hojeSP } from "@/lib/crm-tarefas";
 
 const MESES = [
   "jan", "fev", "mar", "abr", "mai", "jun",
@@ -43,8 +45,12 @@ export default async function CrmPage({
         .maybeSingle()
     : { data: null };
   const souDono = perfil?.role === "dono";
-  // Histórico do WhatsApp (importação) é do administrador.
-  const aba = view === "dashboard" ? "dashboard" : view === "historico" && souDono ? "historico" : "funil";
+  // Duas telas: Funil e Tarefas. A revisão do histórico do WhatsApp (só do administrador) é aberta
+  // pelo aviso que aparece no Funil quando há sugestões esperando, e não ocupa uma aba fixa.
+  const aba = view === "tarefas" || view === "dashboard" ? "tarefas" : view === "historico" && souDono ? "historico" : "funil";
+  const hoje = hojeSP();
+  const fimSemana = fimDaSemana(hoje);
+  const fimMes = fimDoMes(hoje);
 
   // Profissional: base própria (contatos que cadastrou + os que já atendeu na agenda).
   const semCadastroProfissional = !souDono && !perfil?.professional_id;
@@ -64,7 +70,7 @@ export default async function CrmPage({
       : consultaContatos.eq("id", "00000000-0000-0000-0000-000000000000");
   }
 
-  const [{ data: estagios }, { data: contatos }, { data: historicoPendente }] = await Promise.all([
+  const [{ data: estagios }, { data: contatos }, { data: historicoPendente }, { data: tarefasBrutas }] = await Promise.all([
     supabase
       .from("funnel_stages")
       .select("id, key, label, posicao")
@@ -78,7 +84,31 @@ export default async function CrmPage({
           .not("resumo", "is", null)
           .order("ultima_mensagem_em", { ascending: false })
       : Promise.resolve({ data: [] as never[] }),
+    // A RLS limita: administrador vê tudo; usuário vê só o que ele criou.
+    supabase
+      .from("crm_tarefas")
+      .select("id, tipo, titulo, data, status, contacts(nome, telefone)")
+      .order("data", { ascending: true })
+      .limit(500),
   ]);
+
+  const tarefas: TarefaLinhaDados[] = (tarefasBrutas ?? []).map((x) => {
+    const c = x.contacts as unknown as { nome: string; telefone: string } | null;
+    return {
+      id: x.id as string,
+      tipo: x.tipo as "tarefa" | "lembrete",
+      titulo: x.titulo as string,
+      data: x.data as string,
+      status: x.status as "pendente" | "concluida",
+      nome: c?.nome ?? "Cliente",
+      telefone: c?.telefone ?? "",
+    };
+  });
+  const pendentes = tarefas.filter((x) => x.status === "pendente");
+  const nAtrasadas = pendentes.filter((x) => x.data < hoje).length;
+  const nHoje = pendentes.filter((x) => x.data === hoje).length;
+  const nSemana = pendentes.filter((x) => x.data >= hoje && x.data <= fimSemana).length;
+  const nMes = pendentes.filter((x) => x.data >= hoje && x.data <= fimMes).length;
 
   const listaEstagios = estagios ?? [];
   const listaContatos = contatos ?? [];
@@ -88,7 +118,7 @@ export default async function CrmPage({
     <div>
       <div className="mb-4 flex flex-wrap items-baseline justify-between gap-3">
         <div>
-          <h1 className="font-display text-[22px] font-extrabold">CRM</h1>
+          <h1 className="font-display text-[22px] font-extrabold">CRM + Funil de Vendas</h1>
           <p className="text-[13.5px] text-ink-soft">
             {souDono ? "Funil de clientes" : "Seus contatos"} — {listaContatos.length}{" "}
             {listaContatos.length === 1 ? "contato" : "contatos"} no total.
@@ -127,42 +157,33 @@ export default async function CrmPage({
       <div className="mb-4 flex gap-1 border-b border-border">
         <Link
           href="/crm"
-          className={`px-3.5 py-2 text-[13px] font-bold ${
-            aba === "funil"
-              ? "border-b-2 border-ink text-ink"
-              : "text-ink-faint"
-          }`}
+          className={`px-3.5 py-2 text-[13px] font-bold ${aba === "funil" ? "border-b-2 border-ink text-ink" : "text-ink-faint"}`}
         >
           Funil
         </Link>
         <Link
-          href="/crm?view=dashboard"
-          className={`px-3.5 py-2 text-[13px] font-bold ${
-            aba === "dashboard"
-              ? "border-b-2 border-ink text-ink"
-              : "text-ink-faint"
-          }`}
+          href="/crm?view=tarefas"
+          className={`flex items-center gap-1.5 px-3.5 py-2 text-[13px] font-bold ${aba === "tarefas" ? "border-b-2 border-ink text-ink" : "text-ink-faint"}`}
         >
-          Dashboard
-        </Link>
-        {souDono && (
-        <Link
-          href="/crm?view=historico"
-          className={`flex items-center gap-1.5 px-3.5 py-2 text-[13px] font-bold ${
-            aba === "historico"
-              ? "border-b-2 border-ink text-ink"
-              : "text-ink-faint"
-          }`}
-        >
-          Histórico WhatsApp
-          {listaHistoricoPendente.length > 0 && (
-            <span className="rounded-full bg-coral px-1.5 py-0.5 text-[10.5px] font-extrabold text-white">
-              {listaHistoricoPendente.length}
-            </span>
+          Tarefas
+          {nHoje + nAtrasadas > 0 && (
+            <span className="rounded-full bg-coral px-1.5 py-0.5 text-[10.5px] font-extrabold text-white">{nHoje + nAtrasadas}</span>
           )}
         </Link>
-        )}
       </div>
+
+      {aba === "funil" && souDono && listaHistoricoPendente.length > 0 && (
+        <Link
+          href="/crm?view=historico"
+          className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-[12px] border border-purple/30 bg-purple/5 px-4 py-3 text-[13px] font-semibold text-purple"
+        >
+          <span>
+            A IA leu conversas antigas do seu WhatsApp e encontrou {listaHistoricoPendente.length}{" "}
+            {listaHistoricoPendente.length === 1 ? "pessoa que parece ter sido cliente" : "pessoas que parecem ter sido clientes"}. Confirme quem entra no funil.
+          </span>
+          <span aria-hidden>Revisar →</span>
+        </Link>
+      )}
 
       {semCadastroProfissional && (
         <div className="mb-4 rounded-[12px] border border-amber/30 bg-[#fdf0dc] px-4 py-3 text-[13px] font-semibold text-[#7a4a00]">
@@ -179,11 +200,44 @@ export default async function CrmPage({
           contatosIniciais={listaContatos}
         />
       )}
-      {aba === "dashboard" && (
-        <CrmDashboard estagios={listaEstagios} contatos={listaContatos} />
+      {aba === "tarefas" && (
+        <div>
+          <div className="mb-5 grid grid-cols-2 gap-3.5 md:grid-cols-4">
+            <div className={`card px-5 py-4 ${nAtrasadas > 0 ? "border-coral/40" : ""}`}>
+              <p className="mb-2 text-[11.5px] font-bold uppercase tracking-wide text-ink-faint">Atrasadas</p>
+              <p className={`font-display text-[26px] font-extrabold ${nAtrasadas > 0 ? "text-coral" : ""}`}>{nAtrasadas}</p>
+            </div>
+            <div className="card border-purple/35 px-5 py-4">
+              <p className="mb-2 text-[11.5px] font-bold uppercase tracking-wide text-ink-faint">Hoje</p>
+              <p className="font-display text-[26px] font-extrabold text-purple">{nHoje}</p>
+            </div>
+            <div className="card px-5 py-4">
+              <p className="mb-2 text-[11.5px] font-bold uppercase tracking-wide text-ink-faint">Esta semana</p>
+              <p className="font-display text-[26px] font-extrabold">{nSemana}</p>
+            </div>
+            <div className="card px-5 py-4">
+              <p className="mb-2 text-[11.5px] font-bold uppercase tracking-wide text-ink-faint">Este mês</p>
+              <p className="font-display text-[26px] font-extrabold">{nMes}</p>
+            </div>
+          </div>
+
+          <p className="mb-4 text-[12.5px] text-ink-soft">
+            Para criar uma tarefa ou lembrete, abra o cartão do cliente no Funil. No dia marcado, o aviso aparece no topo do sistema.
+          </p>
+
+          <TarefasLista itens={tarefas} hoje={hoje} fimSemana={fimSemana} fimMes={fimMes} />
+
+          <h2 className="mb-3 mt-8 text-[15px] font-extrabold">Resumo do funil</h2>
+          <CrmDashboard estagios={listaEstagios} contatos={listaContatos} />
+        </div>
       )}
       {aba === "historico" && (
-        <HistoricoWhatsAppReview itens={listaHistoricoPendente} />
+        <div>
+          <Link href="/crm" className="mb-3 inline-block text-[12.5px] font-semibold text-ink-soft hover:text-ink">
+            ← Voltar ao funil
+          </Link>
+          <HistoricoWhatsAppReview itens={listaHistoricoPendente} />
+        </div>
       )}
     </div>
   );

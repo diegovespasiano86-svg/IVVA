@@ -282,7 +282,7 @@ export default function AppShell({
               <CircleHelp size={19} />
             </a>
             <Link
-              href={firstAlert ?? "/dashboard"}
+              href={firstAlert === "/crm" ? "/crm?view=tarefas" : (firstAlert ?? "/dashboard")}
               className="relative flex h-9 w-9 items-center justify-center rounded-lg text-white/80 hover:bg-white/10"
               aria-label={alertHrefs.length ? "Há avisos pedindo atenção" : "Sem avisos"}
               title={alertHrefs.length ? "Há avisos pedindo atenção" : "Sem avisos"}
