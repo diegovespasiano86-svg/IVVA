@@ -8,8 +8,8 @@ const GRAPH_URL = `https://graph.facebook.com/${GRAPH_VERSION}`;
 
 export class WhatsAppEmbeddedSignupError extends Error {}
 
-// O SDK do JavaScript resolve o popup na própria janela (sem redirect de servidor), então a troca
-// do código não leva redirect_uri — é assim que a Meta documenta esse fluxo.
+// O SDK do JavaScript resolve o popup na própria janela (sem redirect de servidor); por isso o
+// redirect_uri da troca do código é vazio.
 export async function exchangeEmbeddedSignupCode(code: string): Promise<string> {
   const appId = process.env.NEXT_PUBLIC_WHATSAPP_APP_ID;
   const appSecret = process.env.WHATSAPP_APP_SECRET;
@@ -20,6 +20,9 @@ export async function exchangeEmbeddedSignupCode(code: string): Promise<string> 
   const url = new URL(`${GRAPH_URL}/oauth/access_token`);
   url.searchParams.set("client_id", appId);
   url.searchParams.set("client_secret", appSecret);
+  // Código vindo do FB.login do SDK do JavaScript: a Meta exige redirect_uri VAZIO (sem o parâmetro dá o erro
+  // "redirect_uri is identical to the one you used in the OAuth dialog").
+  url.searchParams.set("redirect_uri", "");
   url.searchParams.set("code", code);
 
   const resp = await fetch(url.toString());
