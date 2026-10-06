@@ -86,6 +86,42 @@ export default function AppShell({
   const setPaletteOpen = (v: boolean | ((p: boolean) => boolean)) =>
     setPaletteAt((cur) => ((typeof v === "function" ? v(cur === pathname) : v) ? pathname : null));
 
+  // Menu do usuário (canto superior direito): fecha ao tirar o mouse de cima (com um pequeno
+  // atraso, para não piscar ao cruzar o vão entre o botão e o painel), ao clicar ou tocar fora,
+  // ao apertar Esc e quando o foco sai dele. No celular (toque), fecha ao tocar fora.
+  const userMenuRef = useRef<HTMLDivElement>(null);
+  const userMenuTimer = useRef<number | null>(null);
+  const cancelarFechamento = () => {
+    if (userMenuTimer.current !== null) {
+      window.clearTimeout(userMenuTimer.current);
+      userMenuTimer.current = null;
+    }
+  };
+  useEffect(() => {
+    if (!userMenu) return;
+    const dentro = (alvo: EventTarget | null) =>
+      alvo instanceof Node && !!userMenuRef.current?.contains(alvo);
+    const fechar = () => setUserMenuAt(null);
+    const aoApertar = (e: PointerEvent) => {
+      if (!dentro(e.target)) fechar();
+    };
+    const aoTeclar = (e: KeyboardEvent) => {
+      if (e.key === "Escape") fechar();
+    };
+    const aoFocar = (e: FocusEvent) => {
+      if (!dentro(e.target)) fechar();
+    };
+    document.addEventListener("pointerdown", aoApertar);
+    document.addEventListener("keydown", aoTeclar);
+    document.addEventListener("focusin", aoFocar);
+    return () => {
+      document.removeEventListener("pointerdown", aoApertar);
+      document.removeEventListener("keydown", aoTeclar);
+      document.removeEventListener("focusin", aoFocar);
+      cancelarFechamento();
+    };
+  }, [userMenu]);
+
   function togglePin() {
     try {
       localStorage.setItem(PIN_KEY, pinned ? "0" : "1");
@@ -257,7 +293,16 @@ export default function AppShell({
               )}
             </Link>
 
-            <div className="relative ml-1">
+            <div
+              ref={userMenuRef}
+              className="relative ml-1"
+              onPointerEnter={cancelarFechamento}
+              onPointerLeave={(e) => {
+                if (e.pointerType !== "mouse" || !userMenu) return;
+                cancelarFechamento();
+                userMenuTimer.current = window.setTimeout(() => setUserMenuAt(null), 350);
+              }}
+            >
               <button
                 type="button"
                 onClick={() => setUserMenu((v) => !v)}
@@ -274,7 +319,7 @@ export default function AppShell({
                   <div className="border-b border-border px-3 pb-2.5 pt-1.5">
                     <p className="truncate text-[13px] font-bold">{nome}</p>
                     <p className="truncate text-[12px] text-ink-soft">
-                      {negocio} · {role === "dono" ? "Dono" : "Profissional"}
+                      {negocio} · {role === "dono" ? "Administrador" : "Usuário"}
                     </p>
                   </div>
                   {role === "dono" && (
