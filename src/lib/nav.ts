@@ -5,6 +5,7 @@ import {
   Home,
   Megaphone,
   MessageSquare,
+  Package,
   Plug,
   Settings,
   Users,
@@ -86,8 +87,13 @@ export const NAV_GROUPS: NavGroup[] = [
     icon: Wallet,
     items: [
       { href: "/checkout", label: "Checkout", roles: AMBOS },
-      { href: "/estoque", label: "Estoque", roles: AMBOS },
     ],
+  },
+  {
+    id: "estoque",
+    label: "Estoque",
+    icon: Package,
+    items: [{ href: "/estoque", label: "Controle de estoque", roles: AMBOS }],
   },
   {
     id: "robo",
