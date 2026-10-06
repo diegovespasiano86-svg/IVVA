@@ -6,6 +6,7 @@ import KpiCard from "@/components/kpi-card";
 import EmptyState from "@/components/empty-state";
 import Barras from "@/components/barras";
 import PrintButton from "@/components/print-button";
+import AvaliacoesAba from "./avaliacoes-aba";
 import { LineAreaChart } from "@/components/charts";
 import { CATEGORIA_LABEL, type CategoriaResumo } from "@/lib/resumo-conversas";
 import { PERIODOS, agrupar, brl, formatarDuracao, lerPeriodo, mediana, serieDiaria } from "@/lib/relatorios";
@@ -17,6 +18,7 @@ const ABAS = [
   { id: "atendimento", label: "Atendimento" },
   { id: "financeiro", label: "Financeiro" },
   { id: "clientes", label: "Clientes" },
+  { id: "avaliacoes", label: "Avaliações" },
 ] as const;
 type Aba = (typeof ABAS)[number]["id"];
 
@@ -80,6 +82,7 @@ export default async function RelatoriosPage({ searchParams }: { searchParams: P
       {aba === "atendimento" && <Atendimento supabase={supabase} desde={desde} />}
       {aba === "financeiro" && <Financeiro supabase={supabase} desde={desde} periodo={periodo} />}
       {aba === "clientes" && <Clientes supabase={supabase} desde={desde} periodo={periodo} />}
+      {aba === "avaliacoes" && <AvaliacoesAba supabase={supabase} desde={desde} />}
 
       <section className="card mt-6 px-5 py-5 print:hidden">
         <h2 className="flex items-center gap-2 text-[15px] font-extrabold">
