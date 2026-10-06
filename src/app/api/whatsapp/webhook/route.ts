@@ -10,6 +10,7 @@ import {
 } from "@/lib/whatsapp";
 import { gerarRespostaWhatsApp, type ContextoConversa, type ResultadoIA } from "@/lib/ai";
 import { gerarRespostaAdmin } from "@/lib/admin-ai";
+import { consumirConversaIA } from "@/lib/uso-ia";
 import { verifyPin } from "@/lib/pin";
 import { transcreverAudio } from "@/lib/transcricao";
 import { gerarFala } from "@/lib/fala";
@@ -807,6 +808,37 @@ async function processarMensagem(params: {
   }
   // "Preciso remarcar" cai direto no fluxo normal da IA (ela já sabe
   // remarcar), então não precisa de atalho — só segue pro código abaixo.
+
+  // Limite mensal de conversas da IA deste negócio (por plano). Só chega aqui o que
+  // realmente vai gastar IA: opt-out, botão de confirmar e conversa com humano ficam de fora.
+  // Acabou (ou conversa longa demais): não chama a IA, passa a conversa para a equipe do
+  // negócio e avisa o cliente final com uma mensagem neutra (nunca fala de plano ou limite).
+  // O dono é avisado no painel (80%/90%/100%) e já vê o pagamento de crédito pronto.
+  const uso = await consumirConversaIA(supabase, internalSecret, resultado.tenant_id, resultado.contact_id);
+  if (uso.nivelAvisoNovo > 0) {
+    console.log(`[whatsapp webhook] tenant ${resultado.tenant_id} chegou a ${uso.nivelAvisoNovo}% das conversas da IA no mês`);
+  }
+  if (!uso.permitido) {
+    const motivoHandoff =
+      uso.motivo === "limite_respostas_conversa"
+        ? "Conversa muito longa: a IA passou o atendimento para a equipe"
+        : "Conversas da IA do mês esgotadas: compre créditos em Conta para a IA voltar a atender";
+    await supabase.rpc("ia_solicitar_handoff", {
+      p_secret: internalSecret,
+      p_conversation_id: resultado.conversation_id,
+      p_tenant_id: resultado.tenant_id,
+      p_motivo: motivoHandoff,
+    });
+    await enviarRespostaEregistrar({
+      supabase,
+      internalSecret,
+      creds,
+      waId,
+      resposta: "Recebi sua mensagem! Já avisei a equipe e logo alguém te responde por aqui. 🙂",
+      resultado,
+    });
+    return;
+  }
 
   const ctx: ContextoConversa = {
     tenantId: resultado.tenant_id,

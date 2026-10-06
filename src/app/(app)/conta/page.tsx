@@ -6,6 +6,15 @@ import BillingPortalButton from "./billing-portal-button";
 import ApagarConta from "./apagar-conta";
 import { desconectarWhatsApp, revogarConvite } from "./actions";
 import { sincronizarPlanoTenant } from "@/lib/sincronizar-plano";
+import ComprarCreditosButton from "@/components/comprar-creditos-button";
+import Alert from "@/components/alert";
+import {
+  CONVERSAS_POR_PLANO,
+  PACOTE_AVULSO,
+  RESPOSTAS_POR_CONVERSA_MEDIA,
+  formatarNumero,
+} from "@/lib/planos";
+import { estadoDoUso, obterResumoUso, reconciliarCreditos } from "@/lib/uso-ia";
 
 const PLANO_LABEL: Record<string, string> = {
   essencial: "Essencial",
@@ -20,6 +29,7 @@ const PLANOS = [
     preco: "R$ 297",
     destaque: false,
     beneficios: [
+      `${formatarNumero(CONVERSAS_POR_PLANO.essencial)} conversas/mês com a IA`,
       "Chatbot no WhatsApp 24h (1 número)",
       "Agenda + CRM com funil de vendas",
       "Dashboard básico",
@@ -32,6 +42,7 @@ const PLANOS = [
     preco: "R$ 447",
     destaque: true,
     beneficios: [
+      `${formatarNumero(CONVERSAS_POR_PLANO.profissional)} conversas/mês com a IA`,
       "Tudo do Essencial",
       "Calendários múltiplos + comissão automática",
       "Central de SAC + avaliações",
@@ -48,6 +59,7 @@ const PLANOS = [
     preco: "R$ 597",
     destaque: false,
     beneficios: [
+      `${formatarNumero(CONVERSAS_POR_PLANO.completo)} conversas/mês com a IA`,
       "Tudo do Profissional",
       "Admin do negócio pelo WhatsApp",
       "Sinal antecipado (anti no-show)",
@@ -60,9 +72,9 @@ const PLANOS = [
 export default async function ContaPage({
   searchParams,
 }: {
-  searchParams: Promise<{ bloqueado?: string }>;
+  searchParams: Promise<{ bloqueado?: string; creditos?: string }>;
 }) {
-  const { bloqueado } = await searchParams;
+  const { bloqueado, creditos } = await searchParams;
   const supabase = await createClient();
 
   const {
@@ -100,6 +112,11 @@ export default async function ContaPage({
       tenant.plano = planoSincronizado;
     }
   }
+
+  // Voltou do pagamento de créditos: confere na Stripe e credita antes de ler o saldo.
+  const creditadas = isDono && creditos === "ok" ? await reconciliarCreditos(supabase) : 0;
+  const resumoUso = isDono ? await obterResumoUso(supabase) : null;
+  const estadoUso = resumoUso ? estadoDoUso(resumoUso) : null;
 
   const [{ data: conta }, { data: equipe }, { data: chamados }, { data: convites }] =
     await Promise.all([
@@ -145,6 +162,64 @@ export default async function ContaPage({
           </span>
         </p>
       </div>
+
+      {isDono && creditos === "ok" && (
+        <Alert tone="info">
+          {creditadas > 0
+            ? `Pagamento confirmado! Adicionamos ${formatarNumero(creditadas)} conversas ao seu saldo. A IA já está atendendo.`
+            : "Recebemos o seu retorno do pagamento. Se o saldo ainda não aparecer, atualize a página em alguns instantes: a confirmação pode levar um minuto."}
+        </Alert>
+      )}
+      {isDono && creditos === "cancelado" && (
+        <Alert tone="warn">Pagamento cancelado. Nada foi cobrado. Quando quiser, é só comprar de novo.</Alert>
+      )}
+
+      {isDono && resumoUso && (
+        <div className="card mb-4 px-5 py-5">
+          <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-[14px] font-bold">Conversas com a IA neste mês</p>
+              <p className="text-[12.5px] text-ink-soft">
+                Cada conversa reúne todas as respostas da IA para um mesmo cliente em até 24 horas (em média{" "}
+                {RESPOSTAS_POR_CONVERSA_MEDIA} respostas). Renova em{" "}
+                {new Date(resumoUso.renova_em).toLocaleDateString("pt-BR", {
+                  timeZone: "America/Sao_Paulo",
+                  day: "2-digit",
+                  month: "2-digit",
+                })}
+                .
+              </p>
+            </div>
+            <ComprarCreditosButton />
+          </div>
+          <div
+            className="h-3 w-full overflow-hidden rounded-full bg-surface-soft"
+            role="progressbar"
+            aria-valuenow={Math.min(resumoUso.percentual, 100)}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label="Conversas da IA usadas no mês"
+          >
+            <div
+              className={`h-full rounded-full ${
+                estadoUso === "ok" || estadoUso === "aviso80" ? "bg-teal" : estadoUso === "aviso90" ? "bg-amber" : "bg-coral"
+              }`}
+              style={{ width: `${Math.min(resumoUso.percentual, 100)}%` }}
+            />
+          </div>
+          <p className="mt-2 text-[13px] font-semibold">
+            {formatarNumero(resumoUso.usado_plano)} de {formatarNumero(resumoUso.limite)} conversas do plano ({Math.min(resumoUso.percentual, 100)}%)
+          </p>
+          <p className="mt-1 text-[12.5px] text-ink-soft">
+            {resumoUso.saldo_extra > 0
+              ? `Créditos avulsos: ${formatarNumero(resumoUso.saldo_extra)} conversas (não expiram). `
+              : "Créditos avulsos: nenhum. "}
+            Passou do limite? Compre +{PACOTE_AVULSO.conversas} conversas por R${" "}
+            {(PACOTE_AVULSO.valorCentavos / 100).toLocaleString("pt-BR")}: elas entram na hora e a IA continua
+            atendendo.
+          </p>
+        </div>
+      )}
 
       {isDono && (
         <div className="card mb-4 px-5 py-5">
@@ -222,6 +297,11 @@ export default async function ContaPage({
           <p className="mt-4 text-center text-[12px] text-ink-faint">
             Pra trocar de plano, atualizar cartão ou Pix, use &ldquo;Gerenciar
             assinatura&rdquo; acima — abre o portal seguro da Stripe.
+          </p>
+          <p className="mt-1 text-center text-[12px] text-ink-faint">
+            Conversas = todas as respostas da IA a um mesmo cliente em até 24 horas. Se passar do limite do mês,
+            é possível comprar créditos avulsos (+{PACOTE_AVULSO.conversas} conversas por R${" "}
+            {(PACOTE_AVULSO.valorCentavos / 100).toLocaleString("pt-BR")}).
           </p>
         </div>
       )}

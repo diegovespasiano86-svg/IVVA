@@ -11,10 +11,18 @@ type Plano = {
   key: string;
   nome: string;
   preco: number;
+  conversas: number;
   descricao: string;
   destaque?: boolean;
   recursos: string[];
 };
+
+// Volumes de conversas por mês para o visitante achar o plano certo.
+const VOLUMES = [150, 300, 700, 1500];
+
+function fmt(n: number) {
+  return n.toLocaleString("pt-BR");
+}
 
 const ESTADO_INICIAL: AssinarPlanoState = { erro: null, clientSecret: null };
 
@@ -91,6 +99,14 @@ function EmbeddedPanel({ clientSecret }: { clientSecret: string }) {
 
 export default function PlanosClient({ planos }: { planos: Plano[] }) {
   const [checkout, setCheckout] = useState<{ clientSecret: string; plano: Plano } | null>(null);
+  const [volume, setVolume] = useState<number | null>(null);
+  // Menor plano que comporta o volume escolhido (acima do maior, indica o maior).
+  const indicado =
+    volume === null
+      ? null
+      : ([...planos].sort((a, b) => a.conversas - b.conversas).find((p) => p.conversas >= volume) ??
+        [...planos].sort((a, b) => b.conversas - a.conversas)[0]
+      ).key;
 
   if (checkout) {
     return (
@@ -113,7 +129,31 @@ export default function PlanosClient({ planos }: { planos: Plano[] }) {
   }
 
   return (
-    <div className="grid gap-5 md:grid-cols-3 md:items-stretch">
+    <div>
+      <div className="mb-8 text-center">
+        <p className="text-[13.5px] font-semibold text-[#c7c5d1]">Quantas conversas você atende por mês?</p>
+        <div className="mt-3 flex flex-wrap items-center justify-center gap-2" role="group" aria-label="Volume de conversas por mês">
+          {VOLUMES.map((v) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => setVolume(volume === v ? null : v)}
+              aria-pressed={volume === v}
+              className={`rounded-full border px-4 py-2 text-[13px] font-semibold transition-colors ${
+                volume === v
+                  ? "border-transparent bg-[linear-gradient(100deg,#2fbf9f,#8b7fe8)] text-white"
+                  : "border-white/15 text-[#c7c5d1] hover:border-white/30 hover:text-[#f7f6f2]"
+              }`}
+            >
+              {v === VOLUMES[VOLUMES.length - 1] ? `${fmt(v)} ou mais` : `até ${fmt(v)}`}
+            </button>
+          ))}
+        </div>
+        <p className="mt-2 text-[12px] text-[#8a8896]">
+          Uma conversa reúne todas as respostas da IA a um mesmo cliente em até 24 horas.
+        </p>
+      </div>
+      <div className="grid gap-5 md:grid-cols-3 md:items-stretch">
       {planos.map((p) => (
         <motion.div
           key={p.key}
@@ -151,6 +191,21 @@ export default function PlanosClient({ planos }: { planos: Plano[] }) {
               <span className="text-[38px] font-extrabold tracking-[-0.03em]">{p.preco}</span>
               <span className={`text-[13px] ${p.destaque ? "text-[#a5a3b0]" : "text-[#8a8896]"}`}>/mês</span>
             </p>
+            <p
+              className={`mt-3 rounded-xl px-3 py-2 text-[13px] font-bold ${
+                p.destaque ? "bg-white/8 text-[#f7f6f2]" : "bg-[#f3f1ec] text-[#0e0e13]"
+              }`}
+            >
+              {fmt(p.conversas)} conversas/mês com a IA
+              <span className={`block text-[11.5px] font-medium ${p.destaque ? "text-[#a5a3b0]" : "text-[#8a8896]"}`}>
+                ≈ {fmt(p.conversas * 6)} respostas
+              </span>
+            </p>
+            {indicado === p.key && (
+              <span className="mt-3 inline-block self-start rounded-full bg-[#2fbf9f] px-3 py-1 text-[11px] font-bold text-white">
+                Indicado pro seu volume
+              </span>
+            )}
 
             <ul className="mt-6 flex flex-1 flex-col gap-2.5">
               {p.recursos.map((r) => (
@@ -176,6 +231,7 @@ export default function PlanosClient({ planos }: { planos: Plano[] }) {
           </div>
         </motion.div>
       ))}
+      </div>
     </div>
   );
 }

@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import AppShell from "@/components/app-shell";
 import Alert from "@/components/alert";
+import UsoIaAviso from "@/components/uso-ia-aviso";
+import { obterResumoUso, reconciliarCreditos, type ResumoUso } from "@/lib/uso-ia";
 import type { Role } from "@/lib/nav";
 
 export default async function AppLayout({
@@ -54,6 +56,7 @@ export default async function AppLayout({
   let chamadosAbertos = 0;
   let sugestoesPendentes = 0;
   let roboStatus: "ativo" | "pausado" | "sem-whatsapp" | null = null;
+  let resumoUso: ResumoUso | null = null;
   if (role === "dono") {
     const [{ data: conta }, { count }, { count: sugestoesCount }, { data: botCfg }] = await Promise.all([
       supabase
@@ -85,6 +88,16 @@ export default async function AppLayout({
     }
     chamadosAbertos = count ?? 0;
     sugestoesPendentes = sugestoesCount ?? 0;
+
+    // Consumo das conversas da IA no mês (avisos de 80/90/100%). Antes, credita
+    // compras de crédito já pagas que ainda não foram confirmadas (cliente que
+    // fechou a aba do pagamento antes de voltar). Falha aqui nunca derruba a tela.
+    try {
+      await reconciliarCreditos(supabase);
+      resumoUso = await obterResumoUso(supabase);
+    } catch (err) {
+      console.error("[layout] falha ao ler o uso da IA", err);
+    }
   }
 
   // Intervenção humana pendente é o alerta mais crítico do app — cliente
@@ -112,6 +125,7 @@ export default async function AppLayout({
       alertHrefs={alertHrefs}
       roboStatus={roboStatus}
     >
+        {resumoUso && <UsoIaAviso resumo={resumoUso} />}
         {aguardandoHumano > 0 && (
           <Alert tone="danger" pulse action={{ href: "/sac", label: "Abrir o SAC" }}>
             {aguardandoHumano === 1

@@ -1,12 +1,19 @@
 import { GlowBackdrop } from "./brand-fx";
 import IvvaLogo from "./logo";
 import PlanosClient from "./planos-client";
+import {
+  CONVERSAS_POR_PLANO,
+  PACOTE_AVULSO,
+  RESPOSTAS_POR_CONVERSA_MEDIA,
+  formatarNumero,
+} from "@/lib/planos";
 
 const PLANOS = [
   {
     key: "essencial",
     nome: "Essencial",
     preco: 297,
+    conversas: CONVERSAS_POR_PLANO.essencial,
     descricao: "Atendimento e agenda no piloto automático.",
     recursos: [
       "Chatbot no WhatsApp 24h (1 número)",
@@ -21,6 +28,7 @@ const PLANOS = [
     key: "profissional",
     nome: "Profissional",
     preco: 447,
+    conversas: CONVERSAS_POR_PLANO.profissional,
     descricao: "Pra equipe com mais de um profissional.",
     destaque: true,
     recursos: [
@@ -40,6 +48,7 @@ const PLANOS = [
     key: "completo",
     nome: "Completo",
     preco: 597,
+    conversas: CONVERSAS_POR_PLANO.completo,
     descricao: "Operação inteira dentro do WhatsApp.",
     recursos: [
       "Tudo do Profissional",
@@ -85,6 +94,16 @@ export default function PlanosPage() {
         </div>
 
         <PlanosClient planos={PLANOS} />
+
+        <p className="mx-auto mt-8 max-w-[720px] text-center text-[12.5px] leading-relaxed text-[#8a8896]">
+          Conversa = todas as respostas da IA para um mesmo cliente seu em até 24 horas (em média{" "}
+          {RESPOSTAS_POR_CONVERSA_MEDIA} respostas). O limite renova todo mês, no dia 1º. Se ultrapassar o limite
+          do mês, é possível comprar créditos avulsos: +{PACOTE_AVULSO.conversas} conversas por R${" "}
+          {(PACOTE_AVULSO.valorCentavos / 100).toLocaleString("pt-BR")}, que não expiram e a IA continua
+          atendendo na hora. Hoje: {formatarNumero(CONVERSAS_POR_PLANO.essencial)} /{" "}
+          {formatarNumero(CONVERSAS_POR_PLANO.profissional)} / {formatarNumero(CONVERSAS_POR_PLANO.completo)}{" "}
+          conversas por mês nos planos Essencial / Profissional / Completo.
+        </p>
 
         <p className="mt-10 text-center text-[13px] text-[#8a8896]">
           Já tem conta?{" "}

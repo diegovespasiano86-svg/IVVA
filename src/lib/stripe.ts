@@ -188,7 +188,48 @@ export async function getCheckoutSession(sessionId: string) {
     customer_details?: { email?: string };
     customer?: string;
     subscription?: string;
-    metadata?: { nome_negocio?: string; plano?: string };
+    metadata?: { nome_negocio?: string; plano?: string; tipo?: string; tenant_id?: string };
     payment_status: string;
+    amount_total?: number;
   };
+}
+
+// Pacote avulso de conversas com a IA: pagamento único (não é assinatura). Cobra por
+// price_data, então não precisa de produto cadastrado no painel da Stripe. A conferência do
+// pagamento é feita ao voltar (e depois por reconciliarCreditos), sem depender de webhook novo.
+export async function createCreditosCheckoutSession(params: {
+  customerId: string | null;
+  tenantId: string;
+  conversas: number;
+  valorCentavos: number;
+  successUrl: string;
+  cancelUrl: string;
+}) {
+  const body = new URLSearchParams({
+    mode: "payment",
+    locale: "pt-BR",
+    "line_items[0][quantity]": "1",
+    "line_items[0][price_data][currency]": "brl",
+    "line_items[0][price_data][unit_amount]": String(params.valorCentavos),
+    "line_items[0][price_data][product_data][name]": `ivva · +${params.conversas} conversas com a IA`,
+    "line_items[0][price_data][product_data][description]":
+      "Crédito avulso: não expira e é usado depois das conversas do seu plano.",
+    success_url: params.successUrl,
+    cancel_url: params.cancelUrl,
+    "metadata[tipo]": "creditos_conversas",
+    "metadata[tenant_id]": params.tenantId,
+    "metadata[conversas]": String(params.conversas),
+  });
+  if (params.customerId) body.set("customer", params.customerId);
+
+  const res = await fetch(`${STRIPE_API}/checkout/sessions`, {
+    method: "POST",
+    headers: stripeHeaders(),
+    body,
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data?.error?.message ?? "Falha ao abrir o pagamento dos créditos");
+  }
+  return data as { id: string; url: string };
 }

@@ -13,12 +13,15 @@ export default function Alert({
   icon,
   pulse,
   action,
+  actionNode,
   children,
 }: {
   tone?: keyof typeof TONS;
   icon?: LucideIcon;
   pulse?: boolean;
   action?: { href: string; label: string };
+  /** Ação própria (ex.: botão que abre um pagamento), no lugar do link `action`. */
+  actionNode?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const t = TONS[tone];
@@ -30,7 +33,8 @@ export default function Alert({
         {pulse && <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 animate-ping rounded-full bg-coral/80" />}
       </span>
       <p className={`min-w-0 flex-1 text-[13px] font-semibold leading-snug ${t.texto}`}>{children}</p>
-      {action && (
+      {actionNode}
+      {!actionNode && action && (
         <Link href={action.href} className="btn btn-secondary btn-sm shrink-0">
           {action.label}
         </Link>

@@ -39,6 +39,42 @@ const RECURSO_PLANO_MINIMO: Record<Recurso, PlanoId> = {
   recibo_automatico: "completo",
 };
 
+// ---- Limite mensal de conversas atendidas pela IA ------------------------
+// Fonte única dos números: o app envia esta tabela ao banco, que escolhe pelo
+// plano do cliente (ver supabase-migrations/2026-10-05_limite_conversas_ia.sql).
+// Mudou aqui? Mude também src/lib/site.ts do site (ivva-site) e o texto de /planos.
+//
+// "Conversa" = todas as respostas da IA para o mesmo cliente do negócio dentro de
+// 24 horas. O mês é o mês-calendário (renova dia 1º) e soma o mês inteiro.
+export const CONVERSAS_POR_PLANO: Record<PlanoId, number> = {
+  essencial: 300,
+  profissional: 700,
+  completo: 1500,
+};
+
+// Respostas médias por conversa, só para mostrar a equivalência ("≈ 1.800 respostas").
+export const RESPOSTAS_POR_CONVERSA_MEDIA = 6;
+
+// Teto de respostas dentro de uma mesma conversa (24h): barra laços e abuso.
+// Passou disso, a conversa vai para a equipe do negócio.
+export const RESPOSTAS_POR_CONVERSA_MAX = 30;
+
+// Depois que as conversas do plano e os créditos avulsos acabam, a IA ainda
+// atende esta folga (% do limite do plano) para o atendimento não parar de uma vez.
+// Zere para bloquear exatamente no limite.
+export const FOLGA_PERCENTUAL = 20;
+
+// Pacote de crédito avulso: não expira e é usado depois das conversas do plano.
+export const PACOTE_AVULSO = { conversas: 100, valorCentavos: 5900 } as const;
+
+export function limiteConversas(plano: string | null | undefined): number {
+  return CONVERSAS_POR_PLANO[normalizarPlano(plano)];
+}
+
+export function formatarNumero(n: number): string {
+  return n.toLocaleString("pt-BR");
+}
+
 function normalizarPlano(plano: string | null | undefined): PlanoId {
   return PLANOS_ORDEM.includes(plano as PlanoId) ? (plano as PlanoId) : "essencial";
 }

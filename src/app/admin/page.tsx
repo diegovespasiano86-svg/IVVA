@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { resolverChamado } from "./actions";
+import { limiteConversas } from "@/lib/planos";
 
 const PLANO_LABEL: Record<string, string> = {
   essencial: "Essencial",
@@ -46,11 +47,26 @@ export default async function AdminPage() {
     redirect("/dashboard");
   }
 
-  const [{ data }, { data: chamadosData }] = await Promise.all([
+  const [{ data }, { data: chamadosData }, { data: usoData }] = await Promise.all([
     supabase.rpc("admin_tenants_overview"),
     supabase.rpc("admin_chamados_recentes"),
+    supabase.rpc("admin_ia_uso_overview"),
   ]);
   const tenants = (data ?? []) as AdminTenantRow[];
+  // Uso de conversas da IA no mês, por negócio (limite = valor negociado ou o do plano).
+  const usoPorTenant = new Map(
+    (
+      (usoData ?? []) as {
+        tenant_id: string;
+        usado_plano: number;
+        usado_extra: number;
+        usado_folga: number;
+        bloqueios: number;
+        saldo_extra: number;
+        limite_override: number | null;
+      }[]
+    ).map((u) => [u.tenant_id, u]),
+  );
   const chamados = (chamadosData ?? []) as {
     id: string;
     tenant_id: string;
@@ -192,6 +208,7 @@ export default async function AdminPage() {
                   <th className="px-4 py-3">Empresa</th>
                   <th className="px-4 py-3">Dono</th>
                   <th className="px-4 py-3">Plano</th>
+                  <th className="px-4 py-3 text-right">Conversas IA (mês)</th>
                   <th className="px-4 py-3">Assinatura</th>
                   <th className="px-4 py-3">WhatsApp</th>
                   <th className="px-4 py-3 text-right">Contatos</th>
@@ -218,6 +235,30 @@ export default async function AdminPage() {
                       </td>
                       <td className="px-4 py-3 text-ink-soft">
                         {PLANO_LABEL[t.plano] ?? t.plano}
+                      </td>
+                      <td className="px-4 py-3 text-right text-ink-soft">
+                        {(() => {
+                          const u = usoPorTenant.get(t.tenant_id);
+                          const limite = u?.limite_override ?? limiteConversas(t.plano);
+                          const usadas = u?.usado_plano ?? 0;
+                          const pct = limite > 0 ? Math.round((usadas * 100) / limite) : 100;
+                          return (
+                            <span className={pct >= 100 ? "font-bold text-coral" : pct >= 80 ? "font-bold text-amber" : ""}>
+                              {usadas}/{limite}
+                              {u && u.usado_extra + u.usado_folga > 0 && (
+                                <span className="block text-[11px] font-normal text-ink-faint">
+                                  +{u.usado_extra} avulso, +{u.usado_folga} folga
+                                </span>
+                              )}
+                              {u && u.saldo_extra > 0 && (
+                                <span className="block text-[11px] font-normal text-ink-faint">saldo avulso: {u.saldo_extra}</span>
+                              )}
+                              {u && u.bloqueios > 0 && (
+                                <span className="block text-[11px] font-normal text-coral">{u.bloqueios} bloqueios</span>
+                              )}
+                            </span>
+                          );
+                        })()}
                       </td>
                       <td className="px-4 py-3">
                         <span
