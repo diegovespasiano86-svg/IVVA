@@ -91,26 +91,51 @@ export default function EmbeddedSignupButton() {
   const appId = process.env.NEXT_PUBLIC_WHATSAPP_APP_ID;
   const configId = process.env.NEXT_PUBLIC_WHATSAPP_CONFIG_ID;
 
+  const [sdkErro, setSdkErro] = useState(false);
+  const [tentativa, setTentativa] = useState(0);
+
+  // Carrega o login da Meta. Se não ficar pronto em 10 s (bloqueador de anúncios/privacidade, rede da
+  // empresa, extensão), mostra o motivo provável e um botão para tentar de novo, em vez de deixar o
+  // botão cinza sem explicação.
   useEffect(() => {
-    if (window.FB) {
-      setSdkPronto(true);
-      return;
-    }
-    if (!document.getElementById("facebook-jssdk")) {
-      const script = document.createElement("script");
-      script.id = "facebook-jssdk";
-      script.src = SDK_SRC;
-      script.async = true;
-      script.defer = true;
-      script.crossOrigin = "anonymous";
-      document.body.appendChild(script);
-    }
-    window.fbAsyncInit = () => {
-      if (!appId) return;
+    if (!appId) return;
+    let ativo = true;
+    const iniciarSdk = () => {
       window.FB?.init({ appId, autoLogAppEvents: true, xfbml: true, version: "v26.0" });
-      setSdkPronto(true);
+      if (ativo) {
+        setSdkErro(false);
+        setSdkPronto(true);
+      }
     };
-  }, [appId]);
+
+    if (window.FB) {
+      iniciarSdk();
+      return () => {
+        ativo = false;
+      };
+    }
+
+    window.fbAsyncInit = iniciarSdk;
+    // Tentar de novo: tira o script antigo (que falhou ou foi bloqueado) e injeta outro.
+    document.getElementById("facebook-jssdk")?.remove();
+    const script = document.createElement("script");
+    script.id = "facebook-jssdk";
+    script.src = SDK_SRC;
+    script.async = true;
+    script.defer = true;
+    script.onerror = () => {
+      if (ativo) setSdkErro(true);
+    };
+    document.body.appendChild(script);
+    const limite = setTimeout(() => {
+      if (ativo && !window.FB) setSdkErro(true);
+    }, 10000);
+
+    return () => {
+      ativo = false;
+      clearTimeout(limite);
+    };
+  }, [appId, tentativa]);
 
   // Concluir a conexão exige dois pedaços de informação que chegam por
   // canais diferentes e em ordem que não dá pra prever: o "code" vem do
@@ -268,8 +293,31 @@ export default function EmbeddedSignupButton() {
           ? "Conectando…"
           : status === "aguardando"
             ? "Complete o login na janela que abriu…"
-            : "Conectar com um clique"}
+            : !sdkPronto && !sdkErro
+              ? "Carregando a conexão com a Meta…"
+              : "Conectar com um clique"}
       </button>
+
+      {sdkErro && !sdkPronto && (
+        <div className="mt-3 rounded-[10px] border border-amber/30 bg-[#fdf0dc] px-3.5 py-3">
+          <p className="text-[12.5px] font-bold text-[#7a4a00]">Não foi possível carregar o login da Meta.</p>
+          <p className="mt-1 text-[12px] leading-relaxed text-[#7a4a00]">
+            Isso costuma ser um bloqueador de anúncios ou de rastreamento (extensão do navegador, modo de privacidade
+            reforçada) impedindo o carregamento do Facebook. Desative o bloqueador para este site, ou abra o sistema em uma
+            janela anônima ou em outro navegador, e tente de novo.
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              setSdkErro(false);
+              setTentativa((n) => n + 1);
+            }}
+            className="btn mt-2 border border-amber/40 bg-surface px-3.5 py-1.5 text-[12.5px] text-[#7a4a00]"
+          >
+            Tentar de novo
+          </button>
+        </div>
+      )}
 
       <p className="mt-2 text-[12px] text-ink-faint">
         Você vai logar direto com o WhatsApp Business que já usa — sem
