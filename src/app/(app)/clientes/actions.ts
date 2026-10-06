@@ -36,7 +36,7 @@ export async function adicionarNotaCliente(formData: FormData) {
   revalidatePath(`/clientes/${contactId}`);
 }
 
-export type LinhaImportacao = { nome: string; telefone: string; email?: string; instagram?: string; aniversario?: string; comoConheceu?: string };
+export type LinhaImportacao = { nome: string; telefone: string; email?: string; instagram?: string; aniversario?: string; comoConheceu?: string; extras?: Record<string, string> };
 export type ResultadoImportacao = {
   ok: boolean;
   erro?: string;
@@ -78,6 +78,7 @@ export async function importarContatos(linhas: LinhaImportacao[], autorizado: bo
   let duplicadosNoArquivo = 0;
   const vistos = new Set<string>();
   const novos: Record<string, unknown>[] = [];
+  const extrasPorTel = new Map<string, string>();
 
   for (const l of linhas) {
     const tel = normalizarTelefone(limpar(l?.telefone, 40));
@@ -95,6 +96,13 @@ export async function importarContatos(linhas: LinhaImportacao[], autorizado: bo
       jaExistiam++;
       continue;
     }
+    // Colunas extras da planilha (o dono pode trazer o que quiser): viram uma nota no cliente.
+    const extras = Object.entries(l?.extras ?? {})
+      .slice(0, 20)
+      .map(([k, v]) => [limpar(k, 60), limpar(v, 300)])
+      .filter(([k, v]) => k && v)
+      .map(([k, v]) => `${k}: ${v}`);
+    if (extras.length) extrasPorTel.set(tel, ["Informações da planilha importada", ...extras].join("\n").slice(0, 2000));
     const email = limpar(l?.email, 160);
     const instagram = limpar(l?.instagram, 80).replace(/^@/, "");
     novos.push({
@@ -116,9 +124,13 @@ export async function importarContatos(linhas: LinhaImportacao[], autorizado: bo
     const { data, error } = await ctx.supabase
       .from("contacts")
       .upsert(novos.slice(i, i + 200), { onConflict: "tenant_id,telefone", ignoreDuplicates: true })
-      .select("id");
+      .select("id, telefone");
     if (error) return { ok: false, erro: "Houve um problema ao salvar parte dos clientes. Confira a lista e tente de novo.", inseridos, jaExistiam, invalidos, duplicadosNoArquivo };
     inseridos += data?.length ?? 0;
+    const notas = (data ?? [])
+      .filter((c) => extrasPorTel.has(c.telefone))
+      .map((c) => ({ tenant_id: ctx.tenantId, contact_id: c.id, autor_id: ctx.userId, tipo: "nota", conteudo: extrasPorTel.get(c.telefone)! }));
+    if (notas.length) await ctx.supabase.from("contact_notes").insert(notas);
   }
 
   // Trilha de auditoria (LGPD): quem importou, quantos e se declarou autorização para enviar mensagens.

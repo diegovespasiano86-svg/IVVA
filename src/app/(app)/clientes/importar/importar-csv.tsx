@@ -31,6 +31,7 @@ export default function ImportarCsv() {
   const [arquivo, setArquivo] = useState<string | null>(null);
   const [linhas, setLinhas] = useState<string[][]>([]);
   const [mapa, setMapa] = useState<Partial<Record<CampoId, number>>>({});
+  const [extrasSel, setExtrasSel] = useState<Record<number, boolean>>({});
   const [autorizado, setAutorizado] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [resultado, setResultado] = useState<ResultadoImportacao | null>(null);
@@ -60,7 +61,13 @@ export default function ImportarCsv() {
       for (const c of CAMPOS) if (sugerido[c.id] === undefined && PISTAS[c.id].test(h)) sugerido[c.id] = i;
     });
     setMapa(sugerido);
+    setExtrasSel({});
   }
+
+  // Colunas que não foram ligadas a nenhum campo: o dono escolhe se quer trazê-las como informação extra.
+  const usadas = new Set(Object.values(mapa).filter((v): v is number => v !== undefined));
+  const colunasExtras = cabecalho.map((h, i) => ({ h: h.trim(), i })).filter((c) => c.h && !usadas.has(c.i));
+  const extrasAtivas = colunasExtras.filter((c) => extrasSel[c.i] !== false);
 
   const prontas = useMemo(() => {
     if (mapa.nome === undefined || mapa.telefone === undefined) return [];
@@ -71,8 +78,10 @@ export default function ImportarCsv() {
       instagram: mapa.instagram !== undefined ? r[mapa.instagram] ?? "" : "",
       aniversario: mapa.aniversario !== undefined ? r[mapa.aniversario] ?? "" : "",
       comoConheceu: mapa.comoConheceu !== undefined ? r[mapa.comoConheceu] ?? "" : "",
+      extras: Object.fromEntries(extrasAtivas.map((c) => [c.h, (r[c.i] ?? "").trim()])),
     }));
-  }, [dados, mapa]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dados, mapa, extrasSel, cabecalho]);
 
   const validas = prontas.filter((p) => p.nome && normalizarTelefone(p.telefone));
   const invalidas = prontas.length - validas.length;
@@ -118,7 +127,7 @@ export default function ImportarCsv() {
         <p className="mb-1 text-[11.5px] font-bold uppercase tracking-wide text-purple">Passo 1</p>
         <h2 className="mb-1 text-[16px] font-extrabold">Escolha o arquivo</h2>
         <p className="mb-4 text-[12.5px] text-ink-soft">
-          Planilha em <strong>.csv</strong> (no Excel: Arquivo, Salvar como, CSV). A primeira linha deve ter os títulos das colunas. Até 2.000 clientes por vez. Só <strong>nome</strong> e <strong>telefone</strong> são obrigatórios.
+          Planilha em <strong>.csv</strong> (no Excel: Arquivo, Salvar como, CSV). A primeira linha deve ter os títulos das colunas. Até 2.000 clientes por vez. Só <strong>nome</strong> e <strong>telefone</strong> são obrigatórios; você pode acrescentar outras colunas, o modelo é só um ponto de partida.
           <a href="/modelo-importacao-clientes.csv" download className="ml-1 font-bold text-purple underline-offset-2 hover:underline">
             Baixar a planilha modelo
           </a>
@@ -158,6 +167,27 @@ export default function ImportarCsv() {
                 </div>
               ))}
             </div>
+
+            {colunasExtras.length > 0 && (
+              <div className="mt-5 rounded-xl border border-border bg-bg px-4 py-3.5">
+                <p className="text-[13px] font-bold">Outras informações da sua planilha</p>
+                <p className="mb-2 mt-0.5 text-[12px] text-ink-soft">
+                  Essas colunas não têm campo próprio. Marque as que você quer guardar: elas entram como uma nota na ficha de cada cliente.
+                </p>
+                <div className="flex flex-wrap gap-x-5 gap-y-1.5">
+                  {colunasExtras.map((c) => (
+                    <label key={c.i} className="flex cursor-pointer items-center gap-2 text-[12.5px] font-semibold">
+                      <input
+                        type="checkbox"
+                        checked={extrasSel[c.i] !== false}
+                        onChange={(e) => setExtrasSel((s) => ({ ...s, [c.i]: e.target.checked }))}
+                      />
+                      {c.h}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {prontas.length > 0 && (
               <>

@@ -96,6 +96,9 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
             <a href="/relatorios/exportar?tipo=clientes&periodo=tudo&formato=xlsx" className="btn btn-secondary btn-md">
               <Download size={15} /> Exportar
             </a>
+            <a href="/modelo-importacao-clientes.csv" download className="btn btn-secondary btn-md">
+              <Download size={15} /> Baixar modelo de importação
+            </a>
             <Link href="/clientes/importar" className="btn btn-primary btn-md">
               <Upload size={15} /> Importar planilha
             </Link>
