@@ -5,7 +5,7 @@ import { CONVERSAS_POR_PLANO, formatarNumero } from "@/lib/planos";
 
 const PLANOS: Record<string, { nome: string; preco: string }> = {
   essencial: { nome: "Essencial", preco: "R$ 297" },
-  profissional: { nome: "Profissional", preco: "R$ 397" },
+  profissional: { nome: "Profissional", preco: "R$ 447" },
   completo: { nome: "Completo", preco: "R$ 597" },
 };
 
