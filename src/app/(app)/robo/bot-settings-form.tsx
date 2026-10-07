@@ -338,6 +338,9 @@ export default function BotSettingsForm({
             <input
               id="admin_whatsapp_numero"
               name="admin_whatsapp_numero"
+              type="tel"
+              inputMode="numeric"
+              autoComplete="off"
               placeholder="5511999998888"
               defaultValue={s?.admin_whatsapp_numero ?? ""}
               className="input"
@@ -351,6 +354,7 @@ export default function BotSettingsForm({
               id="admin_pin"
               name="admin_pin"
               type="password"
+              autoComplete="new-password"
               inputMode="numeric"
               placeholder="••••"
               className="input"
