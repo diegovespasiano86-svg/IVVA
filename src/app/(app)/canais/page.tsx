@@ -1,4 +1,5 @@
 import Link from "next/link";
+import PageHeader from "@/components/page-header";
 import { Camera, CheckCircle2, Mail, MessageCircle, MessagesSquare, Plug, TriangleAlert } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { desconectarWhatsApp } from "../conta/actions";
@@ -45,12 +46,7 @@ export default async function CanaisPage() {
 
   return (
     <div>
-      <div className="mb-5">
-        <h1 className="no-accent flex items-center gap-2 text-[22px] font-extrabold">
-          <Plug size={22} className="text-purple" /> Canais
-        </h1>
-        <p className="text-[13.5px] text-ink-soft">Por onde o seu robô conversa com os clientes.</p>
-      </div>
+      <PageHeader icon={Plug} title="Canais" subtitle="Por onde o seu robô conversa com os clientes." />
 
       <section className="card mb-5 overflow-hidden">
         <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4">

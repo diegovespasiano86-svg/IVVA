@@ -1,4 +1,5 @@
 import EmptyState from "@/components/empty-state";
+import PageHeader from "@/components/page-header";
 import { Package } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { criarProduto, ajustarEstoque } from "./actions";
@@ -23,12 +24,7 @@ export default async function EstoquePage() {
   if (!liberado) {
     return (
       <div>
-        <div className="mb-5">
-          <h1 className="font-display text-[22px] font-extrabold">Estoque</h1>
-          <p className="text-[13.5px] text-ink-soft">
-            Controle de produtos, alertas de estoque mínimo e ajuste rápido.
-          </p>
-        </div>
+        <PageHeader icon={Package} title="Estoque" subtitle="Controle de produtos, alertas de estoque mínimo e ajuste rápido." />
         <FeatureLock
           liberado={false}
           titulo="Controle de estoque"
@@ -56,22 +52,7 @@ export default async function EstoquePage() {
 
   return (
     <div>
-      <div className="mb-5 flex flex-wrap items-baseline justify-between gap-3">
-        <div>
-          <h1 className="font-display text-[22px] font-extrabold">
-            Estoque
-          </h1>
-          <p className="text-[13.5px] text-ink-soft">
-            {produtos?.length ?? 0} {produtos?.length === 1 ? "produto" : "produtos"}
-            {emAlerta.length > 0 && (
-              <span className="ml-1.5 font-semibold text-coral">
-                · {emAlerta.length} em alerta de estoque mínimo
-              </span>
-            )}
-          </p>
-        </div>
-
-        {souDono && (
+      <PageHeader icon={Package} title="Estoque" subtitle={<>{produtos?.length ?? 0} {produtos?.length === 1 ? "produto" : "produtos"} {emAlerta.length > 0 && ( <span className="ml-1.5 font-semibold text-coral"> · {emAlerta.length} em alerta de estoque mínimo </span> )}</>} actions={<>{souDono && (
         <form
           action={criarProduto}
           className="card flex flex-wrap items-end gap-2 px-3.5 py-3"
@@ -146,8 +127,7 @@ export default async function EstoquePage() {
             + Adicionar
           </button>
         </form>
-        )}
-      </div>
+        )}</>} />
 
       {!produtos || produtos.length === 0 ? (
         <div className="card">

@@ -1,4 +1,5 @@
 import EmptyState from "@/components/empty-state";
+import PageHeader from "@/components/page-header";
 import { Wallet } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { temRecurso } from "@/lib/planos";
@@ -82,16 +83,7 @@ export default async function CheckoutPage(props: {
 
   return (
     <div>
-      <div className="mb-5 flex flex-wrap items-baseline justify-between gap-3">
-        <div>
-          <h1 className="font-display text-[22px] font-extrabold">
-            Checkout
-          </h1>
-          <p className="text-[13.5px] text-ink-soft">
-            {temComissao ? "Registro de pagamento com comissão calculada automaticamente." : "Registro de pagamentos dos atendimentos."}
-          </p>
-        </div>
-        <div className="flex gap-6 text-right">
+      <PageHeader icon={Wallet} title="Checkout" subtitle={<>{temComissao ? "Registro de pagamento com comissão calculada automaticamente." : "Registro de pagamentos dos atendimentos."}</>} actions={<><div className="flex gap-6 text-right">
           <div>
             <p className="text-[11px] font-bold uppercase tracking-wide text-ink-faint">
               Últimos 15 · faturado
@@ -110,8 +102,7 @@ export default async function CheckoutPage(props: {
             </p>
           </div>
           )}
-        </div>
-      </div>
+        </div></>} />
 
       {aguardandoCheckout.length > 0 && (
         <div className="card mb-4 px-4 py-4">
@@ -292,7 +283,7 @@ export default async function CheckoutPage(props: {
                       {itens?.[0]?.servico ?? "—"}
                     </td>
                     <td className="px-4 py-3 text-ink-soft capitalize">
-                      {p.forma_pagamento}
+                      {({ pix: "Pix", credito: "Crédito", debito: "Débito", dinheiro: "Dinheiro" } as Record<string, string>)[p.forma_pagamento] ?? p.forma_pagamento}
                     </td>
                     <td className="px-4 py-3 text-right font-semibold">
                       {money.format(Number(p.valor_total))}

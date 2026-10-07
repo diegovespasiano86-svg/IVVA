@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Bot, CalendarCheck, Clock, Hand, MessageCircleReply, UserRound } from "lucide-react";
+import PageHeader from "@/components/page-header";
+import { Bot, CalendarCheck, Clock, Hand, MessageCircleReply, UserRound, Activity } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import AutoRefresh from "@/components/auto-refresh";
 
@@ -105,15 +106,9 @@ export default async function MonitorPage() {
   return (
     <div>
       <AutoRefresh segundos={20} />
-      <div className="mb-5 flex flex-wrap items-end justify-between gap-2">
-        <div>
-          <h1 className="text-[22px] font-extrabold">Monitor do robô</h1>
-          <p className="text-[13.5px] text-ink-soft">O que a IA está fazendo agora. Atualiza sozinho a cada 20 segundos.</p>
-        </div>
-        <span className="badge badge-success">
+      <PageHeader icon={Activity} title="Monitor do robô" subtitle="O que a IA está fazendo agora. Atualiza sozinho a cada 20 segundos." actions={<><span className="badge badge-success">
           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-teal" /> Ao vivo
-        </span>
-      </div>
+        </span></>} />
 
       <div className="grid grid-cols-2 gap-3.5 lg:grid-cols-4">
         <Tile icon={Hand} label="Precisam de você" valor={aguardando ?? 0} hint="Clientes esperando um atendente" tom={(aguardando ?? 0) > 0 ? "danger" : "neutral"} href="/sac" />

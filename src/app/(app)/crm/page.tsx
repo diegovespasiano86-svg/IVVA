@@ -1,4 +1,5 @@
 import EmptyState from "@/components/empty-state";
+import PageHeader from "@/components/page-header";
 import { Users } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
@@ -116,16 +117,7 @@ export default async function CrmPage({
 
   return (
     <div>
-      <div className="mb-4 flex flex-wrap items-baseline justify-between gap-3">
-        <div>
-          <h1 className="font-display text-[22px] font-extrabold">CRM + Funil de Vendas</h1>
-          <p className="text-[13.5px] text-ink-soft">
-            {souDono ? "Funil de clientes" : "Seus contatos"} — {listaContatos.length}{" "}
-            {listaContatos.length === 1 ? "contato" : "contatos"} no total.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
+      <PageHeader icon={Users} title="CRM + Funil de Vendas" subtitle={<>{souDono ? "Funil de clientes" : "Seus contatos"} — {listaContatos.length}{" "} {listaContatos.length === 1 ? "contato" : "contatos"} no total.</>} actions={<><div className="flex items-center gap-2">
           {souDono && aba === "funil" && (
             <StageManager estagios={listaEstagios} />
           )}
@@ -151,8 +143,7 @@ export default async function CrmPage({
               </button>
             </form>
           )}
-        </div>
-      </div>
+        </div></>} />
 
       <div className="mb-4 flex gap-1 border-b border-border">
         <Link

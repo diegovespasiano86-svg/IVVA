@@ -1,4 +1,5 @@
 import EmptyState from "@/components/empty-state";
+import PageHeader from "@/components/page-header";
 import { ListChecks } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { criarTarefa } from "./actions";
@@ -41,17 +42,7 @@ export default async function TarefasPage() {
 
   return (
     <div>
-      <div className="mb-5 flex flex-wrap items-baseline justify-between gap-3">
-        <div>
-          <h1 className="font-display text-[22px] font-extrabold">
-            Tarefas — upsell &amp; cross-sell
-          </h1>
-          <p className="text-[13.5px] text-ink-soft">
-            {pendentes.length} pendentes de {tarefas?.length ?? 0} no total.
-          </p>
-        </div>
-
-        <form
+      <PageHeader icon={ListChecks} title="Tarefas — upsell e cross-sell" subtitle={<>{pendentes.length} pendentes de {tarefas?.length ?? 0} no total.</>} actions={<><form
           action={criarTarefa}
           className="card flex flex-wrap items-end gap-2 px-3.5 py-3"
         >
@@ -108,8 +99,7 @@ export default async function TarefasPage() {
           >
             + Nova tarefa
           </button>
-        </form>
-      </div>
+        </form></>} />
 
       <div className="mb-5 grid grid-cols-1 gap-3.5 sm:grid-cols-3">
         <div className="card px-5 py-4.5">

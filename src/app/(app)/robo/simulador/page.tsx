@@ -1,4 +1,5 @@
 import Link from "next/link";
+import PageHeader from "@/components/page-header";
 import { FlaskConical, ShieldCheck } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import SimuladorChat from "./chat";
@@ -11,14 +12,7 @@ export default async function SimuladorPage() {
 
   return (
     <div>
-      <div className="mb-5">
-        <h1 className="no-accent flex items-center gap-2 text-[22px] font-extrabold">
-          <FlaskConical size={22} className="text-purple" /> Simulador do robô
-        </h1>
-        <p className="text-[13.5px] text-ink-soft">
-          Converse com a sua IA como se fosse um cliente. Ela usa a base de conhecimento, a personalidade e as regras que você configurou.
-        </p>
-      </div>
+      <PageHeader icon={FlaskConical} title="Simulador do robô" subtitle="Converse com a sua IA como se fosse um cliente. Ela usa a base de conhecimento, a personalidade e as regras que você configurou." />
 
       <div className="mb-4 flex items-start gap-2.5 rounded-xl border border-border bg-surface px-4 py-3 text-[12.5px] text-ink-soft">
         <ShieldCheck size={17} className="mt-0.5 shrink-0 text-teal" />

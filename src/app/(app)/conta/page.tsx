@@ -1,4 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
+import { Settings } from "lucide-react";
+import PageHeader from "@/components/page-header";
 import InviteForm from "./invite-form";
 import ApagarConta from "./apagar-conta";
 import { revogarConvite } from "./actions";
@@ -151,17 +153,7 @@ export default async function ContaPage({
             : ", fale com o dono do negócio pra corrigir."}
         </div>
       )}
-      <div className="mb-5">
-        <h1 className="font-display text-[22px] font-extrabold">
-          Conta e assinatura
-        </h1>
-        <p className="text-[13.5px] text-ink-soft">
-          {tenant?.nome} · plano{" "}
-          <span className="font-semibold text-ink">
-            {PLANO_LABEL[tenant?.plano ?? ""] ?? tenant?.plano}
-          </span>
-        </p>
-      </div>
+      <PageHeader icon={Settings} title="Conta e equipe" subtitle={<>{tenant?.nome} · plano{" "} <span className="font-semibold text-ink"> {PLANO_LABEL[tenant?.plano ?? ""] ?? tenant?.plano} </span></>} />
 
       {isDono && creditos === "ok" && (
         <Alert tone="info">
