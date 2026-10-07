@@ -4,7 +4,8 @@ import PageHeader from "@/components/page-header";
 import EmptyState from "@/components/empty-state";
 import { createClient } from "@/lib/supabase/server";
 import { temRecurso } from "@/lib/planos";
-import { NovoItem, LinhaItem, CopiarLista, ROTULO_TIPO, custoDaFicha, type ItemCatalogo, type InsumoOpcao } from "./catalogo-client";
+import { custoDaFicha } from "@/lib/catalogo";
+import { NovoItem, LinhaItem, CopiarLista, ROTULO_TIPO, type ItemCatalogo, type InsumoOpcao } from "./catalogo-client";
 
 const FILTROS = [
   { id: "todos", label: "Todos" },

@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
+import { custoDaFicha } from "@/lib/catalogo";
 import { criarItem, editarItem, movimentarEstoque, alternarAtivo, ajusteRapido, salvarFicha, type EstadoCatalogo } from "./actions";
 
 export type ItemCatalogo = {
@@ -211,10 +212,6 @@ function FormMovimento({ item, aoFechar }: { item: ItemCatalogo; aoFechar: () =>
 }
 
 
-export function custoDaFicha(ficha: ItemCatalogo["ficha"], insumos: InsumoOpcao[]): number {
-  return (ficha ?? []).reduce((s, f) => s + f.quantidade * (insumos.find((i) => i.id === f.insumo_id)?.custo ?? 0), 0);
-}
-
 function FichaPanel({ item, insumos, aoFechar }: { item: ItemCatalogo; insumos: InsumoOpcao[]; aoFechar: () => void }) {
   const [linhas, setLinhas] = useState<{ insumoId: string; quantidade: number }[]>(
     (item.ficha ?? []).map((f) => ({ insumoId: f.insumo_id, quantidade: f.quantidade })),
@@ -260,7 +257,7 @@ function FichaPanel({ item, insumos, aoFechar }: { item: ItemCatalogo; insumos: 
           aria-label="Adicionar insumo"
           value=""
           onChange={(e) => e.target.value && setLinhas((ls) => [...ls, { insumoId: e.target.value, quantidade: 1 }])}
-          className="select w-[260px]"
+          className="select !w-[260px]"
           disabled={disponiveis.length === 0}
         >
           <option value="">{disponiveis.length === 0 ? "Cadastre insumos com estoque no catálogo" : "+ Adicionar insumo…"}</option>
