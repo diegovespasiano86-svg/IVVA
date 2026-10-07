@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, BookOpen, Bot, CalendarCheck, Check, MessageCircle, Users } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import type { Termos } from "@/lib/termos";
 
 type Passo = {
   titulo: string;
@@ -11,7 +12,7 @@ type Passo = {
 };
 
 /** Checklist de ativação do negócio. Some sozinho quando tudo está pronto. */
-export default async function PrimeirosPassos() {
+export default async function PrimeirosPassos({ termos }: { termos: Termos }) {
   const supabase = await createClient();
 
   const [{ data: conta }, { count: conhecimento }, { count: profissionais }, { data: botCfg }, { count: agendamentos }] =
@@ -39,8 +40,8 @@ export default async function PrimeirosPassos() {
       icon: BookOpen,
     },
     {
-      titulo: "Cadastrar profissionais e agenda",
-      texto: "O robô só marca horários de quem estiver cadastrado.",
+      titulo: `Cadastrar ${termos.profissionais.toLowerCase()} e agenda`,
+      texto: `O robô só marca horários de quem estiver cadastrado como ${termos.profissional.toLowerCase()}.`,
       href: "/calendario",
       feito: (profissionais ?? 0) > 0,
       icon: Users,
@@ -53,8 +54,8 @@ export default async function PrimeirosPassos() {
       icon: Bot,
     },
     {
-      titulo: "Receber o primeiro agendamento",
-      texto: "Quando um cliente marcar horário, este passo se completa sozinho.",
+      titulo: `Receber ${termos.agendamento === "Agendamento" ? "o primeiro agendamento" : "a primeira " + termos.agendamento.toLowerCase()}`,
+      texto: `Quando ${termos.cliente === "Cliente" ? "um cliente" : "alguém"} marcar, este passo se completa sozinho.`,
       href: "/conversas",
       feito: (agendamentos ?? 0) > 0,
       icon: CalendarCheck,

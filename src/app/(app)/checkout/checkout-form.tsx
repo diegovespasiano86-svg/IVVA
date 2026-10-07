@@ -6,6 +6,7 @@ import QRCode from "qrcode";
 import { Copy, MessageCircle, Plus, Search, Trash2, QrCode } from "lucide-react";
 import { registrarPagamentoCarrinho, salvarPix, type RetornoCheckout } from "./actions";
 import { gerarPixCopiaECola } from "@/lib/pix";
+import type { Termos } from "@/lib/termos";
 
 export type ContatoOpcao = { id: string; nome: string; telefone: string | null };
 export type ProfissionalOpcao = { id: string; nome: string; comissao_pct: number };
@@ -70,7 +71,7 @@ function ConfigurarPix({ aoSalvar }: { aoSalvar: () => void }) {
 }
 
 
-function AdicionarItem({ catalogo, aoEscolher }: { catalogo: ItemCatalogoCheckout[]; aoEscolher: (id: string) => void }) {
+function AdicionarItem({ catalogo, aoEscolher, placeholder }: { catalogo: ItemCatalogoCheckout[]; aoEscolher: (id: string) => void; placeholder: string }) {
   const [busca, setBusca] = useState("");
   const [aberto, setAberto] = useState(false);
   const norm = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
@@ -82,7 +83,7 @@ function AdicionarItem({ catalogo, aoEscolher }: { catalogo: ItemCatalogoCheckou
         value={busca}
         onChange={(e) => { setBusca(e.target.value); setAberto(true); }}
         onFocus={() => setAberto(true)}
-        placeholder="Buscar serviço ou produto…"
+        placeholder={placeholder}
         aria-label="Buscar no catálogo"
         className="input !pl-9"
       />
@@ -125,6 +126,7 @@ export default function CheckoutForm({
   temComissao,
   pix: pixConfig,
   ehDono,
+  termos,
 }: {
   contatos: ContatoOpcao[];
   profissionais: ProfissionalOpcao[];
@@ -133,6 +135,7 @@ export default function CheckoutForm({
   temComissao: boolean;
   pix: PixConfig;
   ehDono: boolean;
+  termos: Termos;
 }) {
   const router = useRouter();
   const [pendente, iniciar] = useTransition();
@@ -205,8 +208,7 @@ export default function CheckoutForm({
   };
 
   const validar = (): string | null => {
-    if (!contactId && !(novoCliente && nomeNovo.trim() && telNovo.trim())) return "Escolha o cliente ou cadastre um novo (nome e WhatsApp).";
-    if (!profissional) return "Escolha o profissional.";
+    if (!contactId && !(novoCliente && nomeNovo.trim() && telNovo.trim())) return `Escolha o ${termos.cliente.toLowerCase()} ou cadastre um novo (nome e WhatsApp).`;
     if (linhas.length === 0) return "Adicione pelo menos um item.";
     if (linhas.some((l) => !l.nome.trim())) return "Todo item precisa de um nome.";
     if (total <= 0) return "O total precisa ser maior que zero.";
@@ -263,9 +265,9 @@ export default function CheckoutForm({
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <div className="mb-1 flex items-center justify-between">
-            <label htmlFor="co-cliente" className="!mb-0">Cliente</label>
+            <label htmlFor="co-cliente" className="!mb-0">{termos.cliente}</label>
             <button type="button" onClick={() => { setNovoCliente(!novoCliente); setContactId(""); }} className="text-[12px] font-bold text-purple hover:underline">
-              {novoCliente ? "Escolher da lista" : "+ Novo cliente"}
+              {novoCliente ? "Escolher da lista" : `+ Novo ${termos.cliente.toLowerCase()}`}
             </button>
           </div>
           {novoCliente ? (
@@ -283,9 +285,9 @@ export default function CheckoutForm({
           )}
         </div>
         <div>
-          <label htmlFor="co-prof" className="!mb-1">Profissional</label>
+          <label htmlFor="co-prof" className="!mb-1">{termos.profissional}</label>
           <select id="co-prof" value={profissional} onChange={(e) => setProfissional(e.target.value)} className="select w-full">
-            <option value="">Selecione…</option>
+            <option value="">Nenhum (sem comissão)</option>
             {profissionais.map((p) => (
               <option key={p.id} value={p.id}>{temComissao ? `${p.nome} (${p.comissao_pct}%)` : p.nome}</option>
             ))}
@@ -295,16 +297,16 @@ export default function CheckoutForm({
 
       <div>
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-          <p className="text-[13.5px] font-bold">Itens do atendimento</p>
+          <p className="text-[13.5px] font-bold">Itens da venda</p>
           <div className="flex flex-wrap items-center gap-2">
-            {catalogo.length > 0 && <AdicionarItem catalogo={catalogo} aoEscolher={adicionarDoCatalogo} />}
+            {catalogo.length > 0 && <AdicionarItem catalogo={catalogo} aoEscolher={adicionarDoCatalogo} placeholder={`Buscar ${termos.servico.toLowerCase()} ou ${termos.produto.toLowerCase()}…`} />}
             <button type="button" onClick={adicionarAvulso} className="btn btn-secondary btn-md"><Plus size={15} /> Item avulso</button>
           </div>
         </div>
 
         {linhas.length === 0 ? (
           <p className="rounded-[12px] bg-surface-soft px-4 py-6 text-center text-[13px] text-ink-faint">
-            Adicione os serviços e produtos deste atendimento. {catalogo.length === 0 && "Cadastre-os no Catálogo ou use um item avulso."}
+            Adicione os itens desta venda ou atendimento. {catalogo.length === 0 && "Cadastre-os no Catálogo ou use um item avulso."}
           </p>
         ) : (
           <ul className="flex flex-col gap-2">

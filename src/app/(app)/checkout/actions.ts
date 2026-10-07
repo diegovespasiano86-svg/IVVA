@@ -44,7 +44,6 @@ export async function registrarPagamentoCarrinho(dados: DadosPagamento): Promise
   const { data: perfil } = await supabase.from("users").select("tenant_id").eq("id", user.id).maybeSingle();
   if (!perfil) return { erro: "Não encontramos o seu negócio." };
 
-  if (!dados.professionalId) return { erro: "Escolha o profissional." };
   if (!dados.forma) return { erro: "Escolha a forma de pagamento." };
   if (!Array.isArray(dados.itens) || dados.itens.length === 0) return { erro: "Adicione pelo menos um item." };
 
@@ -69,7 +68,7 @@ export async function registrarPagamentoCarrinho(dados: DadosPagamento): Promise
 
   const { error } = await supabase.rpc("pagamento_registrar", {
     p_contact_id: contactId,
-    p_professional_id: dados.professionalId,
+    p_professional_id: dados.professionalId || null,
     p_appointment_id: dados.appointmentId || null,
     p_itens: dados.itens.map((i) => ({ product_id: i.productId, nome: i.nome, qtd: i.qtd, preco_unit: i.preco })),
     p_forma: dados.forma,

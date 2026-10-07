@@ -96,9 +96,11 @@ export type EventoAgenda = {
 export default function CalendarView({
   eventos,
   profissionais,
+  termos,
 }: {
   eventos: EventoAgenda[];
   profissionais: { id: string; nome: string; cor: string }[];
+  termos: { profissional: string; servico: string };
 }) {
   const [view, setView] = useState<View | "year">(Views.WEEK);
   const [data, setData] = useState(new Date());
@@ -260,11 +262,11 @@ export default function CalendarView({
             </div>
             <dl className="flex flex-col gap-2 text-[13px]">
               <div className="flex justify-between">
-                <dt className="text-ink-faint">Serviço</dt>
+                <dt className="text-ink-faint">{termos.servico}</dt>
                 <dd className="font-semibold">{selecionado.servico ?? "—"}</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-ink-faint">Profissional</dt>
+                <dt className="text-ink-faint">{termos.profissional}</dt>
                 <dd className="font-semibold">{selecionado.profissional}</dd>
               </div>
               <div className="flex justify-between">

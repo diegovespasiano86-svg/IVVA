@@ -4,15 +4,12 @@ import PageHeader from "@/components/page-header";
 import EmptyState from "@/components/empty-state";
 import { createClient } from "@/lib/supabase/server";
 import { temRecurso } from "@/lib/planos";
-import { custoDaFicha } from "@/lib/catalogo";
-import { NovoItem, LinhaItem, CopiarLista, ROTULO_TIPO, type ItemCatalogo, type InsumoOpcao } from "./catalogo-client";
+import { custoDaFicha, rotuloTipo } from "@/lib/catalogo";
+import { carregarTermos } from "@/lib/termos-servidor";
+import type { Termos } from "@/lib/termos";
+import { NovoItem, LinhaItem, CopiarLista, type ItemCatalogo, type InsumoOpcao } from "./catalogo-client";
 
-const FILTROS = [
-  { id: "todos", label: "Todos" },
-  { id: "servico", label: "Serviços" },
-  { id: "venda", label: "Produtos de venda" },
-  { id: "insumo", label: "Insumos" },
-] as const;
+const IDS_FILTRO = ["todos", "servico", "venda", "insumo"] as const;
 
 const ROTULO_MOVIMENTO: Record<string, string> = {
   venda: "Venda",
@@ -33,7 +30,14 @@ export default async function CatalogoPage(props: { searchParams: Promise<{ tipo
   const ehDono = perfil?.role === "dono";
   const estoqueLiberado = temRecurso((perfil?.tenants as unknown as { plano: string } | null)?.plano, "estoque");
 
-  const filtro = FILTROS.some((f) => f.id === tipo) ? (tipo as string) : "todos";
+  const termos = await carregarTermos(supabase);
+  const FILTROS = [
+    { id: "todos", label: "Todos" },
+    { id: "servico", label: termos.servicos },
+    { id: "venda", label: termos.produto === "Produto" ? "Produtos de venda" : termos.produtos },
+    { id: "insumo", label: "Insumos" },
+  ];
+  const filtro = IDS_FILTRO.some((f) => f === tipo) ? (tipo as string) : "todos";
   const verMovimentos = aba === "movimentos" && estoqueLiberado;
   const verAnalise = aba === "analise" && estoqueLiberado;
 
@@ -85,7 +89,7 @@ export default async function CatalogoPage(props: { searchParams: Promise<{ tipo
       </div>
 
       {verAnalise ? (
-        <Analise itens={itens} insumos={insumos} movs={(movs60 ?? []) as unknown as { product_id: string; tipo: string; quantidade: number; created_at: string }[]} />
+        <Analise termos={termos} itens={itens} insumos={insumos} movs={(movs60 ?? []) as unknown as { product_id: string; tipo: string; quantidade: number; created_at: string }[]} />
       ) : verMovimentos ? (
         !movs || movs.length === 0 ? (
           <div className="card">
@@ -121,7 +125,7 @@ export default async function CatalogoPage(props: { searchParams: Promise<{ tipo
         )
       ) : (
         <>
-          {ehDono && <NovoItem estoqueLiberado={estoqueLiberado} />}
+          {ehDono && <NovoItem estoqueLiberado={estoqueLiberado} termos={termos} />}
 
           <div className="mb-3 flex flex-wrap gap-2">
             {FILTROS.map((f) => (
@@ -142,7 +146,7 @@ export default async function CatalogoPage(props: { searchParams: Promise<{ tipo
           ) : (
             <ul className="card overflow-hidden">
               {visiveis.map((i, idx) => (
-                <LinhaItem key={i.id} item={i} ehDono={ehDono} estoqueLiberado={estoqueLiberado} insumos={insumos} indice={idx} />
+                <LinhaItem key={i.id} item={i} ehDono={ehDono} estoqueLiberado={estoqueLiberado} insumos={insumos} termos={termos} indice={idx} />
               ))}
             </ul>
           )}
@@ -151,7 +155,6 @@ export default async function CatalogoPage(props: { searchParams: Promise<{ tipo
               O catálogo está liberado no seu plano. O controle de estoque (saldo, alertas e histórico) é do plano Profissional em diante; os itens continuam aparecendo no Checkout.
             </p>
           )}
-          <p className="sr-only">{Object.values(ROTULO_TIPO).join(", ")}</p>
         </>
       )}
     </div>
@@ -161,10 +164,12 @@ export default async function CatalogoPage(props: { searchParams: Promise<{ tipo
 const dinheiro = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
 function Analise({
+  termos,
   itens,
   insumos,
   movs,
 }: {
+  termos: Termos;
   itens: ItemCatalogo[];
   insumos: InsumoOpcao[];
   movs: { product_id: string; tipo: string; quantidade: number; created_at: string }[];
@@ -233,7 +238,7 @@ function Analise({
           <ul className="flex flex-col">
             {compras.map((c) => (
               <li key={c.id} className="flex flex-wrap items-center gap-3 border-b border-border py-2.5 last:border-0">
-                <span className="min-w-[180px] flex-1 text-[13.5px] font-semibold">{c.nome}<span className="ml-2 text-[11.5px] font-normal text-ink-faint">{ROTULO_TIPO[c.tipo]}</span></span>
+                <span className="min-w-[180px] flex-1 text-[13.5px] font-semibold">{c.nome}<span className="ml-2 text-[11.5px] font-normal text-ink-faint">{rotuloTipo(c.tipo, termos)}</span></span>
                 <span className="text-[12.5px] text-ink-soft">saldo {c.estoque_atual} · mínimo {c.estoque_minimo}</span>
                 <span className="rounded-full bg-coral/10 px-3 py-1 text-[12px] font-bold text-coral">comprar {c.comprar}</span>
                 {c.custo > 0 && <span className="w-[90px] text-right text-[12px] text-ink-faint">≈ {dinheiro.format(c.comprar * c.custo)}</span>}

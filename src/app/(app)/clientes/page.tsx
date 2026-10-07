@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight, Download, Filter, ListChecks, Search, Tag, Upload, UserRound, Users } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import PageHeader from "@/components/page-header";
+import { carregarTermos } from "@/lib/termos-servidor";
 import EmptyState from "@/components/empty-state";
 import { ESTILO_ETIQUETA, SEGMENTOS_RFV, formatarTelefone, rotuloSegmento, type CorEtiqueta } from "@/lib/clientes";
 import AdicionarALista from "./adicionar-a-lista";
@@ -19,12 +20,13 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
     data: { user },
   } = await supabase.auth.getUser();
   const { data: perfil } = await supabase.from("users").select("role").eq("id", user?.id ?? "").maybeSingle();
+  const termos = await carregarTermos(supabase);
   if (perfil?.role !== "dono") {
     return (
       <div>
-        <PageHeader icon={Users} title="Clientes" />
+        <PageHeader icon={Users} title={termos.clientes} />
         <div className="card">
-          <EmptyState icon={Users} title="Só o dono do negócio vê a base de clientes completa" text="Você continua acessando o histórico de cada cliente pelas conversas e pela agenda." />
+          <EmptyState icon={Users} title={`Só o dono do negócio vê a base de ${termos.clientes.toLowerCase()} completa`} text="Você continua acessando o histórico de cada cliente pelas conversas e pela agenda." />
         </div>
       </div>
     );

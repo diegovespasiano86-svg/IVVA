@@ -3,6 +3,7 @@ import PageHeader from "@/components/page-header";
 import { Wallet } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { temRecurso } from "@/lib/planos";
+import { carregarTermos } from "@/lib/termos-servidor";
 import CheckoutForm, { type ItemCatalogoCheckout, type PixConfig } from "./checkout-form";
 import EstornarBotao from "./estornar-botao";
 
@@ -30,6 +31,7 @@ export default async function CheckoutPage(props: {
     .maybeSingle();
   const tenant = perfil?.tenants as unknown as { plano: string; pix_chave: string | null; pix_beneficiario: string | null; pix_cidade: string | null } | null;
   const ehDono = perfil?.role === "dono";
+  const termos = await carregarTermos(supabase);
   const temComissao = temRecurso(tenant?.plano, "comissao_automatica");
   const pix: PixConfig = tenant?.pix_chave && tenant.pix_beneficiario && tenant.pix_cidade
     ? { chave: tenant.pix_chave, beneficiario: tenant.pix_beneficiario, cidade: tenant.pix_cidade }
@@ -145,6 +147,7 @@ export default async function CheckoutPage(props: {
         contatos={(contatos ?? []).map((c) => ({ id: c.id, nome: c.nome, telefone: c.telefone ?? null }))}
         profissionais={(profissionais ?? []).map((p) => ({ id: p.id, nome: p.nome, comissao_pct: Number(p.comissao_pct ?? 0) }))}
         catalogo={catalogo}
+        termos={termos}
         prefill={{ appointmentId: prefill.appointment_id, contactId: prefill.contact_id, professionalId: prefill.professional_id, servico: prefill.servico }}
         temComissao={temComissao}
         pix={pix}
@@ -160,8 +163,8 @@ export default async function CheckoutPage(props: {
           <table className="w-full min-w-[640px] text-[13px]">
             <thead>
               <tr className="border-b border-border text-left text-[11px] font-bold uppercase tracking-wide text-ink-faint">
-                <th className="px-4 py-3">Cliente</th>
-                <th className="px-4 py-3">Profissional</th>
+                <th className="px-4 py-3">{termos.cliente}</th>
+                <th className="px-4 py-3">{termos.profissional}</th>
                 <th className="px-4 py-3">Itens</th>
                 <th className="px-4 py-3">Pagamento</th>
                 <th className="px-4 py-3 text-right">Valor</th>

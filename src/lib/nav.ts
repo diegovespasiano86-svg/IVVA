@@ -12,6 +12,7 @@ import {
   Wallet,
   type LucideIcon,
 } from "lucide-react";
+import { rotuloDoMenu, type Termos } from "@/lib/termos";
 
 export type Role = "dono" | "profissional";
 
@@ -128,10 +129,11 @@ export const NAV_GROUPS: NavGroup[] = [
 ];
 
 /** Grupos com só os itens que o perfil pode ver (grupos vazios somem). */
-export function navGroupsForRole(role: Role): NavGroup[] {
+export function navGroupsForRole(role: Role, termos?: Termos): NavGroup[] {
   return NAV_GROUPS.map((g) => ({
     ...g,
-    items: g.items.filter((i) => i.roles.includes(role)),
+    label: termos ? rotuloDoMenu(g.label, termos) : g.label,
+    items: g.items.filter((i) => i.roles.includes(role)).map((i) => ({ ...i, label: termos ? rotuloDoMenu(i.label, termos) : i.label })),
   })).filter((g) => g.items.length > 0);
 }
 

@@ -19,6 +19,7 @@ import { Logo } from "@/components/logo";
 import MotionEffects from "@/components/motion-effects";
 import Aparencia from "@/components/aparencia";
 import { navGroupsForRole, type NavGroup, type Role } from "@/lib/nav";
+import type { Termos } from "@/lib/termos";
 
 const MOBILE_PRIORITY = ["inicio", "conversas", "agenda", "clientes"];
 
@@ -54,6 +55,7 @@ export default function AppShell({
   nome,
   alertHrefs,
   roboStatus,
+  termos,
   children,
 }: {
   role: Role;
@@ -63,11 +65,13 @@ export default function AppShell({
   alertHrefs: string[];
   /** estado real do robô (só o dono vê); null = não mostrar */
   roboStatus: "ativo" | "pausado" | "sem-whatsapp" | null;
+  /** vocabulário do nicho (paciente, aluno, corretor...) */
+  termos?: Termos;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const groups = useMemo(() => navGroupsForRole(role), [role]);
+  const groups = useMemo(() => navGroupsForRole(role, termos), [role, termos]);
 
   const [hovered, setHovered] = useState(false);
   const pinned = useSyncExternalStore(subscribePin, readPin, () => false);

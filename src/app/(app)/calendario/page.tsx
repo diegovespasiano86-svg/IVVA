@@ -1,4 +1,5 @@
 import PageHeader from "@/components/page-header";
+import { carregarTermos } from "@/lib/termos-servidor";
 import { CalendarDays } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { criarAgendamento } from "./actions";
@@ -33,6 +34,7 @@ export default async function CalendarioPage() {
     consultaProfissionais = consultaProfissionais.eq("id", escopo?.professionalId ?? "00000000-0000-0000-0000-000000000000");
   }
 
+  const termos = await carregarTermos(supabase);
   const [{ data: profissionais }, { data: contatos }, { data: agendamentos }, { data: usuariosEquipe }, { data: convitesPendentes }, { data: tenantPlano }] =
     await Promise.all([
       consultaProfissionais,
@@ -98,7 +100,7 @@ export default async function CalendarioPage() {
 
   return (
     <div>
-      <PageHeader icon={CalendarDays} title="Calendário" subtitle="Agenda de todos os profissionais — inclui o que o robô marca sozinho pelo WhatsApp." />
+      <PageHeader icon={CalendarDays} title="Calendário" subtitle={`Agenda de todos os ${termos.profissionais.toLowerCase()} — inclui o que o robô marca sozinho pelo WhatsApp.`} />
 
       {souDono && (
         <ProfissionaisCard
@@ -196,7 +198,7 @@ export default async function CalendarioPage() {
         </div>
       </details>
 
-      <CalendarView eventos={eventos} profissionais={profissionais ?? []} />
+      <CalendarView eventos={eventos} profissionais={profissionais ?? []} termos={{ profissional: termos.profissional, servico: termos.servico }} />
     </div>
   );
 }

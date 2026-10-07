@@ -1,7 +1,8 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
-import { custoDaFicha } from "@/lib/catalogo";
+import { custoDaFicha, rotuloTipo } from "@/lib/catalogo";
+import type { Termos } from "@/lib/termos";
 import { criarItem, editarItem, movimentarEstoque, alternarAtivo, ajusteRapido, salvarFicha, type EstadoCatalogo } from "./actions";
 
 export type ItemCatalogo = {
@@ -23,7 +24,6 @@ export type ItemCatalogo = {
 export type InsumoOpcao = { id: string; nome: string; custo: number };
 
 const ESTADO: EstadoCatalogo = { erro: null };
-export const ROTULO_TIPO: Record<ItemCatalogo["tipo"], string> = { servico: "Serviço", venda: "Produto de venda", insumo: "Insumo de uso" };
 const dinheiro = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
 function Erro({ estado }: { estado: EstadoCatalogo }) {
@@ -31,7 +31,7 @@ function Erro({ estado }: { estado: EstadoCatalogo }) {
   return null;
 }
 
-export function NovoItem({ estoqueLiberado }: { estoqueLiberado: boolean }) {
+export function NovoItem({ estoqueLiberado, termos }: { estoqueLiberado: boolean; termos: Termos }) {
   const [estado, acao, pendente] = useActionState(criarItem, ESTADO);
   const [tipo, setTipo] = useState<ItemCatalogo["tipo"]>("venda");
   const [controla, setControla] = useState(false);
@@ -51,8 +51,8 @@ export function NovoItem({ estoqueLiberado }: { estoqueLiberado: boolean }) {
         <div>
           <label htmlFor="n-tipo" className="!mb-1">Tipo</label>
           <select id="n-tipo" name="tipo" value={tipo} onChange={(e) => setTipo(e.target.value as ItemCatalogo["tipo"])} className="select w-[170px]">
-            <option value="servico">Serviço</option>
-            <option value="venda">Produto de venda</option>
+            <option value="servico">{termos.servico}</option>
+            <option value="venda">{rotuloTipo("venda", termos)}</option>
             <option value="insumo">Insumo de uso</option>
           </select>
         </div>
@@ -292,7 +292,7 @@ function FichaPanel({ item, insumos, aoFechar }: { item: ItemCatalogo; insumos: 
   );
 }
 
-export function LinhaItem({ item, ehDono, estoqueLiberado, insumos, indice = 0 }: { item: ItemCatalogo; ehDono: boolean; estoqueLiberado: boolean; insumos: InsumoOpcao[]; indice?: number }) {
+export function LinhaItem({ item, ehDono, estoqueLiberado, insumos, termos, indice = 0 }: { item: ItemCatalogo; ehDono: boolean; estoqueLiberado: boolean; insumos: InsumoOpcao[]; termos: Termos; indice?: number }) {
   const [painel, setPainel] = useState<"editar" | "movimento" | "ficha" | null>(null);
   const custoFicha = custoDaFicha(item.ficha, insumos);
   const fechar = () => setPainel(null);
@@ -304,7 +304,7 @@ export function LinhaItem({ item, ehDono, estoqueLiberado, insumos, indice = 0 }
         <div className="min-w-[180px] flex-1">
           <p className="text-[13.5px] font-bold">{item.nome}{!item.ativo && <span className="ml-2 text-[11px] font-semibold text-ink-faint">(arquivado)</span>}</p>
           <p className="text-[11.5px] text-ink-faint">
-            {ROTULO_TIPO[item.tipo]}{item.categoria ? ` · ${item.categoria}` : ""}{item.duracao_minutos ? ` · ${item.duracao_minutos} min` : ""}
+            {rotuloTipo(item.tipo, termos)}{item.categoria ? ` · ${item.categoria}` : ""}{item.duracao_minutos ? ` · ${item.duracao_minutos} min` : ""}
             {item.tipo === "servico" && (item.ficha?.length ?? 0) > 0 && (
               <span className="ml-1.5 font-semibold text-teal">· usa {item.ficha!.length} {item.ficha!.length === 1 ? "insumo" : "insumos"} (custo {dinheiro.format(custoFicha)})</span>
             )}

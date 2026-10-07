@@ -3,6 +3,7 @@ import PageHeader from "@/components/page-header";
 import { Users } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { carregarTermos } from "@/lib/termos-servidor";
 import { criarContato, confirmarContatoHistorico, ignorarContatoHistorico } from "./actions";
 import CrmBoard from "./board";
 import StageManager from "./stage-manager";
@@ -34,6 +35,7 @@ export default async function CrmPage({
 }) {
   const { view } = await searchParams;
   const supabase = await createClient();
+  const termos = await carregarTermos(supabase);
 
   const {
     data: { user },
@@ -117,7 +119,7 @@ export default async function CrmPage({
 
   return (
     <div>
-      <PageHeader icon={Users} title="CRM + Funil de Vendas" subtitle={<>{souDono ? "Funil de clientes" : "Seus contatos"} — {listaContatos.length}{" "} {listaContatos.length === 1 ? "contato" : "contatos"} no total.</>} actions={<><div className="flex items-center gap-2">
+      <PageHeader icon={Users} title="CRM + Funil de Vendas" subtitle={<>{souDono ? `Funil de ${termos.clientes.toLowerCase()}` : "Seus contatos"} — {listaContatos.length}{" "} {listaContatos.length === 1 ? "contato" : "contatos"} no total.</>} actions={<><div className="flex items-center gap-2">
           {souDono && aba === "funil" && (
             <StageManager estagios={listaEstagios} />
           )}

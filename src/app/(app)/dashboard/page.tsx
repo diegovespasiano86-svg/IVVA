@@ -3,6 +3,7 @@ import { LineAreaChart, HBarList, VBarChart, StatusTile, CardVazio } from "@/com
 import { FeatureLock } from "@/components/feature-lock";
 import { temRecurso, nomePlano } from "@/lib/planos";
 import PrimeirosPassos from "@/components/primeiros-passos";
+import { termosDoSegmento } from "@/lib/termos";
 import KpiCard from "@/components/kpi-card";
 import { CalendarDays, MessageSquare, Users, Wallet } from "lucide-react";
 
@@ -16,10 +17,11 @@ export default async function DashboardPage() {
   } = await supabase.auth.getUser();
   const { data: perfil } = await supabase
     .from("users")
-    .select("nome, role, tenants(nome, plano)")
+    .select("nome, role, tenants(nome, plano, segmento)")
     .eq("id", user?.id ?? "")
     .maybeSingle();
   const plano = (perfil?.tenants as unknown as { plano: string } | null)?.plano ?? "essencial";
+  const termos = termosDoSegmento((perfil?.tenants as unknown as { segmento: string | null } | null)?.segmento);
   const temSac = temRecurso(plano, "sac_avaliacoes");
   const ehDono = perfil?.role === "dono";
   const primeiroNome = (perfil?.nome ?? "").trim().split(/\s+/)[0] || "";
@@ -193,12 +195,12 @@ export default async function DashboardPage() {
         </div>
       </section>
 
-      {ehDono && <PrimeirosPassos />}
+      {ehDono && <PrimeirosPassos termos={termos} />}
 
       <div className={`grid grid-cols-2 gap-3.5 ${ehDono ? "md:grid-cols-4" : "md:grid-cols-3"}`}>
         <KpiCard label="Conversas este mês" numero={conversas ?? 0} icon={MessageSquare} spark={pontosLinha.map((p) => p.valor)} />
         <KpiCard label="Contatos no CRM" numero={contatos ?? 0} icon={Users} />
-        <KpiCard label="Agendamentos futuros" numero={agendamentos ?? 0} icon={CalendarDays} />
+        <KpiCard label={termos.agendamentosFuturos} numero={agendamentos ?? 0} icon={CalendarDays} />
         {/* Valores do negócio são do administrador. */}
         {ehDono && <KpiCard label="Faturamento do mês" value={money.format(faturamentoMes)} icon={Wallet} accent />}
       </div>
