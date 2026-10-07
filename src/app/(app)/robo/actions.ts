@@ -55,7 +55,7 @@ export async function atualizarIdentidadeAssistente(
   }
 
   revalidatePath("/robo");
-  return undefined;
+  return "ok";
 }
 
 export async function atualizarBotSettings(
@@ -81,9 +81,12 @@ export async function atualizarBotSettings(
 
   const plano = (perfil.tenants as unknown as { plano: string } | null)?.plano;
   const audioLiberado = temRecurso(plano, "resposta_por_audio");
+  const filaEsperaLiberada = temRecurso(plano, "fila_espera");
+  const reengajamentoLiberado = temRecurso(plano, "reengajamento_automatico");
+  const adminWhatsappLiberado = temRecurso(plano, "admin_pelo_whatsapp");
 
   const posVendaDelay = String(formData.get("pos_venda_delay") ?? "1d");
-  const novoPin = String(formData.get("admin_pin") ?? "").trim();
+  const novoPin = adminWhatsappLiberado ? String(formData.get("admin_pin") ?? "").trim() : "";
 
   if (novoPin && !/^\d{4,6}$/.test(novoPin)) {
     return "O PIN precisa ter de 4 a 6 dígitos numéricos.";
@@ -96,15 +99,15 @@ export async function atualizarBotSettings(
     pos_venda_mensagem: String(formData.get("pos_venda_mensagem") ?? "").trim() || null,
     pedir_instagram_primeiro_contato: formData.get("pedir_instagram_primeiro_contato") === "on",
     pedir_email_primeiro_contato: formData.get("pedir_email_primeiro_contato") === "on",
-    reengajamento_ativo: formData.get("reengajamento_ativo") === "on",
+    reengajamento_ativo: reengajamentoLiberado && formData.get("reengajamento_ativo") === "on",
     reengajamento_dias_inatividade: Number(formData.get("reengajamento_dias_inatividade") ?? 60) || 60,
     link_avaliacao_google: String(formData.get("link_avaliacao_google") ?? "").trim() || null,
     aniversario_ativo: formData.get("aniversario_ativo") === "on",
     aniversario_dias_antecedencia: Number(formData.get("aniversario_dias_antecedencia") ?? 0) || 0,
     aniversario_mensagem: String(formData.get("aniversario_mensagem") ?? "").trim() || null,
-    admin_whatsapp_numero: String(formData.get("admin_whatsapp_numero") ?? "").trim() || null,
+    admin_whatsapp_numero: adminWhatsappLiberado ? String(formData.get("admin_whatsapp_numero") ?? "").trim() || null : null,
     upsell_template_nome: String(formData.get("upsell_template_nome") ?? "").trim() || null,
-    lista_espera_ativo: formData.get("lista_espera_ativo") === "on",
+    lista_espera_ativo: filaEsperaLiberada && formData.get("lista_espera_ativo") === "on",
     recuperar_conversa_ativo: formData.get("recuperar_conversa_ativo") === "on",
     recuperar_conversa_primeiro_toque_min:
       Number(formData.get("recuperar_conversa_primeiro_toque_min") ?? 45) || 45,
@@ -132,5 +135,5 @@ export async function atualizarBotSettings(
   }
 
   revalidatePath("/robo");
-  return undefined;
+  return "ok";
 }

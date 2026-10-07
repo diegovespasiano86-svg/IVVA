@@ -1,6 +1,7 @@
 import EmptyState from "@/components/empty-state";
 import { Wallet } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { temRecurso } from "@/lib/planos";
 import { registrarPagamento } from "./actions";
 
 const FORMAS: { key: string; label: string }[] = [
@@ -20,6 +21,11 @@ export default async function CheckoutPage(props: {
 }) {
   const prefill = await props.searchParams;
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data: perfilPlano } = await supabase.from("users").select("tenants(plano)").eq("id", user?.id ?? "").maybeSingle();
+  const temComissao = temRecurso((perfilPlano?.tenants as unknown as { plano: string } | null)?.plano, "comissao_automatica");
 
   const inicioHoje = new Date();
   inicioHoje.setHours(0, 0, 0, 0);
@@ -82,7 +88,7 @@ export default async function CheckoutPage(props: {
             Checkout
           </h1>
           <p className="text-[13.5px] text-ink-soft">
-            Registro de pagamento com comissão calculada automaticamente.
+            {temComissao ? "Registro de pagamento com comissão calculada automaticamente." : "Registro de pagamentos dos atendimentos."}
           </p>
         </div>
         <div className="flex gap-6 text-right">
@@ -94,6 +100,7 @@ export default async function CheckoutPage(props: {
               {money.format(faturamentoTotal)}
             </p>
           </div>
+          {temComissao && (
           <div>
             <p className="text-[11px] font-bold uppercase tracking-wide text-ink-faint">
               Comissão gerada
@@ -102,6 +109,7 @@ export default async function CheckoutPage(props: {
               {money.format(comissaoTotal)}
             </p>
           </div>
+          )}
         </div>
       </div>
 
@@ -184,7 +192,7 @@ export default async function CheckoutPage(props: {
             <option value="">Selecione…</option>
             {(profissionais ?? []).map((p) => (
               <option key={p.id} value={p.id}>
-                {p.nome} ({p.comissao_pct}%)
+                {temComissao ? `${p.nome} (${p.comissao_pct}%)` : p.nome}
               </option>
             ))}
           </select>
@@ -262,7 +270,7 @@ export default async function CheckoutPage(props: {
                 <th className="px-4 py-3">Serviço</th>
                 <th className="px-4 py-3">Pagamento</th>
                 <th className="px-4 py-3 text-right">Valor</th>
-                <th className="px-4 py-3 text-right">Comissão</th>
+                {temComissao && <th className="px-4 py-3 text-right">Comissão</th>}
               </tr>
             </thead>
             <tbody>
@@ -289,9 +297,11 @@ export default async function CheckoutPage(props: {
                     <td className="px-4 py-3 text-right font-semibold">
                       {money.format(Number(p.valor_total))}
                     </td>
-                    <td className="px-4 py-3 text-right text-purple">
-                      {money.format(Number(p.comissao_calculada))}
-                    </td>
+                    {temComissao && (
+                      <td className="px-4 py-3 text-right text-purple">
+                        {money.format(Number(p.comissao_calculada))}
+                      </td>
+                    )}
                   </tr>
                 );
               })}

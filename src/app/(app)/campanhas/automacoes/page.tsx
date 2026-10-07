@@ -3,6 +3,7 @@ import { ArrowLeft, Bell, Cake, Clock, HeartHandshake, MessageCircleHeart, Mic, 
 import { createClient } from "@/lib/supabase/server";
 import PageHeader from "@/components/page-header";
 import EmptyState from "@/components/empty-state";
+import { temRecurso, planoMinimoPara, nomePlano, type Recurso } from "@/lib/planos";
 
 type Cfg = {
   pos_venda_ativo?: boolean;
@@ -16,14 +17,15 @@ type Cfg = {
   link_avaliacao_google?: string | null;
 };
 
-type Automacao = { titulo: string; texto: string; icon: LucideIcon; ativa: boolean; detalhe?: string; fixa?: boolean };
+type Automacao = { titulo: string; texto: string; icon: LucideIcon; ativa: boolean; detalhe?: string; fixa?: boolean; recurso?: Recurso };
 
 export default async function AutomacoesPage() {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const { data: perfil } = await supabase.from("users").select("role").eq("id", user?.id ?? "").maybeSingle();
+  const { data: perfil } = await supabase.from("users").select("role, tenants(plano)").eq("id", user?.id ?? "").maybeSingle();
+  const plano = (perfil?.tenants as unknown as { plano: string } | null)?.plano;
 
   if (perfil?.role !== "dono") {
     return (
@@ -47,14 +49,15 @@ export default async function AutomacoesPage() {
       texto: "Cria tarefas para a equipe chamar clientes que sumiram.",
       icon: Users,
       ativa: !!c.reengajamento_ativo,
+      recurso: "reengajamento_automatico",
       detalhe: c.reengajamento_ativo && c.reengajamento_dias_inatividade ? `Após ${c.reengajamento_dias_inatividade} dias sem voltar` : undefined,
     },
     { titulo: "Aniversário", texto: "Lembra a equipe de parabenizar quem faz aniversário.", icon: Cake, ativa: !!c.aniversario_ativo },
-    { titulo: "Lista de espera", texto: "Avisa o próximo da fila quando surge uma vaga.", icon: Clock, ativa: !!c.lista_espera_ativo },
+    { titulo: "Lista de espera", texto: "Avisa o próximo da fila quando surge uma vaga.", icon: Clock, ativa: !!c.lista_espera_ativo, recurso: "fila_espera" },
     { titulo: "Recuperar conversa esfriada", texto: "Retoma a conversa de quem pediu horário e não confirmou.", icon: RefreshCw, ativa: !!c.recuperar_conversa_ativo },
     { titulo: "Pedido de avaliação no Google", texto: "Convida clientes satisfeitos a avaliar o negócio.", icon: Star, ativa: !!c.link_avaliacao_google, detalhe: c.link_avaliacao_google ? "Link configurado" : "Falta informar o link" },
     { titulo: "Indicação com recompensa", texto: "Estimula clientes a indicarem amigos.", icon: MessageCircleHeart, ativa: !!c.indicacao_recompensa_ativo },
-    { titulo: "Resposta por áudio", texto: "O robô responde em áudio quando o cliente manda áudio.", icon: Mic, ativa: !!c.responder_audio_ativo },
+    { titulo: "Resposta por áudio", texto: "O robô responde em áudio quando o cliente manda áudio.", icon: Mic, ativa: !!c.responder_audio_ativo, recurso: "resposta_por_audio" },
   ];
 
   return (
@@ -75,17 +78,19 @@ export default async function AutomacoesPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {lista.map((a) => {
           const Icon = a.icon;
+          const bloqueada = !!a.recurso && !temRecurso(plano, a.recurso);
+          const ativa = a.ativa && !bloqueada;
           return (
-            <section key={a.titulo} className="card card-lift flex flex-col px-5 py-5">
+            <section key={a.titulo} className={`card card-lift flex flex-col px-5 py-5 ${bloqueada ? "opacity-70" : ""}`}>
               <div className="mb-3 flex items-start justify-between gap-2">
-                <span className={`flex h-10 w-10 items-center justify-center rounded-xl ${a.ativa ? "bg-[#e3f4ef] text-teal" : "bg-surface-soft text-ink-faint"}`}>
+                <span className={`flex h-10 w-10 items-center justify-center rounded-xl ${ativa ? "bg-[#e3f4ef] text-teal" : "bg-surface-soft text-ink-faint"}`}>
                   <Icon size={19} />
                 </span>
-                <span className={`badge ${a.ativa ? "badge-success" : "badge-neutral"}`}>{a.fixa ? "Sempre ligada" : a.ativa ? "Ligada" : "Desligada"}</span>
+                <span className={`badge ${ativa ? "badge-success" : "badge-neutral"}`}>{bloqueada ? `A partir do ${nomePlano(planoMinimoPara(a.recurso!))}` : a.fixa ? "Sempre ligada" : ativa ? "Ligada" : "Desligada"}</span>
               </div>
               <h2 className="text-[14.5px] font-extrabold">{a.titulo}</h2>
               <p className="mt-1 flex-1 text-[12.5px] leading-snug text-ink-soft">{a.texto}</p>
-              {a.detalhe && <p className="mt-2 text-[11.5px] font-semibold text-purple">{a.detalhe}</p>}
+              {!bloqueada && a.detalhe && <p className="mt-2 text-[11.5px] font-semibold text-purple">{a.detalhe}</p>}
             </section>
           );
         })}

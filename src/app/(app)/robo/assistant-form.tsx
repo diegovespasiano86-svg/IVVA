@@ -180,8 +180,10 @@ export default function AssistantForm({ identidade }: { identidade: Identidade }
         />
       </div>
 
-      {error && (
-        <p className="text-[12.5px] font-semibold text-coral">{error}</p>
+      {error === "ok" ? (
+        <p role="status" className="text-[12.5px] font-semibold text-teal">Personalidade salva.</p>
+      ) : (
+        error && <p className="text-[12.5px] font-semibold text-coral">{error}</p>
       )}
 
       <button

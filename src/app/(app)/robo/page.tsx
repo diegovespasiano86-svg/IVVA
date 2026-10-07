@@ -32,6 +32,9 @@ export default async function RoboPage() {
   } | null;
 
   const audioLiberado = temRecurso(tenant?.plano, "resposta_por_audio");
+  const filaEsperaLiberada = temRecurso(tenant?.plano, "fila_espera");
+  const reengajamentoLiberado = temRecurso(tenant?.plano, "reengajamento_automatico");
+  const adminWhatsappLiberado = temRecurso(tenant?.plano, "admin_pelo_whatsapp");
 
   if (!isDono) {
     return (
@@ -115,7 +118,13 @@ export default async function RoboPage() {
             Pós-venda, reengajamento, aniversário e o canal de comandos que
             você usa pra falar com o robô como dono.
           </p>
-          <BotSettingsForm settings={botSettings} audioLiberado={audioLiberado} />
+          <BotSettingsForm
+            settings={botSettings}
+            audioLiberado={audioLiberado}
+            filaEsperaLiberada={filaEsperaLiberada}
+            reengajamentoLiberado={reengajamentoLiberado}
+            adminWhatsappLiberado={adminWhatsappLiberado}
+          />
         </div>
       </div>
     </div>

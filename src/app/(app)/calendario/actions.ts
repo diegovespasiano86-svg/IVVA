@@ -60,6 +60,8 @@ export async function criarAgendamento(formData: FormData) {
 // de acesso escolhido pelo administrador. Aqui fica só o atalho do próprio administrador que também
 // atende clientes: coloca ele na agenda sem precisar de convite.
 
+import { bloqueioNovoProfissional } from "@/lib/limite-profissionais";
+
 export type EuAtendoState = { erro: string | null };
 
 export async function euTambemAtendo(_prev: EuAtendoState): Promise<EuAtendoState> {
@@ -76,6 +78,9 @@ export async function euTambemAtendo(_prev: EuAtendoState): Promise<EuAtendoStat
     .maybeSingle();
   if (!perfil || perfil.role !== "dono") return { erro: "Só o administrador pode fazer isso." };
   if (perfil.professional_id) return { erro: null };
+
+  const bloqueio = await bloqueioNovoProfissional(supabase, perfil.tenant_id);
+  if (bloqueio) return { erro: bloqueio };
 
   const { data: criado, error } = await supabase
     .from("professionals")

@@ -7,6 +7,8 @@ import EmptyState from "@/components/empty-state";
 import Barras from "@/components/barras";
 import PrintButton from "@/components/print-button";
 import AvaliacoesAba from "./avaliacoes-aba";
+import { FeatureLock } from "@/components/feature-lock";
+import { temRecurso } from "@/lib/planos";
 import DesempenhoRobo from "../conversas/dashboard";
 import FaturamentoAba from "./faturamento-aba";
 import { LineAreaChart } from "@/components/charts";
@@ -41,7 +43,8 @@ export default async function RelatoriosPage({ searchParams }: { searchParams: P
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const { data: perfil } = await supabase.from("users").select("role").eq("id", user?.id ?? "").maybeSingle();
+  const { data: perfil } = await supabase.from("users").select("role, tenants(plano)").eq("id", user?.id ?? "").maybeSingle();
+  const plano = (perfil?.tenants as unknown as { plano: string } | null)?.plano;
   if (perfil?.role !== "dono") {
     return (
       <div>
@@ -86,10 +89,16 @@ export default async function RelatoriosPage({ searchParams }: { searchParams: P
       {aba === "atendimento" && <Atendimento supabase={supabase} desde={desde} />}
       {aba === "financeiro" && <Financeiro supabase={supabase} desde={desde} periodo={periodo} />}
       {aba === "clientes" && <Clientes supabase={supabase} desde={desde} periodo={periodo} />}
-      {aba === "avaliacoes" && <AvaliacoesAba supabase={supabase} desde={desde} />}
+      {aba === "avaliacoes" && (
+        <FeatureLock liberado={temRecurso(plano, "sac_avaliacoes")} titulo="Avaliações dos clientes" planoNecessario="Profissional" variante="chart" className="px-4 py-4">
+          <AvaliacoesAba supabase={supabase} desde={desde} />
+        </FeatureLock>
+      )}
       {aba === "robo" && <DesempenhoRobo desde={desde} />}
       {aba === "faturamento" && (
-        <FaturamentoAba supabase={supabase} desde={desde} periodoChave={periodo.chave} profissionalId={sp.profissional} />
+        <FeatureLock liberado={temRecurso(plano, "comissao_automatica")} titulo="Faturamento e comissões por profissional" planoNecessario="Profissional" variante="chart" className="px-4 py-4">
+          <FaturamentoAba supabase={supabase} desde={desde} periodoChave={periodo.chave} profissionalId={sp.profissional} />
+        </FeatureLock>
       )}
 
       <section className="card mt-6 px-5 py-5 print:hidden">

@@ -1,3 +1,4 @@
+import { bloqueioNovoProfissional } from "@/lib/limite-profissionais";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { emailConfigurado, emailConviteProfissional, enviarEmail } from "./email";
 import type { PapelConvite } from "./acessos";
@@ -37,6 +38,11 @@ export async function criarConviteProfissional(params: {
 
   if (!EMAIL_VALIDO.test(email)) {
     return { erro: "Esse e-mail não parece válido.", link: null, emailEnviado: false, emailMotivo: null };
+  }
+
+  if (atende && !professionalId) {
+    const bloqueio = await bloqueioNovoProfissional(supabase, tenantId);
+    if (bloqueio) return { erro: bloqueio, link: null, emailEnviado: false, emailMotivo: null };
   }
 
   // Convites antigos pendentes do mesmo profissional ou do mesmo e-mail deixam de valer.

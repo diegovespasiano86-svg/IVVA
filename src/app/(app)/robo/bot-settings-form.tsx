@@ -31,9 +31,15 @@ type BotSettings = {
 export default function BotSettingsForm({
   settings,
   audioLiberado,
+  filaEsperaLiberada,
+  reengajamentoLiberado,
+  adminWhatsappLiberado,
 }: {
   settings: BotSettings;
   audioLiberado: boolean;
+  filaEsperaLiberada: boolean;
+  reengajamentoLiberado: boolean;
+  adminWhatsappLiberado: boolean;
 }) {
   const [error, formAction, pending] = useActionState(
     atualizarBotSettings,
@@ -92,6 +98,7 @@ export default function BotSettingsForm({
             />
           </div>
 
+          <FeatureLock liberado={filaEsperaLiberada} titulo="Lista de espera automática" planoNecessario="Profissional" variante="list" className="px-4 py-4">
           <div className="border-t border-teal/20 pt-4">
             <label className="mb-2 flex items-center gap-2 text-[12.5px] font-semibold">
               <input className="toggle"
@@ -108,6 +115,7 @@ export default function BotSettingsForm({
               próximo da fila — sem essa vaga ficar perdida.
             </p>
           </div>
+          </FeatureLock>
 
           <div className="border-t border-teal/20 pt-4">
             <label className="mb-2 flex items-center gap-2 text-[12.5px] font-semibold">
@@ -247,6 +255,7 @@ export default function BotSettingsForm({
       </section>
 
       <section className="border-t border-border pt-4">
+        <FeatureLock liberado={reengajamentoLiberado} titulo="Reengajamento de clientes inativos" planoNecessario="Profissional" variante="list" className="px-4 py-4">
         <p className="mb-2.5 text-[13px] font-bold">Reengajamento</p>
         <label className="mb-2 flex items-center gap-2 text-[12.5px] font-semibold">
           <input className="toggle"
@@ -269,6 +278,7 @@ export default function BotSettingsForm({
             className="input w-32"
           />
         </div>
+        </FeatureLock>
       </section>
 
       <section className="border-t border-border pt-4">
@@ -311,6 +321,7 @@ export default function BotSettingsForm({
       </section>
 
       <section className="border-t border-border pt-4">
+        <FeatureLock liberado={adminWhatsappLiberado} titulo="Comandos do dono pelo WhatsApp" planoNecessario="Completo" variante="list" className="px-4 py-4">
         <p className="mb-1 text-[13px] font-bold">Canal do dono (comandos via WhatsApp)</p>
         <p className="mb-2.5 text-[12px] text-ink-faint">
           Cadastre seu número e um PIN pra dar comandos ao robô direto pelo
@@ -371,10 +382,13 @@ export default function BotSettingsForm({
             ser submetido e aprovado no Meta Business).
           </p>
         </div>
+        </FeatureLock>
       </section>
 
-      {error && (
-        <p className="text-[12.5px] font-semibold text-coral">{error}</p>
+      {error === "ok" ? (
+        <p role="status" className="text-[12.5px] font-semibold text-teal">Configurações salvas.</p>
+      ) : (
+        error && <p className="text-[12.5px] font-semibold text-coral">{error}</p>
       )}
 
       <button

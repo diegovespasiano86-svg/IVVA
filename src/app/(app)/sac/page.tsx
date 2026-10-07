@@ -3,6 +3,8 @@ import EmptyState from "@/components/empty-state";
 import { LifeBuoy } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { FeatureLock } from "@/components/feature-lock";
+import { temRecurso } from "@/lib/planos";
 
 function formatarRelativo(data: string) {
   const diffMs = Date.now() - new Date(data).getTime();
@@ -27,6 +29,20 @@ function formatarDataHora(data: string) {
 
 export default async function SacPage() {
   const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data: perfilPlano } = await supabase.from("users").select("tenants(plano)").eq("id", user?.id ?? "").maybeSingle();
+  const plano = (perfilPlano?.tenants as unknown as { plano: string } | null)?.plano;
+  if (!temRecurso(plano, "sac_avaliacoes")) {
+    return (
+      <div>
+        <PageHeader icon={LifeBuoy} title="Central de SAC" subtitle="Quando a ivva precisa de um humano, o ticket já chega com a conversa anexada." />
+        <FeatureLock liberado={false} titulo="Central de SAC" planoNecessario="Profissional" variante="list" className="px-4 py-4" />
+      </div>
+    );
+  }
 
   const inicio14dias = new Date();
   inicio14dias.setDate(inicio14dias.getDate() - 14);

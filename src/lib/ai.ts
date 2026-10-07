@@ -4,6 +4,7 @@
 import { createPixPaymentIntent } from "@/lib/stripe";
 import { sendWhatsAppText } from "@/lib/whatsapp";
 import { podeEnviarAutomatico } from "@/lib/automacao";
+import { temRecurso } from "@/lib/planos";
 
 const ANTHROPIC_API = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_VERSION = "2023-06-01";
@@ -44,6 +45,8 @@ export type ContextoConversa = {
    * verdade; qualquer outra é respondida com um resultado de mentira e
    * NADA é gravado nem enviado. Desligado por padrão. */
   simulacao?: boolean;
+  /** Plano do negócio (essencial/profissional/completo): define quais ferramentas o robô pode usar. */
+  plano?: string | null;
 };
 
 export type ResultadoIA = {
@@ -68,6 +71,8 @@ function headers() {
 }
 
 function montarSystemPrompt(ctx: ContextoConversa) {
+  const podeFila = temRecurso(ctx.plano, "fila_espera");
+  const podeMudarPeloChat = temRecurso(ctx.plano, "cancelamento_pelo_chat");
   const id = ctx.identidadeAssistente ?? {};
   const nomeAssistente = id.nome_assistente?.trim() || "a recepção";
   const tom = id.tom?.trim() || "cordial, direto e natural — nada robótico";
@@ -108,9 +113,11 @@ function montarSystemPrompt(ctx: ContextoConversa) {
     `Quando o cliente quiser marcar, remarcar ou cancelar um horário, siga sempre esta ordem:`,
     `1. Chame consultar_disponibilidade pra ver horários realmente livres — nunca invente ou suponha um horário.`,
     `2. Ofereça 2-3 opções reais (data + hora + profissional, se houver mais de um) e espere o cliente escolher/confirmar.`,
-    `3. Só depois da confirmação explícita do cliente, chame criar_agendamento (ou remarcar_ou_cancelar_agendamento pra mudar algo já marcado).`,
+    `3. Só depois da confirmação explícita do cliente, chame criar_agendamento ${podeMudarPeloChat ? "(ou remarcar_ou_cancelar_agendamento pra mudar algo já marcado)" : ""}.`,
     `4. NUNCA diga algo como "vou confirmar com a equipe e te retorno" — você tem acesso direto à agenda, então ou você resolve na hora chamando as ferramentas, ou explica o que falta pro cliente decidir. Depois de criar/remarcar/cancelar um agendamento, sua resposta final SEMPRE repete o horário exato marcado (dia, hora e profissional) — nunca deixa a confirmação implícita.`,
-    `Se não achar nenhum horário livre nos critérios pedidos, diga isso claramente e ofereça duas coisas: outro dia/profissional, E entrar na lista de espera (ferramenta entrar_lista_espera) daquele profissional específico — explique que avisamos automaticamente assim que uma vaga abrir. Só chame a ferramenta depois que o cliente topar.`,
+    podeFila
+      ? `Se não achar nenhum horário livre nos critérios pedidos, diga isso claramente e ofereça duas coisas: outro dia/profissional, E entrar na lista de espera (ferramenta entrar_lista_espera) daquele profissional específico — explique que avisamos automaticamente assim que uma vaga abrir. Só chame a ferramenta depois que o cliente topar.`
+      : `Se não achar nenhum horário livre nos critérios pedidos, diga isso claramente e ofereça outro dia ou outro profissional. Não ofereça lista de espera.`,
   ]
     .filter(Boolean)
     .join("\n\n");
@@ -137,6 +144,8 @@ function montarSystemPrompt(ctx: ContextoConversa) {
     horario ? `Horário de atendimento humano: ${horario}.` : "",
     regras ? `Regras específicas desse negócio:\n${regras}` : "",
     `Se o cliente pedir claramente pra falar com uma pessoa, reclamar de algo sério, ou se você não souber responder com segurança, chame a ferramenta solicitar_atendimento_humano explicando o motivo — não invente informação que você não tem.`,
+    podeMudarPeloChat ? "" : `Neste atendimento você NÃO remarca nem cancela horários já marcados: se o cliente pedir, chame solicitar_atendimento_humano explicando o pedido e diga que a equipe confirma em breve.`,
+    `Formatação: o WhatsApp só entende *negrito* com UM asterisco de cada lado. Nunca use ** (dois asteriscos), # de título, tabelas nem listas em markdown; para listar, use uma linha por item começando com um traço simples e sem negrito.`,
     `Se o cliente pedir pra parar de receber mensagem automática do negócio (não confundir com cancelar agendamento), chame parar_mensagens_automaticas e confirme educadamente — deixe claro que ele continua podendo falar com vocês quando quiser, só não vai mais receber mensagem que o negócio manda por conta própria.`,
     `Se a mensagem do cliente for literalmente "[Cliente mandou um áudio, mas não consegui converter pra texto ainda]", isso significa que a transcrição de voz não está disponível agora — peça educadamente pra ele escrever a mensagem, sem fingir que ouviu algo.`,
     `Se vier uma imagem anexada, ela é real (uma foto que o cliente mandou) — descreva o que vê com naturalidade e responda ao que ele quis dizer com a foto (referência de corte, foto de um problema, etc.), sem inventar detalhes que não dá pra ver.`,
@@ -285,7 +294,17 @@ type ClaudeMessage = {
   content: string | ClaudeContentBlock[];
 };
 
-async function chamarClaude(system: string, messages: ClaudeMessage[]) {
+/** Ferramentas que o plano do negócio inclui (as demais nem aparecem para a IA). */
+function ferramentasDoPlano(plano: string | null | undefined) {
+  return TOOLS.filter(
+    (f) =>
+      !(f.name === "entrar_lista_espera" && !temRecurso(plano, "fila_espera")) &&
+      !(f.name === "remarcar_ou_cancelar_agendamento" && !temRecurso(plano, "cancelamento_pelo_chat")) &&
+      !(f.name === "solicitar_pagamento_pix" && !temRecurso(plano, "sinal_antecipado")),
+  );
+}
+
+async function chamarClaude(system: string, messages: ClaudeMessage[], plano: string | null | undefined) {
   const res = await fetch(ANTHROPIC_API, {
     method: "POST",
     headers: headers(),
@@ -294,7 +313,7 @@ async function chamarClaude(system: string, messages: ClaudeMessage[]) {
       max_tokens: 1024,
       system,
       messages,
-      tools: TOOLS,
+      tools: ferramentasDoPlano(plano),
     }),
   });
   const data = await res.json();
@@ -323,6 +342,9 @@ async function executarFerramenta(
   supabaseUrl: string,
   anonKey: string,
 ): Promise<{ resultado: string; handoff: boolean; slots?: Slot[]; reservaFeita?: boolean }> {
+  if (!ferramentasDoPlano(ctx.plano).some((f) => f.name === nome)) {
+    return { resultado: "Esse recurso não está disponível neste atendimento. Siga a conversa sem usá-lo; se precisar, chame solicitar_atendimento_humano.", handoff: false };
+  }
   if (ctx.simulacao && !FERRAMENTAS_SOMENTE_LEITURA.has(nome)) {
     return {
       resultado: "Modo teste: ação simulada com sucesso. Nada foi gravado, enviado nem cobrado de verdade. Siga a conversa normalmente, como se tivesse dado certo.",
@@ -532,6 +554,17 @@ export async function gerarRespostaWhatsApp(
   anonKey: string,
   imagemAnexada?: { base64: string; mediaType: string },
 ): Promise<ResultadoIA> {
+  // O plano vem do banco (função protegida pelo segredo); se falhar, vale o mais restrito (Essencial).
+  try {
+    const { createClient } = await import("@supabase/supabase-js");
+    const { data: planoDoNegocio } = await createClient(supabaseUrl, anonKey).rpc("bot_plano_do_tenant", {
+      p_secret: secret,
+      p_tenant_id: ctx.tenantId,
+    });
+    ctx = { ...ctx, plano: typeof planoDoNegocio === "string" ? planoDoNegocio : "essencial" };
+  } catch {
+    ctx = { ...ctx, plano: "essencial" };
+  }
   const system = montarSystemPrompt(ctx);
 
   const messages: ClaudeMessage[] = ctx.historico.map((m) => ({
@@ -558,7 +591,7 @@ export async function gerarRespostaWhatsApp(
   let opcoesHorario: Slot[] | undefined;
 
   for (let turno = 0; turno < MAX_TOOL_TURNS; turno++) {
-    const resposta = await chamarClaude(system, messages);
+    const resposta = await chamarClaude(system, messages, ctx.plano);
 
     const blocosTexto = resposta.content.filter((b) => b.type === "text") as { type: "text"; text: string }[];
     const blocosFerramenta = resposta.content.filter((b) => b.type === "tool_use") as {
