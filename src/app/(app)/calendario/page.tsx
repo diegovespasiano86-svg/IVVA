@@ -40,7 +40,7 @@ export default async function CalendarioPage() {
       supabase
         .from("appointments")
         .select(
-          "id, data_hora, duracao_minutos, servico, status, contacts(nome), professionals(id, nome, cor)",
+          "id, data_hora, duracao_minutos, servico, status, contacts(id, nome, telefone), professionals(id, nome, cor)",
         )
         .neq("status", "cancelado")
         .gte("data_hora", inicio.toISOString())
@@ -76,7 +76,7 @@ export default async function CalendarioPage() {
   }));
 
   const eventos: EventoAgenda[] = (agendamentos ?? []).map((ag) => {
-    const contato = ag.contacts as unknown as { nome: string } | null;
+    const contato = ag.contacts as unknown as { id: string; nome: string; telefone: string | null } | null;
     const prof = ag.professionals as unknown as { nome: string; cor: string } | null;
     const inicio = new Date(ag.data_hora);
     const fim = new Date(inicio.getTime() + (ag.duracao_minutos ?? 30) * 60 * 1000);
@@ -87,6 +87,8 @@ export default async function CalendarioPage() {
       end: fim,
       cor: prof?.cor ?? "#8B7FE8",
       contato: contato?.nome ?? "Cliente",
+      contatoId: contato?.id ?? null,
+      telefone: contato?.telefone ?? null,
       profissional: prof?.nome ?? "—",
       servico: ag.servico,
       status: ag.status,

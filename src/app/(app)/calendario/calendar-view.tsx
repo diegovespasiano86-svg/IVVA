@@ -1,6 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
+import Link from "next/link";
+import { atualizarAgendamento } from "./actions";
 import {
   Calendar,
   dateFnsLocalizer,
@@ -83,6 +85,8 @@ export type EventoAgenda = {
   end: Date;
   cor: string;
   contato: string;
+  contatoId: string | null;
+  telefone: string | null;
   profissional: string;
   servico: string | null;
   status: string;
@@ -98,6 +102,27 @@ export default function CalendarView({
   const [view, setView] = useState<View | "year">(Views.WEEK);
   const [data, setData] = useState(new Date());
   const [selecionado, setSelecionado] = useState<EventoAgenda | null>(null);
+  const [pendente, iniciar] = useTransition();
+  const [passo, setPasso] = useState<"menu" | "cancelar" | "remarcar">("menu");
+  const [novaData, setNovaData] = useState("");
+  const [retorno, setRetorno] = useState<{ ok: boolean; texto: string } | null>(null);
+  const fechar = () => {
+    setSelecionado(null);
+    setPasso("menu");
+    setNovaData("");
+    setRetorno(null);
+  };
+  const executar = (acao: "concluir" | "cancelar" | "remarcar") => {
+    if (!selecionado) return;
+    iniciar(async () => {
+      const r = await atualizarAgendamento(selecionado.id, acao, acao === "remarcar" ? new Date(novaData).toISOString() : undefined);
+      if (r.erro) setRetorno({ ok: false, texto: r.erro });
+      else {
+        setRetorno({ ok: true, texto: r.aviso ?? (acao === "concluir" ? "Atendimento concluído." : acao === "remarcar" ? "Horário remarcado." : "Horário cancelado.") });
+        setTimeout(fechar, 1400);
+      }
+    });
+  };
   const [maximizado, setMaximizado] = useState(false);
 
   const eventosRBC = useMemo<RBCEvent[]>(
@@ -210,7 +235,7 @@ export default function CalendarView({
       {selecionado && (
         <div
           className="fixed inset-0 z-[60] flex items-center justify-center bg-ink/30 px-4"
-          onClick={() => setSelecionado(null)}
+          onClick={fechar}
         >
           <div
             className="card w-full max-w-[360px] px-5 py-5"
@@ -223,7 +248,8 @@ export default function CalendarView({
               </span>
               <button
                 type="button"
-                onClick={() => setSelecionado(null)}
+                onClick={fechar}
+                aria-label="Fechar"
                 className="text-ink-faint hover:text-ink"
               >
                 <svg className="icon" viewBox="0 0 24 24" width="16" height="16">
@@ -252,6 +278,63 @@ export default function CalendarView({
                 <dd className="font-semibold capitalize">{selecionado.status}</dd>
               </div>
             </dl>
+
+            {retorno && (
+              <p role="status" className={`mt-3 rounded-[10px] px-3 py-2 text-[12.5px] font-semibold ${retorno.ok ? "bg-teal/10 text-teal" : "bg-coral/10 text-coral"}`}>
+                {retorno.texto}
+              </p>
+            )}
+
+            {!retorno?.ok && passo === "menu" && (
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                {selecionado.status !== "concluido" && (
+                  <button type="button" disabled={pendente} onClick={() => executar("concluir")} className="btn btn-primary btn-md col-span-2 justify-center disabled:opacity-60">
+                    {pendente ? "Salvando…" : "Concluir atendimento"}
+                  </button>
+                )}
+                <button type="button" onClick={() => setPasso("remarcar")} className="btn btn-secondary btn-md justify-center">
+                  Remarcar
+                </button>
+                <button type="button" onClick={() => setPasso("cancelar")} className="btn btn-secondary btn-md justify-center !text-coral">
+                  Cancelar horário
+                </button>
+                {selecionado.contatoId && (
+                  <Link href={`/clientes/${selecionado.contatoId}`} className="btn btn-secondary btn-md justify-center">
+                    Abrir cliente
+                  </Link>
+                )}
+                {selecionado.telefone && (
+                  <a href={`https://wa.me/${selecionado.telefone.replace(/\D/g, "")}`} target="_blank" rel="noreferrer" className="btn btn-secondary btn-md justify-center">
+                    WhatsApp
+                  </a>
+                )}
+              </div>
+            )}
+
+            {!retorno?.ok && passo === "remarcar" && (
+              <div className="mt-4 flex flex-col gap-2">
+                <label htmlFor="nova-data" className="text-[12px] font-bold text-ink-soft">Nova data e hora</label>
+                <input id="nova-data" type="datetime-local" value={novaData} onChange={(e) => setNovaData(e.target.value)} className="input" />
+                <div className="grid grid-cols-2 gap-2">
+                  <button type="button" onClick={() => setPasso("menu")} className="btn btn-secondary btn-md justify-center">Voltar</button>
+                  <button type="button" disabled={pendente || !novaData} onClick={() => executar("remarcar")} className="btn btn-primary btn-md justify-center disabled:opacity-60">
+                    {pendente ? "Salvando…" : "Confirmar"}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {!retorno?.ok && passo === "cancelar" && (
+              <div className="mt-4 flex flex-col gap-2">
+                <p className="text-[12.5px] text-ink-soft">Cancelar este horário? Se houver lista de espera, a próxima pessoa será avisada.</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <button type="button" onClick={() => setPasso("menu")} className="btn btn-secondary btn-md justify-center">Manter</button>
+                  <button type="button" disabled={pendente} onClick={() => executar("cancelar")} className="btn btn-md justify-center bg-coral text-white disabled:opacity-60">
+                    {pendente ? "Cancelando…" : "Sim, cancelar"}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
