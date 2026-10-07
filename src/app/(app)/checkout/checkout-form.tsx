@@ -283,7 +283,7 @@ export default function CheckoutForm({
                   <span className="w-6 text-center text-[13px] font-bold">{l.qtd}</span>
                   <button type="button" aria-label="Aumentar quantidade" onClick={() => mudar(l.key, { qtd: l.qtd + 1 })} className="h-7 w-7 rounded-full border border-border hover:bg-surface-soft">+</button>
                 </div>
-                <input aria-label="Preço unitário" type="number" step="0.01" min="0" value={l.preco} onChange={(e) => mudar(l.key, { preco: e.target.value })} placeholder="0,00" className="input w-[100px]" />
+                <input aria-label="Preço unitário" type="number" step="0.01" min="0" value={l.preco} onChange={(e) => mudar(l.key, { preco: e.target.value })} placeholder="0,00" className="input !w-[100px] shrink-0" />
                 <span className="w-[86px] text-right text-[13px] font-bold">{dinheiro.format(l.qtd * (Number(l.preco) || 0))}</span>
                 <button type="button" aria-label="Remover item" onClick={() => setLinhas((ls) => ls.filter((x) => x.key !== l.key))} className="text-ink-faint hover:text-coral"><Trash2 size={16} /></button>
               </li>
