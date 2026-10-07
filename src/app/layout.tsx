@@ -17,8 +17,9 @@ const instrumentSerif = Instrument_Serif({
 });
 
 export const metadata: Metadata = {
-  title: "IVVA",
+  title: { default: "ivva", template: "%s · ivva" },
   description: "Recepção com IA no WhatsApp para negócios de serviço.",
+  applicationName: "ivva",
 };
 
 // Aplica as preferências de aparência (cor e densidade) antes da primeira pintura, sem piscar.
