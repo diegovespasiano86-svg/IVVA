@@ -7,7 +7,7 @@ import { resumoTarefasCrm } from "@/lib/crm-tarefas";
 import UsoIaAviso from "@/components/uso-ia-aviso";
 import { obterResumoUso, reconciliarCreditos, type ResumoUso } from "@/lib/uso-ia";
 import type { Role } from "@/lib/nav";
-import { termosDoSegmento } from "@/lib/termos";
+import { termosDoNegocio } from "@/lib/termos";
 
 export default async function AppLayout({
   children,
@@ -26,7 +26,7 @@ export default async function AppLayout({
 
   const { data: perfil } = await supabase
     .from("users")
-    .select("nome, role, tenant_id, tenants(nome, segmento)")
+    .select("nome, role, tenant_id, tenants(nome, segmento, termos)")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -50,7 +50,8 @@ export default async function AppLayout({
   const role = perfil.role as Role;
   const tenantNome =
     (perfil.tenants as unknown as { nome: string } | null)?.nome ?? "ivva";
-  const termos = termosDoSegmento((perfil.tenants as unknown as { segmento: string | null } | null)?.segmento);
+  const tenantTermos = perfil.tenants as unknown as { segmento: string | null; termos: unknown } | null;
+  const termos = termosDoNegocio(tenantTermos?.segmento, tenantTermos?.termos);
 
   // Só o dono pode agir sobre isso (reconectar em /conta, ver chamados) —
   // não vale a pena mostrar/consultar pra profissional, que não tem o que

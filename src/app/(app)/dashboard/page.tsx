@@ -3,7 +3,7 @@ import { LineAreaChart, HBarList, VBarChart, StatusTile, CardVazio } from "@/com
 import { FeatureLock } from "@/components/feature-lock";
 import { temRecurso, nomePlano } from "@/lib/planos";
 import PrimeirosPassos from "@/components/primeiros-passos";
-import { termosDoSegmento } from "@/lib/termos";
+import { termosDoNegocio } from "@/lib/termos";
 import KpiCard from "@/components/kpi-card";
 import { CalendarDays, MessageSquare, Users, Wallet } from "lucide-react";
 
@@ -17,11 +17,12 @@ export default async function DashboardPage() {
   } = await supabase.auth.getUser();
   const { data: perfil } = await supabase
     .from("users")
-    .select("nome, role, tenants(nome, plano, segmento)")
+    .select("nome, role, tenants(nome, plano, segmento, termos)")
     .eq("id", user?.id ?? "")
     .maybeSingle();
   const plano = (perfil?.tenants as unknown as { plano: string } | null)?.plano ?? "essencial";
-  const termos = termosDoSegmento((perfil?.tenants as unknown as { segmento: string | null } | null)?.segmento);
+  const tenantTermos = perfil?.tenants as unknown as { segmento: string | null; termos: unknown } | null;
+  const termos = termosDoNegocio(tenantTermos?.segmento, tenantTermos?.termos);
   const temSac = temRecurso(plano, "sac_avaliacoes");
   const ehDono = perfil?.role === "dono";
   const primeiroNome = (perfil?.nome ?? "").trim().split(/\s+/)[0] || "";

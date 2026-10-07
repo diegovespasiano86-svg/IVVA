@@ -95,3 +95,29 @@ export function rotuloDoMenu(rotulo: string, t: Termos): string {
   };
   return mapa[rotulo] ?? rotulo;
 }
+
+export const CHAVES_TERMOS = ["cliente", "clientes", "profissional", "profissionais", "agendamento", "agendamentos", "servico", "servicos", "produto", "produtos"] as const;
+export type ChaveTermo = (typeof CHAVES_TERMOS)[number];
+
+/** Aceita só chaves conhecidas e textos curtos e limpos (o dono pode renomear qualquer termo). */
+export function limparTermosPersonalizados(bruto: unknown): Partial<Record<ChaveTermo, string>> {
+  const saida: Partial<Record<ChaveTermo, string>> = {};
+  if (!bruto || typeof bruto !== "object") return saida;
+  for (const k of CHAVES_TERMOS) {
+    const v = (bruto as Record<string, unknown>)[k];
+    if (typeof v !== "string") continue;
+    const t = v.replace(/[<>{}]/g, "").replace(/\s+/g, " ").trim().slice(0, 30);
+    if (t) saida[k] = t.charAt(0).toUpperCase() + t.slice(1);
+  }
+  return saida;
+}
+
+/** Vocabulário final: padrão do nicho + o que o dono personalizou. */
+export function termosDoNegocio(segmento: string | null | undefined, personalizados: unknown): Termos {
+  const base = termosDoSegmento(segmento);
+  const extra = limparTermosPersonalizados(personalizados);
+  if (Object.keys(extra).length === 0) return base;
+  const t = { ...base, ...extra };
+  const feminino = !/o$/.test(t.agendamentos.replace(/s$/, "")) || t.agendamentos === "Reuniões";
+  return { ...t, agendamentosFuturos: `${t.agendamentos} ${feminino ? "futuras" : "futuros"}` };
+}

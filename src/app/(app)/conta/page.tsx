@@ -2,6 +2,9 @@ import { createClient } from "@/lib/supabase/server";
 import { Settings } from "lucide-react";
 import PageHeader from "@/components/page-header";
 import InviteForm from "./invite-form";
+import TermosForm from "./termos-form";
+import { termosDoSegmento, limparTermosPersonalizados } from "@/lib/termos";
+import { getSegmento } from "@/lib/segmentos";
 import ApagarConta from "./apagar-conta";
 import { revogarConvite } from "./actions";
 import { sincronizarPlanoTenant } from "@/lib/sincronizar-plano";
@@ -85,13 +88,15 @@ export default async function ContaPage({
 
   const { data: perfil } = await supabase
     .from("users")
-    .select("tenant_id, role, tenants(nome, plano)")
+    .select("tenant_id, role, tenants(nome, plano, segmento, termos)")
     .eq("id", user?.id ?? "")
     .maybeSingle();
 
   const tenant = perfil?.tenants as unknown as {
     nome: string;
     plano: string;
+    segmento: string | null;
+    termos: unknown;
   } | null;
 
   const isDono = perfil?.role === "dono";
@@ -296,6 +301,14 @@ export default async function ContaPage({
             {(PACOTE_AVULSO.valorCentavos / 100).toLocaleString("pt-BR")}).
           </p>
         </div>
+      )}
+
+      {isDono && (
+        <TermosForm
+          padrao={termosDoSegmento(tenant?.segmento)}
+          atuais={limparTermosPersonalizados(tenant?.termos)}
+          nichoNome={getSegmento(tenant?.segmento ?? "")?.nome ?? "Outro tipo de negócio"}
+        />
       )}
 
       <div className="grid gap-4 lg:grid-cols-2">
