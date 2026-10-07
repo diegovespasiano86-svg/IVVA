@@ -3,7 +3,7 @@
 import { useActionState, useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import QRCode from "qrcode";
-import { Copy, MessageCircle, Plus, Trash2, QrCode } from "lucide-react";
+import { Copy, MessageCircle, Plus, Search, Trash2, QrCode } from "lucide-react";
 import { registrarPagamentoCarrinho, salvarPix, type RetornoCheckout } from "./actions";
 import { gerarPixCopiaECola } from "@/lib/pix";
 
@@ -66,6 +66,54 @@ function ConfigurarPix({ aoSalvar }: { aoSalvar: () => void }) {
         {estado.erro && <p role="alert" className="text-[12.5px] font-semibold text-coral">{estado.erro}</p>}
       </div>
     </form>
+  );
+}
+
+
+function AdicionarItem({ catalogo, aoEscolher }: { catalogo: ItemCatalogoCheckout[]; aoEscolher: (id: string) => void }) {
+  const [busca, setBusca] = useState("");
+  const [aberto, setAberto] = useState(false);
+  const norm = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  const filtrados = catalogo.filter((c) => norm(c.nome).includes(norm(busca))).slice(0, 12);
+  return (
+    <div className="relative w-[260px]" onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setAberto(false); }}>
+      <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-faint" />
+      <input
+        value={busca}
+        onChange={(e) => { setBusca(e.target.value); setAberto(true); }}
+        onFocus={() => setAberto(true)}
+        placeholder="Buscar serviço ou produto…"
+        aria-label="Buscar no catálogo"
+        className="input !pl-9"
+      />
+      {aberto && (
+        <ul className="anim-pop absolute left-0 right-0 top-[calc(100%+6px)] z-20 max-h-[300px] overflow-auto rounded-[14px] border border-border bg-surface p-1.5 shadow-[0_18px_40px_-18px_rgba(36,31,46,0.35)]">
+          {filtrados.length === 0 ? (
+            <li className="px-3 py-3 text-[12.5px] text-ink-faint">Nada encontrado. Use &ldquo;Item avulso&rdquo;.</li>
+          ) : (
+            filtrados.map((c) => {
+              const semSaldo = c.tipo === "venda" && c.controla && c.saldo <= 0;
+              return (
+                <li key={c.id}>
+                  <button
+                    type="button"
+                    disabled={semSaldo}
+                    onClick={() => { aoEscolher(c.id); setBusca(""); setAberto(false); }}
+                    className="flex w-full items-center justify-between gap-2 rounded-[10px] px-3 py-2 text-left text-[13px] hover:bg-surface-soft disabled:opacity-50"
+                  >
+                    <span>
+                      <span className="block font-semibold">{c.nome}</span>
+                      <span className="block text-[11px] text-ink-faint">{c.tipo === "servico" ? "Serviço" : "Produto"}{c.controla ? ` · ${semSaldo ? "sem estoque" : c.saldo + " em estoque"}` : ""}</span>
+                    </span>
+                    <span className="font-bold">{dinheiro.format(c.preco)}</span>
+                  </button>
+                </li>
+              );
+            })
+          )}
+        </ul>
+      )}
+    </div>
   );
 }
 
@@ -202,7 +250,12 @@ export default function CheckoutForm({
   return (
     <div className="card mb-5 flex flex-col gap-5 px-4 py-4 sm:px-5">
       {retorno && (
-        <p role={retorno.ok ? "status" : "alert"} className={`rounded-[10px] px-3.5 py-2.5 text-[13px] font-semibold ${retorno.ok ? "bg-teal/10 text-teal" : "bg-coral/10 text-coral"}`}>
+        <p role={retorno.ok ? "status" : "alert"} className={`anim-pop flex items-center gap-2.5 rounded-[12px] px-4 py-3 text-[13.5px] font-semibold ${retorno.ok ? "bg-teal/10 text-teal" : "bg-coral/10 text-coral"}`}>
+          {retorno.ok && (
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-teal text-white">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path className="anim-check" d="M5 12.5l4.5 4.5L19 7.5" /></svg>
+            </span>
+          )}
           {retorno.texto}
         </p>
       )}
@@ -244,23 +297,7 @@ export default function CheckoutForm({
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
           <p className="text-[13.5px] font-bold">Itens do atendimento</p>
           <div className="flex flex-wrap items-center gap-2">
-            {catalogo.length > 0 && (
-              <select aria-label="Adicionar do catálogo" value="" onChange={(e) => adicionarDoCatalogo(e.target.value)} className="select w-[230px]">
-                <option value="">+ Adicionar do catálogo…</option>
-                <optgroup label="Serviços">
-                  {catalogo.filter((c) => c.tipo === "servico").map((c) => (
-                    <option key={c.id} value={c.id}>{c.nome} · {dinheiro.format(c.preco)}</option>
-                  ))}
-                </optgroup>
-                <optgroup label="Produtos">
-                  {catalogo.filter((c) => c.tipo === "venda").map((c) => (
-                    <option key={c.id} value={c.id} disabled={c.controla && c.saldo <= 0}>
-                      {c.nome} · {dinheiro.format(c.preco)}{c.controla ? ` (${c.saldo} un.)` : ""}
-                    </option>
-                  ))}
-                </optgroup>
-              </select>
-            )}
+            {catalogo.length > 0 && <AdicionarItem catalogo={catalogo} aoEscolher={adicionarDoCatalogo} />}
             <button type="button" onClick={adicionarAvulso} className="btn btn-secondary btn-md"><Plus size={15} /> Item avulso</button>
           </div>
         </div>
@@ -272,7 +309,7 @@ export default function CheckoutForm({
         ) : (
           <ul className="flex flex-col gap-2">
             {linhas.map((l) => (
-              <li key={l.key} className="flex flex-wrap items-center gap-2 rounded-[12px] border border-border px-3 py-2.5">
+              <li key={l.key} className="anim-pop flex flex-wrap items-center gap-2 rounded-[12px] border border-border px-3 py-2.5">
                 {l.productId ? (
                   <span className="min-w-[160px] flex-1 text-[13.5px] font-semibold">{l.nome}{l.controla && <span className="ml-2 text-[11px] font-normal text-ink-faint">{l.saldo} em estoque</span>}</span>
                 ) : (
@@ -314,7 +351,7 @@ export default function CheckoutForm({
           <div className="text-right">
             {valorDesconto > 0 && <p className="text-[12px] text-ink-faint">Subtotal {dinheiro.format(bruto)} · desconto −{dinheiro.format(valorDesconto)}</p>}
             <p className="text-[11px] font-bold uppercase tracking-wide text-ink-faint">Total</p>
-            <p className="font-display text-[28px] font-extrabold text-teal">{dinheiro.format(total)}</p>
+            <p key={total} className="anim-flash font-display text-[28px] font-extrabold text-teal">{dinheiro.format(total)}</p>
           </div>
           {forma === "pix" && !pixAberto ? (
             <button type="button" disabled={pendente} onClick={() => { const e = validar(); if (e) return setRetorno({ ok: false, texto: e }); setRetorno(null); if (!pixConfig) setConfigurando(true); setTxid("IVVA" + Date.now().toString(36).toUpperCase()); setPixAberto(true); }} className="btn btn-primary btn-md disabled:opacity-60">

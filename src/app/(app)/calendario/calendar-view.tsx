@@ -88,6 +88,7 @@ export type EventoAgenda = {
   contatoId: string | null;
   telefone: string | null;
   profissional: string;
+  profissionalId: string | null;
   servico: string | null;
   status: string;
 };
@@ -288,9 +289,17 @@ export default function CalendarView({
             {!retorno?.ok && passo === "menu" && (
               <div className="mt-4 grid grid-cols-2 gap-2">
                 {selecionado.status !== "concluido" && (
-                  <button type="button" disabled={pendente} onClick={() => executar("concluir")} className="btn btn-primary btn-md col-span-2 justify-center disabled:opacity-60">
-                    {pendente ? "Salvando…" : "Concluir atendimento"}
-                  </button>
+                  <>
+                    <Link
+                      href={`/checkout?${new URLSearchParams({ appointment_id: selecionado.id, contact_id: selecionado.contatoId ?? "", professional_id: selecionado.profissionalId ?? "", servico: selecionado.servico ?? "" }).toString()}`}
+                      className="btn btn-primary btn-md col-span-2 justify-center"
+                    >
+                      Concluir e receber
+                    </Link>
+                    <button type="button" disabled={pendente} onClick={() => executar("concluir")} className="col-span-2 text-center text-[12px] font-semibold text-ink-faint hover:text-ink disabled:opacity-60">
+                      {pendente ? "Salvando…" : "Só marcar como concluído (sem cobrança)"}
+                    </button>
+                  </>
                 )}
                 <button type="button" onClick={() => setPasso("remarcar")} className="btn btn-secondary btn-md justify-center">
                   Remarcar

@@ -163,3 +163,32 @@ export async function ajusteRapido(formData: FormData) {
   await ctx.supabase.rpc("estoque_movimentar", { p_product_id: id, p_delta: delta, p_tipo: "ajuste", p_motivo: "Ajuste rápido" });
   revalidatePath("/catalogo");
 }
+
+/** Salva a ficha técnica de um serviço: quais insumos ele consome e quanto, a cada atendimento. */
+export async function salvarFicha(servicoId: string, linhas: { insumoId: string; quantidade: number }[]): Promise<EstadoCatalogo> {
+  const ctx = await contexto();
+  if (!ctx) return { erro: "Sessão expirada, faça login de novo." };
+  if (!ctx.ehDono) return { erro: "Só o administrador edita a ficha técnica." };
+  if (!ctx.estoqueLiberado) return { erro: "A ficha técnica faz parte do controle de estoque (plano Profissional)." };
+
+  const limpas = new Map<string, number>();
+  for (const l of linhas) {
+    const q = Math.floor(Number(l.quantidade));
+    if (!l.insumoId || !Number.isFinite(q) || q < 1 || q > 1000) return { erro: "Confira as quantidades da ficha (de 1 a 1000)." };
+    limpas.set(l.insumoId, q);
+  }
+
+  const { data: servico } = await ctx.supabase.from("products").select("id, tipo").eq("id", servicoId).maybeSingle();
+  if (!servico || servico.tipo !== "servico") return { erro: "Serviço não encontrado." };
+
+  const { error: erroApagar } = await ctx.supabase.from("product_consumos").delete().eq("servico_id", servicoId);
+  if (erroApagar) return { erro: "Não consegui salvar agora. Tente de novo." };
+  if (limpas.size > 0) {
+    const { error } = await ctx.supabase.from("product_consumos").insert(
+      [...limpas].map(([insumo_id, quantidade]) => ({ tenant_id: ctx.tenantId, servico_id: servicoId, insumo_id, quantidade })),
+    );
+    if (error) return { erro: "Não consegui salvar agora. Tente de novo." };
+  }
+  revalidatePath("/catalogo");
+  return { erro: null, ok: true };
+}

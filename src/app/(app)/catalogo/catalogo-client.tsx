@@ -1,7 +1,7 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
-import { criarItem, editarItem, movimentarEstoque, alternarAtivo, ajusteRapido, type EstadoCatalogo } from "./actions";
+import { useActionState, useEffect, useRef, useState, useTransition } from "react";
+import { criarItem, editarItem, movimentarEstoque, alternarAtivo, ajusteRapido, salvarFicha, type EstadoCatalogo } from "./actions";
 
 export type ItemCatalogo = {
   id: string;
@@ -15,7 +15,11 @@ export type ItemCatalogo = {
   estoque_minimo: number;
   duracao_minutos: number | null;
   ativo: boolean;
+  /** Ficha técnica (só serviços): insumos que cada atendimento consome. */
+  ficha?: { insumo_id: string; quantidade: number }[];
 };
+
+export type InsumoOpcao = { id: string; nome: string; custo: number };
 
 const ESTADO: EstadoCatalogo = { erro: null };
 export const ROTULO_TIPO: Record<ItemCatalogo["tipo"], string> = { servico: "Serviço", venda: "Produto de venda", insumo: "Insumo de uso" };
@@ -206,18 +210,110 @@ function FormMovimento({ item, aoFechar }: { item: ItemCatalogo; aoFechar: () =>
   );
 }
 
-export function LinhaItem({ item, ehDono, estoqueLiberado }: { item: ItemCatalogo; ehDono: boolean; estoqueLiberado: boolean }) {
-  const [painel, setPainel] = useState<"editar" | "movimento" | null>(null);
+
+export function custoDaFicha(ficha: ItemCatalogo["ficha"], insumos: InsumoOpcao[]): number {
+  return (ficha ?? []).reduce((s, f) => s + f.quantidade * (insumos.find((i) => i.id === f.insumo_id)?.custo ?? 0), 0);
+}
+
+function FichaPanel({ item, insumos, aoFechar }: { item: ItemCatalogo; insumos: InsumoOpcao[]; aoFechar: () => void }) {
+  const [linhas, setLinhas] = useState<{ insumoId: string; quantidade: number }[]>(
+    (item.ficha ?? []).map((f) => ({ insumoId: f.insumo_id, quantidade: f.quantidade })),
+  );
+  const [pendente, iniciar] = useTransition();
+  const [erro, setErro] = useState<string | null>(null);
+  const disponiveis = insumos.filter((i) => !linhas.some((l) => l.insumoId === i.id));
+  const custo = linhas.reduce((s, l) => s + l.quantidade * (insumos.find((i) => i.id === l.insumoId)?.custo ?? 0), 0);
+  const margem = item.preco > 0 ? ((item.preco - custo) / item.preco) * 100 : 0;
+
+  return (
+    <div className="flex flex-col gap-3 border-t border-border bg-surface-soft px-4 py-4">
+      <div>
+        <p className="text-[13px] font-bold">Ficha técnica: o que um atendimento de &ldquo;{item.nome}&rdquo; consome</p>
+        <p className="text-[12px] text-ink-soft">Ao receber este serviço no Checkout, os insumos abaixo baixam do estoque sozinhos.</p>
+      </div>
+      {linhas.length === 0 && <p className="text-[12.5px] text-ink-faint">Nenhum insumo ainda. Adicione abaixo.</p>}
+      <ul className="flex flex-col gap-2">
+        {linhas.map((l) => {
+          const ins = insumos.find((i) => i.id === l.insumoId);
+          return (
+            <li key={l.insumoId} className="anim-pop flex flex-wrap items-center gap-2 rounded-[10px] bg-surface px-3 py-2">
+              <span className="min-w-[160px] flex-1 text-[13px] font-semibold">{ins?.nome ?? "Item removido"}</span>
+              <label className="flex items-center gap-1.5 text-[12px] text-ink-soft">
+                Qtd. por atendimento
+                <input
+                  type="number"
+                  min={1}
+                  max={1000}
+                  value={l.quantidade}
+                  onChange={(e) => setLinhas((ls) => ls.map((x) => (x.insumoId === l.insumoId ? { ...x, quantidade: Math.max(1, Number(e.target.value) || 1) } : x)))}
+                  className="input !w-[80px] shrink-0"
+                />
+              </label>
+              <span className="w-[80px] text-right text-[12px] text-ink-faint">{dinheiro.format(l.quantidade * (ins?.custo ?? 0))}</span>
+              <button type="button" aria-label="Remover insumo" onClick={() => setLinhas((ls) => ls.filter((x) => x.insumoId !== l.insumoId))} className="text-[18px] leading-none text-ink-faint hover:text-coral">×</button>
+            </li>
+          );
+        })}
+      </ul>
+      <div className="flex flex-wrap items-center gap-3">
+        <select
+          aria-label="Adicionar insumo"
+          value=""
+          onChange={(e) => e.target.value && setLinhas((ls) => [...ls, { insumoId: e.target.value, quantidade: 1 }])}
+          className="select w-[260px]"
+          disabled={disponiveis.length === 0}
+        >
+          <option value="">{disponiveis.length === 0 ? "Cadastre insumos com estoque no catálogo" : "+ Adicionar insumo…"}</option>
+          {disponiveis.map((i) => (
+            <option key={i.id} value={i.id}>{i.nome}</option>
+          ))}
+        </select>
+        <div className="ml-auto flex items-center gap-4 text-[12.5px]">
+          <span>Custo de insumos: <strong>{dinheiro.format(custo)}</strong></span>
+          {item.preco > 0 && <span className={margem >= 50 ? "text-teal" : margem >= 25 ? "text-ink-soft" : "text-coral"}>Margem sobre insumos: <strong>{margem.toFixed(0)}%</strong></span>}
+        </div>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          disabled={pendente}
+          onClick={() =>
+            iniciar(async () => {
+              const r = await salvarFicha(item.id, linhas);
+              if (r.erro) setErro(r.erro);
+              else aoFechar();
+            })
+          }
+          className="btn btn-primary btn-md disabled:opacity-60"
+        >
+          {pendente ? "Salvando…" : "Salvar ficha"}
+        </button>
+        <button type="button" onClick={aoFechar} className="btn btn-secondary btn-md">Cancelar</button>
+        {erro && <p role="alert" className="text-[12.5px] font-semibold text-coral">{erro}</p>}
+      </div>
+    </div>
+  );
+}
+
+export function LinhaItem({ item, ehDono, estoqueLiberado, insumos, indice = 0 }: { item: ItemCatalogo; ehDono: boolean; estoqueLiberado: boolean; insumos: InsumoOpcao[]; indice?: number }) {
+  const [painel, setPainel] = useState<"editar" | "movimento" | "ficha" | null>(null);
+  const custoFicha = custoDaFicha(item.ficha, insumos);
   const fechar = () => setPainel(null);
   const baixo = item.controla_estoque && item.estoque_atual <= item.estoque_minimo;
 
   return (
-    <li className={`border-b border-border last:border-0 ${item.ativo ? "" : "opacity-55"}`}>
+    <li style={{ "--d": `${Math.min(indice, 12) * 30}ms` } as React.CSSProperties} className={`anim-rise border-b border-border last:border-0 ${item.ativo ? "" : "opacity-55"}`}>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
         <div className="min-w-[180px] flex-1">
           <p className="text-[13.5px] font-bold">{item.nome}{!item.ativo && <span className="ml-2 text-[11px] font-semibold text-ink-faint">(arquivado)</span>}</p>
           <p className="text-[11.5px] text-ink-faint">
             {ROTULO_TIPO[item.tipo]}{item.categoria ? ` · ${item.categoria}` : ""}{item.duracao_minutos ? ` · ${item.duracao_minutos} min` : ""}
+            {item.tipo === "servico" && (item.ficha?.length ?? 0) > 0 && (
+              <span className="ml-1.5 font-semibold text-teal">· usa {item.ficha!.length} {item.ficha!.length === 1 ? "insumo" : "insumos"} (custo {dinheiro.format(custoFicha)})</span>
+            )}
+            {item.tipo === "venda" && item.custo > 0 && item.preco > 0 && (
+              <span className="ml-1.5 text-ink-faint">· margem {Math.round(((item.preco - item.custo) / item.preco) * 100)}%</span>
+            )}
           </p>
         </div>
         <div className="w-[90px] text-right text-[13px] font-semibold">{item.tipo === "insumo" ? "—" : dinheiro.format(item.preco)}</div>
@@ -242,6 +338,9 @@ export function LinhaItem({ item, ehDono, estoqueLiberado }: { item: ItemCatalog
           {item.controla_estoque && estoqueLiberado && (
             <button type="button" onClick={() => setPainel(painel === "movimento" ? null : "movimento")} className="btn btn-secondary btn-sm">Movimentar</button>
           )}
+          {ehDono && item.tipo === "servico" && estoqueLiberado && (
+            <button type="button" onClick={() => setPainel(painel === "ficha" ? null : "ficha")} className="btn btn-secondary btn-sm">Ficha técnica</button>
+          )}
           {ehDono && <button type="button" onClick={() => setPainel(painel === "editar" ? null : "editar")} className="btn btn-secondary btn-sm">Editar</button>}
           {ehDono && (
             <form action={alternarAtivo}>
@@ -254,6 +353,28 @@ export function LinhaItem({ item, ehDono, estoqueLiberado }: { item: ItemCatalog
       </div>
       {painel === "editar" && <FormEditar item={item} estoqueLiberado={estoqueLiberado} aoFechar={fechar} />}
       {painel === "movimento" && <FormMovimento item={item} aoFechar={fechar} />}
+      {painel === "ficha" && <FichaPanel item={item} insumos={insumos} aoFechar={fechar} />}
     </li>
+  );
+}
+
+export function CopiarLista({ texto }: { texto: string }) {
+  const [copiado, setCopiado] = useState(false);
+  return (
+    <button
+      type="button"
+      onClick={async () => {
+        try {
+          await navigator.clipboard.writeText(texto);
+          setCopiado(true);
+          setTimeout(() => setCopiado(false), 1800);
+        } catch {
+          /* sem permissão de área de transferência: o texto continua visível na tela */
+        }
+      }}
+      className="btn btn-secondary btn-md"
+    >
+      {copiado ? "Copiado!" : "Copiar lista de compras"}
+    </button>
   );
 }

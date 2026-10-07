@@ -77,7 +77,7 @@ export default async function CalendarioPage() {
 
   const eventos: EventoAgenda[] = (agendamentos ?? []).map((ag) => {
     const contato = ag.contacts as unknown as { id: string; nome: string; telefone: string | null } | null;
-    const prof = ag.professionals as unknown as { nome: string; cor: string } | null;
+    const prof = ag.professionals as unknown as { id: string; nome: string; cor: string } | null;
     const inicio = new Date(ag.data_hora);
     const fim = new Date(inicio.getTime() + (ag.duracao_minutos ?? 30) * 60 * 1000);
     return {
@@ -90,6 +90,7 @@ export default async function CalendarioPage() {
       contatoId: contato?.id ?? null,
       telefone: contato?.telefone ?? null,
       profissional: prof?.nome ?? "—",
+      profissionalId: prof?.id ?? null,
       servico: ag.servico,
       status: ag.status,
     };

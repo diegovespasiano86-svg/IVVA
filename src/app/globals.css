@@ -1132,3 +1132,58 @@ html[data-density="compact"] main .card table thead th {
     display: none;
   }
 }
+
+/* ---------- microinterações do catálogo e do checkout ---------- */
+@keyframes ivva-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  60% {
+    transform: scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes ivva-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes ivva-flash {
+  0% {
+    background-color: color-mix(in srgb, var(--teal, #2fbf9f) 22%, transparent);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+.anim-rise {
+  animation: ivva-in 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: var(--d, 0ms);
+}
+.anim-pop {
+  animation: ivva-pop 0.38s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.anim-flash {
+  animation: ivva-flash 0.7s ease-out;
+  border-radius: 10px;
+}
+.anim-check {
+  stroke-dasharray: 30;
+  stroke-dashoffset: 30;
+  animation: ivva-draw 0.5s 0.15s ease-out forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .anim-rise,
+  .anim-pop,
+  .anim-flash {
+    animation: none;
+  }
+  .anim-check {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+}
