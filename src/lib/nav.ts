@@ -91,9 +91,9 @@ export const NAV_GROUPS: NavGroup[] = [
   },
   {
     id: "estoque",
-    label: "Estoque",
+    label: "Catálogo e estoque",
     icon: Package,
-    items: [{ href: "/estoque", label: "Controle de estoque", roles: AMBOS }],
+    items: [{ href: "/catalogo", label: "Catálogo e estoque", roles: AMBOS }],
   },
   {
     id: "robo",

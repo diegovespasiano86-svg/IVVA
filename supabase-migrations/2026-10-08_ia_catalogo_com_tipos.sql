@@ -1,0 +1,4 @@
+-- ia_consultar_catalogo passa a devolver só serviços e produtos de venda ativos (nunca insumos),
+-- com o tipo e se há saldo (em_estoque: true/false; null quando o item não controla estoque).
+-- Para desfazer: recriar a função com a definição de 2026-10-05_busca_base_conhecimento.sql.
+-- (A definição completa está aplicada no banco; ver migration "ia_consultar_catalogo_com_tipos".)
