@@ -243,6 +243,7 @@ export default async function DashboardPage() {
           variante="cards"
           className="px-5 py-4.5"
         >
+          <div className="card h-full px-5 py-4.5">
           <p className="mb-3 text-[13px] font-bold">Central de atendimento</p>
           <div className="grid grid-cols-2 gap-4">
             <StatusTile
@@ -266,6 +267,7 @@ export default async function DashboardPage() {
               tom={percentualNaoAtendido > 20 ? "atencao" : "bom"}
             />
           </div>
+          </div>
         </FeatureLock>
         <FeatureLock
           liberado={temSac}
@@ -274,13 +276,15 @@ export default async function DashboardPage() {
           variante="cards"
           className="px-5 py-4.5"
         >
-          <StatusTile label="Satisfação média" valor={mediaNotas === "—" ? "—" : `${mediaNotas} ★`} tom="neutro" />
-          <p className="mt-1.5 text-[11.5px] text-ink-faint">
-            {notas.length} {notas.length === 1 ? "avaliação recebida" : "avaliações recebidas"}
-          </p>
+          <div className="card h-full px-5 py-4.5">
+            <StatusTile label="Satisfação média" valor={mediaNotas === "—" ? "—" : `${mediaNotas} ★`} tom="neutro" />
+            <p className="mt-1.5 text-[11.5px] text-ink-faint">
+              {notas.length} {notas.length === 1 ? "avaliação recebida" : "avaliações recebidas"}
+            </p>
+          </div>
         </FeatureLock>
         {ehDono && (
-        <div className="card px-5 py-4.5">
+        <div className="card h-full px-5 py-4.5">
           <StatusTile label="Faturamento do mês" valor={money.format(faturamentoMes)} tom="bom" />
           <p className="mt-1.5 text-[11.5px] text-ink-faint">Somando todos os profissionais</p>
         </div>
