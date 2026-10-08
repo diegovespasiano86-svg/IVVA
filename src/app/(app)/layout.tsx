@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import AppShell from "@/components/app-shell";
 import Alert from "@/components/alert";
-import { ListChecks } from "lucide-react";
+import { ListChecks, Clock } from "lucide-react";
 import { resumoTarefasCrm } from "@/lib/crm-tarefas";
 import UsoIaAviso from "@/components/uso-ia-aviso";
 import { obterResumoUso, reconciliarCreditos, type ResumoUso } from "@/lib/uso-ia";
@@ -62,6 +62,7 @@ export default async function AppLayout({
   let sugestoesPendentes = 0;
   let roboStatus: "ativo" | "pausado" | "sem-whatsapp" | null = null;
   let resumoUso: ResumoUso | null = null;
+  let diasDeTeste: number | null = null;
   if (role === "dono") {
     const [{ data: conta }, { count }, { count: sugestoesCount }, { data: botCfg }] = await Promise.all([
       supabase
@@ -92,6 +93,22 @@ export default async function AppLayout({
       automacoesPausadasAte = conta.automacoes_pausadas_ate;
     }
     chamadosAbertos = count ?? 0;
+
+    // Dias que faltam do teste grátis (14 dias a partir da criação da assinatura). Falha aqui nunca derruba a tela.
+    try {
+      const { data: assinatura } = await supabase
+        .from("subscriptions")
+        .select("status, created_at")
+        .eq("tenant_id", perfil.tenant_id)
+        .maybeSingle();
+      if (assinatura && (assinatura.status === "trial" || assinatura.status === "trialing") && assinatura.created_at) {
+        const fim = new Date(assinatura.created_at).getTime() + 14 * 24 * 60 * 60 * 1000;
+        const dias = Math.ceil((fim - Date.now()) / (24 * 60 * 60 * 1000));
+        if (dias >= 0 && dias <= 14) diasDeTeste = dias;
+      }
+    } catch (err) {
+      console.error("[layout] falha ao ler o teste grátis", err);
+    }
     sugestoesPendentes = sugestoesCount ?? 0;
 
     // Consumo das conversas da IA no mês (avisos de 80/90/100%). Antes, credita
@@ -141,6 +158,16 @@ export default async function AppLayout({
       roboStatus={roboStatus}
       termos={termos}
     >
+        {diasDeTeste !== null && (
+          <Alert tone="info" icon={Clock} action={{ href: "/assinatura", label: "Minha assinatura" }}>
+            {diasDeTeste === 0
+              ? "Hoje é o último dia do seu teste grátis."
+              : diasDeTeste === 1
+                ? "Falta 1 dia para acabar o seu teste grátis."
+                : `Faltam ${diasDeTeste} dias para acabar o seu teste grátis.`}{" "}
+            Depois dele, a cobrança do plano segue normalmente. Você pode cancelar quando quiser.
+          </Alert>
+        )}
         {resumoUso && <UsoIaAviso resumo={resumoUso} />}
         {tarefasCrm.hoje + tarefasCrm.atrasadas > 0 && (
           <Alert tone="info" icon={ListChecks} action={{ href: "/crm?view=tarefas", label: "Ver tarefas" }}>

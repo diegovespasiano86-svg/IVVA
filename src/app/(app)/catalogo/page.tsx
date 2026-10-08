@@ -78,6 +78,10 @@ export default async function CatalogoPage(props: { searchParams: Promise<{ tipo
         }
       />
 
+      <p className="mb-4 rounded-xl bg-surface-soft px-4 py-2.5 text-[12.5px] text-ink-soft">
+        O controle de estoque é opcional: use só nos itens que você vende como produto. Serviços (com horário ou sob orçamento) não precisam de estoque.
+      </p>
+
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <Link href="/catalogo" className="tab" aria-selected={!verMovimentos && !verAnalise}>Itens</Link>
         {estoqueLiberado && (

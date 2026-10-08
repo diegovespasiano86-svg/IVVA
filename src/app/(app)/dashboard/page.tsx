@@ -3,6 +3,7 @@ import { LineAreaChart, HBarList, VBarChart, StatusTile, CardVazio } from "@/com
 import { FeatureLock } from "@/components/feature-lock";
 import { temRecurso, nomePlano } from "@/lib/planos";
 import PrimeirosPassos from "@/components/primeiros-passos";
+import IvvaEmNumeros from "@/components/ivva-em-numeros";
 import { termosDoNegocio } from "@/lib/termos";
 import KpiCard from "@/components/kpi-card";
 import { CalendarDays, MessageSquare, Users, Wallet } from "lucide-react";
@@ -197,6 +198,17 @@ export default async function DashboardPage() {
       </section>
 
       {ehDono && <PrimeirosPassos termos={termos} />}
+
+      {ehDono && (
+        <IvvaEmNumeros
+          conversas={conversas ?? 0}
+          intervencoes={intervencoesHumanas ?? 0}
+          agendamentosFuturos={agendamentos ?? 0}
+          faturamento={faturamentoMes}
+          plano={plano}
+          rotuloAgendamentos={termos.agendamentosFuturos}
+        />
+      )}
 
       <div className={`grid grid-cols-2 gap-3.5 ${ehDono ? "md:grid-cols-4" : "md:grid-cols-3"}`}>
         <KpiCard label="Conversas este mês" numero={conversas ?? 0} icon={MessageSquare} spark={pontosLinha.map((p) => p.valor)} />
