@@ -1,5 +1,6 @@
 import PageHeader from "@/components/page-header";
-import { Bot } from "lucide-react";
+import { Bot, FlaskConical } from "lucide-react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import AssistantForm from "./assistant-form";
 import BotSettingsForm from "./bot-settings-form";
@@ -97,6 +98,23 @@ export default async function RoboPage() {
           </ul>
         </div>
       )}
+
+      <div className="card mb-4 flex flex-wrap items-center justify-between gap-4 px-5 py-4">
+        <div className="flex min-w-0 items-start gap-3">
+          <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#ece9fc] text-purple">
+            <FlaskConical size={18} />
+          </span>
+          <div className="min-w-0">
+            <p className="text-[14px] font-bold">Calibrar o robô</p>
+            <p className="text-[12.5px] text-ink-soft">
+              Faça 5 perguntas típicas dos seus clientes no simulador. Se alguma resposta sair errada, clique em 👎, escreva a resposta certa e ela vai para a base de conhecimento.
+            </p>
+          </div>
+        </div>
+        <Link href="/robo/simulador" className="btn btn-primary btn-md">
+          Começar a calibrar
+        </Link>
+      </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="card px-5 py-5">

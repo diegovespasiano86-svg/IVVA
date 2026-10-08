@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { gerarRespostaWhatsApp, type ContextoConversa } from "@/lib/ai";
 
 export type MensagemSimulada = { remetente: "contato" | "bot"; conteudo: string };
-export type RespostaSimulada = { resposta?: string; erro?: string; pediuHumano?: boolean };
+export type RespostaSimulada = { resposta?: string; erro?: string; pediuHumano?: boolean; fontes?: string[] };
 
 const MAX_MENSAGENS = 24;
 const MAX_CARACTERES = 600;
@@ -81,7 +81,23 @@ export async function simularResposta(historico: MensagemSimulada[]): Promise<Re
 
   try {
     const r = await gerarRespostaWhatsApp(ctx, secret, url, anon);
-    return { resposta: r.resposta, pediuHumano: r.handoffSolicitado };
+    // "Base consultada": os itens da base mais ligados à pergunta (mesma busca que o robô usa). Aproximado; falha aqui não atrapalha.
+    let fontes: string[] = [];
+    try {
+      const { createClient: criarCliente } = await import("@supabase/supabase-js");
+      const { data: achados } = await criarCliente(url, anon).rpc("ia_consultar_catalogo", {
+        p_secret: secret,
+        p_tenant_id: perfil.tenant_id,
+        p_busca: limpo[limpo.length - 1].conteudo,
+      });
+      const base = (achados as { base_conhecimento?: { conteudo?: string }[] } | null)?.base_conhecimento ?? [];
+      fontes = base
+        .map((b) => String(b.conteudo ?? "").trim())
+        .filter(Boolean)
+        .slice(0, 3)
+        .map((c) => (c.length > 160 ? c.slice(0, 157) + "…" : c));
+    } catch {}
+    return { resposta: r.resposta, pediuHumano: r.handoffSolicitado, fontes };
   } catch (e) {
     console.error("[simulador] falha ao gerar resposta de teste", e);
     return { erro: "Não foi possível gerar a resposta de teste agora. Tente de novo em instantes." };

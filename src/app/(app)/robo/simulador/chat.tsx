@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { Fragment, useEffect, useRef, useState, useTransition } from "react";
 import { Bot, RotateCcw, Send, UserRound } from "lucide-react";
 import { simularResposta, type MensagemSimulada } from "./actions";
+import FeedbackResposta from "./feedback-resposta";
 
 const SUGESTOES = [
   "Oi! Quais serviços vocês fazem e quanto custa?",
@@ -17,6 +18,7 @@ export default function SimuladorChat({ nomeAssistente }: { nomeAssistente: stri
   const [erro, setErro] = useState<string | null>(null);
   const [pediuHumano, setPediuHumano] = useState(false);
   const [pendente, iniciar] = useTransition();
+  const [fontes, setFontes] = useState<Record<number, string[]>>({});
   const fim = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -34,6 +36,7 @@ export default function SimuladorChat({ nomeAssistente }: { nomeAssistente: stri
       const r = await simularResposta(proximo);
       if (r.erro) setErro(r.erro);
       if (r.resposta) setMsgs((atual) => [...atual, { remetente: "bot", conteudo: r.resposta! }]);
+      if (r.resposta && r.fontes?.length) setFontes((f) => ({ ...f, [proximo.length]: r.fontes! }));
       if (r.pediuHumano) setPediuHumano(true);
     });
   }
@@ -43,6 +46,7 @@ export default function SimuladorChat({ nomeAssistente }: { nomeAssistente: stri
     setErro(null);
     setPediuHumano(false);
     setTexto("");
+    setFontes({});
   }
 
   return (
@@ -80,7 +84,8 @@ export default function SimuladorChat({ nomeAssistente }: { nomeAssistente: stri
         {msgs.map((m, i) => {
           const cliente = m.remetente === "contato";
           return (
-            <div key={i} className={`flex gap-2 ${cliente ? "justify-end" : "justify-start"}`}>
+            <Fragment key={i}>
+            <div className={`flex gap-2 ${cliente ? "justify-end" : "justify-start"}`}>
               {!cliente && (
                 <span className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#ece9fc] text-purple">
                   <Bot size={14} />
@@ -99,6 +104,8 @@ export default function SimuladorChat({ nomeAssistente }: { nomeAssistente: stri
                 </span>
               )}
             </div>
+            {!cliente && <FeedbackResposta pergunta={msgs[i - 1]?.conteudo ?? ""} fontes={fontes[i]} />}
+            </Fragment>
           );
         })}
 
