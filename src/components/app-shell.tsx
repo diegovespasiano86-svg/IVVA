@@ -275,16 +275,14 @@ export default function AppShell({
                 {roboStatus === "ativo" ? "Robô ativo" : roboStatus === "pausado" ? "Robô pausado" : "WhatsApp desconectado"}
               </Link>
             )}
-            <a
-              href="https://ivva.app.br/contato"
-              target="_blank"
-              rel="noreferrer"
+            <Link
+              href="/ajuda"
               className="flex h-9 w-9 items-center justify-center rounded-lg text-white/80 hover:bg-white/10"
               aria-label="Ajuda"
               title="Ajuda"
             >
               <CircleHelp size={19} />
-            </a>
+            </Link>
             <Link
               href={firstAlert === "/crm" ? "/crm?view=tarefas" : (firstAlert ?? "/dashboard")}
               className="relative flex h-9 w-9 items-center justify-center rounded-lg text-white/80 hover:bg-white/10"

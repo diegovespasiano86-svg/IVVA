@@ -145,6 +145,7 @@ export function navGroupsForRole(role: Role, termos?: Termos): NavGroup[] {
  */
 export function rotaPermitida(role: Role, pathname: string): boolean {
   if (role === "dono") return true;
+  if (pathname === "/ajuda") return true; // guias de ajuda: todo perfil
   let melhor: NavLeaf | null = null;
   for (const grupo of NAV_GROUPS) {
     for (const item of grupo.items) {
