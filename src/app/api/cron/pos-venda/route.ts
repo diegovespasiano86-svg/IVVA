@@ -6,6 +6,7 @@ import { podeEnviarAutomatico } from "@/lib/automacao";
 import { processarResumosHistoricoPendentes } from "@/lib/whatsapp-historico";
 import { processarLotes } from "@/lib/campanhas-envio";
 import { emailAlertaCadastros, enviarEmail } from "@/lib/email";
+import { enviarResumosSemanais } from "@/lib/resumo-semanal";
 
 // Roda 1x por dia (limite do plano Hobby da Vercel — ver vercel.json).
 // Isso significa que os prazos "1h"/"2h" na prática viram "dentro do
@@ -250,8 +251,18 @@ export async function GET(request: NextRequest) {
     console.error("[cron pos-venda] falha no alerta de cadastros pendentes", err);
   }
 
+  // Resumo semanal por e-mail: às segundas (horário de Brasília), pegando carona neste cron diário.
+  let resumoSemanal: { enviados: number; pulados: number; falhas: number } | null = null;
+  try {
+    const diaSemana = new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo", weekday: "short" });
+    if (diaSemana === "Mon") resumoSemanal = await enviarResumosSemanais();
+  } catch (err) {
+    console.error("[cron pos-venda] falha no resumo semanal", err);
+  }
+
   return NextResponse.json({
     ok: true,
+    resumoSemanal,
     campanhasEnviadas: campanhas.enviados,
     campanhasFalhas: campanhas.falhas,
     total: pendentes.length,
