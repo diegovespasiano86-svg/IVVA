@@ -25,6 +25,10 @@ function fmt(n: number) {
   return n.toLocaleString("pt-BR");
 }
 
+// Ciclo anual: 10 mensalidades (2 meses grátis).
+const brl = (n: number) => n.toLocaleString("pt-BR", { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 });
+const totalAnual = (p: Plano) => p.preco * 10;
+
 const ESTADO_INICIAL: CadastroState = { erro: null, clientSecret: null };
 
 // Cartão do plano: só escolhe o plano. Os dados do cliente são pedidos na etapa seguinte (CadastroPanel),
@@ -57,10 +61,12 @@ const ROTULO = "mb-1 block text-[12.5px] font-bold text-[#0e0e13]";
 // Etapa de cadastro antes do pagamento. Os valores ficam guardados no estado para não sumirem se der erro.
 function CadastroPanel({
   plano,
+  anual,
   onClientSecret,
   onVoltar,
 }: {
   plano: Plano;
+  anual: boolean;
   onClientSecret: (clientSecret: string) => void;
   onVoltar: () => void;
 }) {
@@ -76,7 +82,8 @@ function CadastroPanel({
   return (
     <div className="mx-auto max-w-[560px]">
       <p className="mb-4 text-center text-[13px] text-[#a5a3b0]">
-        Assinando <strong className="text-[#f7f6f2]">{plano.nome}</strong> · R$ {plano.preco}/mês · 14 dias grátis
+        Assinando <strong className="text-[#f7f6f2]">{plano.nome}</strong> ·{" "}
+        {anual ? `R$ ${fmt(totalAnual(plano))}/ano (2 meses grátis)` : `R$ ${plano.preco}/mês`} · 14 dias grátis
       </p>
       <div className="rounded-3xl bg-white p-7 shadow-[0_40px_90px_-30px_rgba(0,0,0,0.6)]">
         <h2 className="text-[20px] font-extrabold text-[#0e0e13]">Conte um pouco sobre você e o seu negócio</h2>
@@ -84,6 +91,7 @@ function CadastroPanel({
 
         <form action={formAction} className="mt-5 flex flex-col gap-3.5">
           <input type="hidden" name="plano" value={plano.key} />
+          <input type="hidden" name="ciclo" value={anual ? "anual" : "mensal"} />
           <div>
             <label htmlFor="cad-nome" className={ROTULO}>Seu nome</label>
             <input id="cad-nome" name="nome" required autoComplete="name" placeholder="Como podemos te chamar" className={CAMPO} defaultValue={v.nome} onChange={set("nome")} />
@@ -176,6 +184,11 @@ export default function PlanosClient({ planos }: { planos: Plano[] }) {
   const [checkout, setCheckout] = useState<{ clientSecret: string; plano: Plano } | null>(null);
   const [escolhido, setEscolhido] = useState<Plano | null>(null);
   const [volume, setVolume] = useState<number | null>(null);
+  const [anual, setAnual] = useState(false);
+  // Vindo do site (ivva.app.br) com ?ciclo=anual, já abre no anual.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("ciclo") === "anual") setAnual(true);
+  }, []);
   // Menor plano que comporta o volume escolhido (acima do maior, indica o maior).
   const indicado =
     volume === null
@@ -188,8 +201,7 @@ export default function PlanosClient({ planos }: { planos: Plano[] }) {
     return (
       <div className="mx-auto max-w-[560px]">
         <p className="mb-4 text-center text-[13px] text-[#a5a3b0]">
-          Assinando <strong className="text-[#f7f6f2]">{checkout.plano.nome}</strong> · R${" "}
-          {checkout.plano.preco}/mês
+          Assinando <strong className="text-[#f7f6f2]">{checkout.plano.nome}</strong> · {anual ? `R$ ${fmt(totalAnual(checkout.plano))}/ano` : `R$ ${checkout.plano.preco}/mês`}
         </p>
         <div className="overflow-hidden rounded-3xl bg-white shadow-[0_40px_90px_-30px_rgba(0,0,0,0.6)]">
           <EmbeddedPanel clientSecret={checkout.clientSecret} />
@@ -211,6 +223,7 @@ export default function PlanosClient({ planos }: { planos: Plano[] }) {
     return (
       <CadastroPanel
         plano={escolhido}
+        anual={anual}
         onClientSecret={(clientSecret) => setCheckout({ clientSecret, plano: escolhido })}
         onVoltar={() => setEscolhido(null)}
       />
@@ -219,6 +232,27 @@ export default function PlanosClient({ planos }: { planos: Plano[] }) {
 
   return (
     <div>
+      <div className="mb-8 flex flex-col items-center gap-2">
+        <div role="group" aria-label="Ciclo de cobrança" className="flex rounded-full border border-white/15 bg-white/5 p-1">
+          {[
+            { v: false, l: "Mensal" },
+            { v: true, l: "Anual" },
+          ].map((o) => (
+            <button
+              key={o.l}
+              type="button"
+              aria-pressed={anual === o.v}
+              onClick={() => setAnual(o.v)}
+              className={`rounded-full px-5 py-2 text-[13px] font-semibold transition-colors ${
+                anual === o.v ? "bg-[linear-gradient(100deg,#2fbf9f,#8b7fe8)] text-white" : "text-[#c7c5d1] hover:text-[#f7f6f2]"
+              }`}
+            >
+              {o.l}
+            </button>
+          ))}
+        </div>
+        <p className="text-[12px] font-semibold text-[#2fbf9f]">Anual: 2 meses grátis</p>
+      </div>
       <div className="mb-8 text-center">
         <p className="text-[13.5px] font-semibold text-[#c7c5d1]">Quantas conversas você atende por mês?</p>
         <div className="mt-3 flex flex-wrap items-center justify-center gap-2" role="group" aria-label="Volume de conversas por mês">
@@ -277,9 +311,14 @@ export default function PlanosClient({ planos }: { planos: Plano[] }) {
             </p>
             <p className={`mt-5 flex items-baseline gap-1 ${p.destaque ? "text-[#f7f6f2]" : "text-[#0e0e13]"}`}>
               <span className="text-sm font-semibold opacity-70">R$</span>
-              <span className="text-[38px] font-extrabold tracking-[-0.03em]">{p.preco}</span>
+              <span className="text-[38px] font-extrabold tracking-[-0.03em]">{anual ? brl(totalAnual(p) / 12) : p.preco}</span>
               <span className={`text-[13px] ${p.destaque ? "text-[#a5a3b0]" : "text-[#8a8896]"}`}>/mês</span>
             </p>
+            {anual && (
+              <p className={`mt-1.5 text-[12px] font-semibold ${p.destaque ? "text-[#2fbf9f]" : "text-[#1f9a7f]"}`}>
+                R$ {fmt(totalAnual(p))} por ano, pago de uma vez · 2 meses grátis
+              </p>
+            )}
             <p
               className={`mt-3 rounded-xl px-3 py-2 text-[13px] font-bold ${
                 p.destaque ? "bg-white/8 text-[#f7f6f2]" : "bg-[#f3f1ec] text-[#0e0e13]"

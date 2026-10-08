@@ -5,6 +5,10 @@ const PLANO_POR_PRICE_ID: Record<string, string> = {
   [process.env.STRIPE_PRICE_ESSENCIAL ?? ""]: "essencial",
   [process.env.STRIPE_PRICE_PROFISSIONAL ?? ""]: "profissional",
   [process.env.STRIPE_PRICE_COMPLETO ?? ""]: "completo",
+  // Ciclo anual: o mesmo plano, cobrado uma vez por ano.
+  ...(process.env.STRIPE_PRICE_ESSENCIAL_ANUAL ? { [process.env.STRIPE_PRICE_ESSENCIAL_ANUAL]: "essencial" } : {}),
+  ...(process.env.STRIPE_PRICE_PROFISSIONAL_ANUAL ? { [process.env.STRIPE_PRICE_PROFISSIONAL_ANUAL]: "profissional" } : {}),
+  ...(process.env.STRIPE_PRICE_COMPLETO_ANUAL ? { [process.env.STRIPE_PRICE_COMPLETO_ANUAL]: "completo" } : {}),
 };
 
 // Sem webhook configurado, trocar de plano pelo Portal de cobrança da

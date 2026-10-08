@@ -12,6 +12,13 @@ const PRICE_ENV: Record<string, string | undefined> = {
   completo: process.env.STRIPE_PRICE_COMPLETO,
 };
 
+// Preços do ciclo anual (10x o mensal = 2 meses grátis). Só funciona quando as variáveis STRIPE_PRICE_*_ANUAL existem.
+const PRICE_ENV_ANUAL: Record<string, string | undefined> = {
+  essencial: process.env.STRIPE_PRICE_ESSENCIAL_ANUAL,
+  profissional: process.env.STRIPE_PRICE_PROFISSIONAL_ANUAL,
+  completo: process.env.STRIPE_PRICE_COMPLETO_ANUAL,
+};
+
 export type CadastroState = { erro: string | null; clientSecret: string | null };
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -29,6 +36,7 @@ export async function iniciarCadastro(_prev: CadastroState, formData: FormData):
   const nomeNegocio = String(formData.get("nome_negocio") ?? "").trim();
   const segmento = String(formData.get("segmento") ?? "").trim();
   const aceite = formData.get("aceite") === "on";
+  const anual = String(formData.get("ciclo") ?? "") === "anual";
 
   if (nome.length < 2) return { erro: "Informe o seu nome.", clientSecret: null };
   if (!EMAIL_RE.test(email)) return { erro: "Confira o e-mail: parece incompleto.", clientSecret: null };
@@ -37,8 +45,15 @@ export async function iniciarCadastro(_prev: CadastroState, formData: FormData):
   if (!getSegmento(segmento)) return { erro: "Escolha o tipo do seu negócio.", clientSecret: null };
   if (!aceite) return { erro: "Para continuar, aceite os Termos e a Política de Privacidade.", clientSecret: null };
 
-  const priceId = PRICE_ENV[plano];
-  if (!priceId) return { erro: "Pagamento ainda em configuração. Volte em instantes.", clientSecret: null };
+  const priceId = (anual ? PRICE_ENV_ANUAL : PRICE_ENV)[plano];
+  if (!priceId) {
+    return {
+      erro: anual
+        ? "O plano anual ainda está sendo liberado. Escolha o plano mensal por enquanto ou volte em instantes."
+        : "Pagamento ainda em configuração. Volte em instantes.",
+      clientSecret: null,
+    };
+  }
 
   const secret = process.env.WHATSAPP_WEBHOOK_INTERNAL_SECRET;
   if (!secret) return { erro: "Cadastro indisponível no momento. Tente de novo em instantes.", clientSecret: null };
@@ -73,7 +88,7 @@ export async function iniciarCadastro(_prev: CadastroState, formData: FormData):
       plano,
       nomeNegocio,
       email,
-      extraMetadata: { nome, segmento, telefone: telefone.replace(/\D/g, "") },
+      extraMetadata: { nome, segmento, telefone: telefone.replace(/\D/g, ""), ciclo: anual ? "anual" : "mensal" },
       returnUrl: `${origin}/bem-vindo?session_id={CHECKOUT_SESSION_ID}`,
     });
     await supabase.rpc("lead_avancar", { p_secret: secret, p_email: email, p_status: "pagamento_aberto", p_session_id: session.id });
