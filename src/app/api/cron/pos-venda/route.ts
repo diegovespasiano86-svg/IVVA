@@ -7,6 +7,7 @@ import { processarResumosHistoricoPendentes } from "@/lib/whatsapp-historico";
 import { processarLotes } from "@/lib/campanhas-envio";
 import { emailAlertaCadastros, enviarEmail } from "@/lib/email";
 import { enviarResumosSemanais } from "@/lib/resumo-semanal";
+import { processarIndicacoes } from "@/lib/indicacao";
 
 // Roda 1x por dia (limite do plano Hobby da Vercel — ver vercel.json).
 // Isso significa que os prazos "1h"/"2h" na prática viram "dentro do
@@ -260,9 +261,18 @@ export async function GET(request: NextRequest) {
     console.error("[cron pos-venda] falha no resumo semanal", err);
   }
 
+  // Indique e ganhe: libera o desconto de quem indicou depois de 30 dias de plano mensal ativo do indicado.
+  let indicacoes: Awaited<ReturnType<typeof processarIndicacoes>> | null = null;
+  try {
+    indicacoes = await processarIndicacoes();
+  } catch (err) {
+    console.error("[cron pos-venda] falha nas indicações", err);
+  }
+
   return NextResponse.json({
     ok: true,
     resumoSemanal,
+    indicacoes,
     campanhasEnviadas: campanhas.enviados,
     campanhasFalhas: campanhas.falhas,
     total: pendentes.length,

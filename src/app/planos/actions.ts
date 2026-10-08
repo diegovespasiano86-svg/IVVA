@@ -79,6 +79,16 @@ export async function iniciarCadastro(_prev: CadastroState, formData: FormData):
     };
   }
 
+  // Indique e ganhe: guarda a indicação (código do link de quem indicou). Falha aqui nunca impede o cadastro.
+  const refCodigo = String(formData.get("ref") ?? "").trim();
+  if (refCodigo && /^[A-Za-z0-9]{3,20}$/.test(refCodigo)) {
+    try {
+      await supabase.rpc("indicacao_registrar", { p_secret: secret, p_codigo: refCodigo, p_email: email });
+    } catch (e) {
+      console.error("[cadastro] indicacao_registrar falhou", e);
+    }
+  }
+
   // Em produção o retorno da Stripe é sempre o endereço oficial do app.
   const origin = await origemDoApp();
 

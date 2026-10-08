@@ -62,11 +62,13 @@ const ROTULO = "mb-1 block text-[12.5px] font-bold text-[#0e0e13]";
 function CadastroPanel({
   plano,
   anual,
+  refCodigo,
   onClientSecret,
   onVoltar,
 }: {
   plano: Plano;
   anual: boolean;
+  refCodigo: string;
   onClientSecret: (clientSecret: string) => void;
   onVoltar: () => void;
 }) {
@@ -92,6 +94,7 @@ function CadastroPanel({
         <form action={formAction} className="mt-5 flex flex-col gap-3.5">
           <input type="hidden" name="plano" value={plano.key} />
           <input type="hidden" name="ciclo" value={anual ? "anual" : "mensal"} />
+          <input type="hidden" name="ref" value={refCodigo} />
           <div>
             <label htmlFor="cad-nome" className={ROTULO}>Seu nome</label>
             <input id="cad-nome" name="nome" required autoComplete="name" placeholder="Como podemos te chamar" className={CAMPO} defaultValue={v.nome} onChange={set("nome")} />
@@ -185,9 +188,14 @@ export default function PlanosClient({ planos }: { planos: Plano[] }) {
   const [escolhido, setEscolhido] = useState<Plano | null>(null);
   const [volume, setVolume] = useState<number | null>(null);
   const [anual, setAnual] = useState(false);
+  const [refCodigo, setRefCodigo] = useState("");
   // Vindo do site (ivva.app.br) com ?ciclo=anual, já abre no anual.
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get("ciclo") === "anual") setAnual(true);
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("ciclo") === "anual") setAnual(true);
+    // Código de indicação (Indique e ganhe) vindo do link de quem indicou.
+    const ref = (params.get("ref") ?? "").trim();
+    if (/^[A-Za-z0-9]{3,20}$/.test(ref)) setRefCodigo(ref.toUpperCase());
   }, []);
   // Menor plano que comporta o volume escolhido (acima do maior, indica o maior).
   const indicado =
@@ -224,6 +232,7 @@ export default function PlanosClient({ planos }: { planos: Plano[] }) {
       <CadastroPanel
         plano={escolhido}
         anual={anual}
+        refCodigo={refCodigo}
         onClientSecret={(clientSecret) => setCheckout({ clientSecret, plano: escolhido })}
         onVoltar={() => setEscolhido(null)}
       />

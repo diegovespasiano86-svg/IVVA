@@ -254,3 +254,42 @@ export async function createCreditosCheckoutSession(params: {
   }
   return data as { id: string; url: string };
 }
+
+// ---- Indique e ganhe -------------------------------------------------------
+
+export type EstadoAssinatura = "ativa" | "aguardar" | "cancelada" | "inexistente";
+
+// Situação da assinatura do cliente na Stripe e se o plano é mensal (a indicação só vale para plano mensal).
+export async function situacaoAssinatura(customerId: string): Promise<{ estado: EstadoAssinatura; mensal: boolean }> {
+  const params = new URLSearchParams({ customer: customerId, status: "all", limit: "5" });
+  params.append("expand[]", "data.items.data.price");
+  const res = await fetch(`${STRIPE_API}/subscriptions?${params}`, { headers: stripeHeaders() });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data?.error?.message ?? "Falha ao consultar assinatura");
+
+  type Sub = { status: string; items?: { data?: { price?: { recurring?: { interval?: string; interval_count?: number } } }[] } };
+  const assinaturas = (data?.data ?? []) as Sub[];
+  if (assinaturas.length === 0) return { estado: "inexistente", mensal: false };
+
+  const viva = assinaturas.find((s) => s.status === "active") ?? assinaturas.find((s) => ["trialing", "past_due", "incomplete"].includes(s.status));
+  if (!viva) return { estado: "cancelada", mensal: false };
+  const rec = viva.items?.data?.[0]?.price?.recurring;
+  return { estado: viva.status === "active" ? "ativa" : "aguardar", mensal: rec?.interval === "month" && (rec?.interval_count ?? 1) === 1 };
+}
+
+// Crédito na conta do cliente na Stripe: abate sozinho a próxima fatura (desconto na mensalidade seguinte).
+// A chave de idempotência evita creditar duas vezes a mesma indicação.
+export async function creditarCliente(params: { customerId: string; centavos: number; descricao: string; chave: string }): Promise<void> {
+  const body = new URLSearchParams({
+    amount: String(-Math.abs(params.centavos)),
+    currency: "brl",
+    description: params.descricao.slice(0, 250),
+  });
+  const res = await fetch(`${STRIPE_API}/customers/${params.customerId}/balance_transactions`, {
+    method: "POST",
+    headers: { ...stripeHeaders(), "Idempotency-Key": params.chave },
+    body,
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data?.error?.message ?? "Falha ao creditar o desconto");
+}
