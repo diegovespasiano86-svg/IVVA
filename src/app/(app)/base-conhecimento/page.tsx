@@ -4,6 +4,8 @@ import { confirmarSugestaoConhecimento, ignorarSugestaoConhecimento } from "./ac
 import { criarBloco, organizarAutomaticamente } from "./blocos-actions";
 import { CATEGORIAS, LIMITE_TEXTO_LONGO, type CategoriaId } from "@/lib/blocos-conhecimento";
 import UploadArquivo from "./upload-arquivo";
+import LerSite from "./ler-site";
+import { Globe } from "lucide-react";
 import EntrevistaAudio from "./entrevista-audio";
 import ArquivoItem from "./arquivo-item";
 import NichoSeletor from "./nicho-seletor";
@@ -157,6 +159,16 @@ export default async function BaseConhecimentoPage() {
             <p className="mb-3 text-[12px] text-ink-soft">Prefere contar do que escrever? Grave um áudio falando do negócio.</p>
             <EntrevistaAudio />
           </div>
+        </div>
+        <div className="card mt-4 px-5 py-5">
+          <p className="mb-1 flex items-center gap-2 text-[14px] font-extrabold">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#ece9fc] text-purple">
+              <Globe size={16} />
+            </span>
+            Ler meu site
+          </p>
+          <p className="mb-3 text-[12px] text-ink-soft">Já tem um site com serviços, preços e horários? A ivva lê a página e sugere os itens da base para você revisar.</p>
+          <LerSite />
         </div>
       </section>
 
