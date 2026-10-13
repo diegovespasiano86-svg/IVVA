@@ -144,7 +144,7 @@ export default async function AppLayout({
 
   const alertHrefs = [
     ...(chamadosAbertos > 0 ? ["/conta"] : []),
-    ...(aguardandoHumano > 0 ? ["/sac"] : []),
+    ...(aguardandoHumano > 0 ? ["/conversas"] : []),
     ...(sugestoesPendentes > 0 ? ["/base-conhecimento"] : []),
     ...(tarefasCrm.hoje + tarefasCrm.atrasadas > 0 ? ["/crm"] : []),
   ];
@@ -179,7 +179,7 @@ export default async function AppLayout({
           </Alert>
         )}
         {aguardandoHumano > 0 && (
-          <Alert tone="danger" pulse action={{ href: "/sac", label: "Abrir o SAC" }}>
+          <Alert tone="danger" pulse action={{ href: "/conversas", label: "Atender agora" }}>
             {aguardandoHumano === 1
               ? "1 cliente está aguardando atendimento humano agora."
               : `${aguardandoHumano} clientes estão aguardando atendimento humano agora.`}
