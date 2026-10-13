@@ -11,6 +11,7 @@ import { FeatureLock } from "@/components/feature-lock";
 import { temRecurso } from "@/lib/planos";
 import DesempenhoRobo from "../conversas/dashboard";
 import FaturamentoAba from "./faturamento-aba";
+import RetornoAba from "./retorno-aba";
 import { LineAreaChart } from "@/components/charts";
 import { CATEGORIA_LABEL, type CategoriaResumo } from "@/lib/resumo-conversas";
 import { PERIODOS, agrupar, brl, formatarDuracao, lerPeriodo, mediana, serieDiaria } from "@/lib/relatorios";
@@ -19,6 +20,7 @@ import { ROTULO_DATASET, TIPOS_DATASET } from "@/lib/relatorios-dados";
 const ABAS = [
   { id: "geral", label: "Visão geral" },
   { id: "ia", label: "Resultado da IA" },
+  { id: "retorno", label: "Retorno da ivva" },
   { id: "atendimento", label: "Atendimento" },
   { id: "financeiro", label: "Financeiro" },
   { id: "clientes", label: "Clientes" },
@@ -33,7 +35,7 @@ const MINUTOS_POR_RESPOSTA = 1;
 
 const FORMA: Record<string, string> = { pix: "Pix", credito: "Crédito", debito: "Débito", dinheiro: "Dinheiro" };
 
-export default async function RelatoriosPage({ searchParams }: { searchParams: Promise<{ aba?: string; periodo?: string; profissional?: string }> }) {
+export default async function RelatoriosPage({ searchParams }: { searchParams: Promise<{ aba?: string; periodo?: string; profissional?: string; custo?: string; hora?: string }> }) {
   const sp = await searchParams;
   const aba: Aba = ABAS.some((a) => a.id === sp.aba) ? (sp.aba as Aba) : "geral";
   const periodo = lerPeriodo(sp.periodo);
@@ -86,6 +88,7 @@ export default async function RelatoriosPage({ searchParams }: { searchParams: P
 
       {aba === "geral" && <Geral supabase={supabase} desde={desde} periodo={periodo} />}
       {aba === "ia" && <ResultadoIA supabase={supabase} desde={desde} periodo={periodo} />}
+      {aba === "retorno" && <RetornoAba supabase={supabase} desde={desde} periodo={periodo} plano={plano} custoExtra={sp.custo} valorHora={sp.hora} />}
       {aba === "atendimento" && <Atendimento supabase={supabase} desde={desde} />}
       {aba === "financeiro" && <Financeiro supabase={supabase} desde={desde} periodo={periodo} />}
       {aba === "clientes" && <Clientes supabase={supabase} desde={desde} periodo={periodo} />}

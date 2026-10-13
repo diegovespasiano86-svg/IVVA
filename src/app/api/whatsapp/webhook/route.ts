@@ -73,6 +73,8 @@ type WhatsAppWebhookBody = {
           image?: { id?: string; mime_type?: string; caption?: string };
           audio?: { id?: string; mime_type?: string };
         }[];
+        // Avisos de entrega e leitura das mensagens que a gente enviou.
+        statuses?: { id?: string; status?: string }[];
         // account_update (Coexistência): evento de conexão/desconexão da
         // conta — não tem metadata.phone_number_id, o número vem direto
         // no campo phone_number.
@@ -191,6 +193,20 @@ export async function POST(request: NextRequest) {
 
       const phoneNumberId = value?.metadata?.phone_number_id;
       if (!phoneNumberId) continue;
+
+      // Entregue/lido: só interessa para as campanhas (a função ignora ids que não são de campanha).
+      const avisos = (value?.statuses ?? [])
+        .filter((st) => st.id && (st.status === "delivered" || st.status === "read"))
+        .map((st) => ({ id: st.id, status: st.status }));
+      if (avisos.length > 0) {
+        try {
+          const supabase = createClient(supabaseUrl, anonKey);
+          const { error } = await supabase.rpc("campanha_registrar_status", { p_secret: internalSecret, p_itens: avisos });
+          if (error) console.error("[whatsapp webhook] falha ao registrar entrega/leitura:", error.message);
+        } catch (err) {
+          console.error("[whatsapp webhook] falha ao registrar entrega/leitura", err);
+        }
+      }
 
       for (const msg of value?.messages ?? []) {
         if (!msg.from) continue;

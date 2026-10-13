@@ -313,3 +313,24 @@ export async function consultarModeloWhatsApp(wabaId: string, token: string, nom
       motivo: m.rejected_reason && m.rejected_reason !== "NONE" ? m.rejected_reason : null,
     }));
 }
+
+// ---------- Saúde do número ----------
+export type SaudeNumero = { qualidade: string | null; limite: string | null; nomeStatus: string | null };
+
+/** Consulta a nota de qualidade e o limite diário do número direto na Meta. Devolve null se a consulta falhar. */
+export async function consultarSaudeNumero(phoneNumberId: string, token: string): Promise<SaudeNumero | null> {
+  try {
+    const url = new URL(`https://graph.facebook.com/${GRAPH_API_VERSION}/${phoneNumberId}`);
+    url.searchParams.set("fields", "quality_rating,messaging_limit_tier,name_status");
+    const res = await fetch(url, { signal: AbortSignal.timeout(8000), headers: { Authorization: `Bearer ${token}` }, cache: "no-store" });
+    const data = await res.json();
+    if (!res.ok) return null;
+    return {
+      qualidade: data?.quality_rating ?? null,
+      limite: data?.messaging_limit_tier ?? null,
+      nomeStatus: data?.name_status ?? null,
+    };
+  } catch {
+    return null;
+  }
+}

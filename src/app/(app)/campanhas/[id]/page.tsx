@@ -69,7 +69,7 @@ export default async function CampanhaPage({ params }: { params: Promise<{ id: s
     );
   }
 
-  const { data: dest } = await supabase.from("campaign_recipients").select("nome, telefone, status, erro").eq("campaign_id", id).order("created_at").limit(5000);
+  const { data: dest } = await supabase.from("campaign_recipients").select("nome, telefone, status, erro, entregue_em, lido_em").eq("campaign_id", id).order("created_at").limit(5000);
   const lista = dest ?? [];
   const pendentes = lista.filter((d) => d.status === "pendente" || d.status === "enviando").length;
   const ordem: Record<string, number> = { falhou: 0, enviando: 1, pendente: 2, enviado: 3, ignorado: 4 };
@@ -86,6 +86,8 @@ export default async function CampanhaPage({ params }: { params: Promise<{ id: s
             total={c.total}
             enviados={c.enviados}
             falhas={c.falhas}
+            entregues={lista.filter((d) => d.entregue_em).length}
+            lidos={lista.filter((d) => d.lido_em).length}
             ignorados={c.ignorados}
             pendentes={pendentes}
             pausaMotivo={c.pausa_motivo}

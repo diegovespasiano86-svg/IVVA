@@ -6,6 +6,8 @@ import { desconectarWhatsApp } from "../conta/actions";
 import EmbeddedSignupButton from "../conta/embedded-signup-button";
 import WhatsAppForm from "../conta/whatsapp-form";
 import SituacaoNumero from "./situacao-numero";
+import DivulgarWhatsApp from "./divulgar-whatsapp";
+import SaudeNumero from "./saude-numero";
 
 // As ações desta tela falam com a Meta (conexão do WhatsApp); damos mais tempo que o padrão da Vercel.
 export const maxDuration = 60;
@@ -95,6 +97,7 @@ export default async function CanaisPage() {
                 O WhatsApp parou de enviar mensagens. Desconecte e conecte de novo para restabelecer o atendimento.
               </p>
             )}
+            {ativo && <SaudeNumero />}
             <div className="mt-5 flex flex-wrap items-center gap-2">
               <Link href="/robo/simulador" className="btn btn-primary btn-md">
                 Testar o robô
@@ -133,6 +136,8 @@ export default async function CanaisPage() {
           </div>
         )}
       </section>
+
+      {ativo && conta?.display_phone_number && <DivulgarWhatsApp telefone={conta.display_phone_number} negocio="" />}
 
       <h2 className="mb-3 text-[14px] font-extrabold">Outros canais</h2>
       <div className="grid gap-3.5 md:grid-cols-3">

@@ -14,6 +14,8 @@ export default function CampanhaAcompanhamento({
   total,
   enviados,
   falhas,
+  entregues = 0,
+  lidos = 0,
   ignorados,
   pendentes,
   pausaMotivo,
@@ -23,6 +25,9 @@ export default function CampanhaAcompanhamento({
   total: number;
   enviados: number;
   falhas: number;
+  /** avisos de entrega e leitura que a Meta mandou para as mensagens desta campanha */
+  entregues?: number;
+  lidos?: number;
   ignorados: number;
   pendentes: number;
   pausaMotivo: string | null;
@@ -117,6 +122,25 @@ export default function CampanhaAcompanhamento({
             </div>
           ))}
         </div>
+
+        {enviados > 0 && (
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            {[
+              { rotulo: "Entregues no celular", valor: entregues },
+              { rotulo: "Lidas pelo cliente", valor: lidos },
+            ].map((c) => (
+              <div key={c.rotulo} className="rounded-xl border border-border px-3 py-3 text-center">
+                <p className="text-[20px] font-extrabold tabular-nums">
+                  {c.valor} <span className="text-[12.5px] font-bold text-ink-soft">({Math.round((c.valor / enviados) * 100)}%)</span>
+                </p>
+                <p className="text-[11.5px] font-semibold text-ink-soft">{c.rotulo}</p>
+              </div>
+            ))}
+            <p className="col-span-2 text-[11.5px] leading-snug text-ink-soft">
+              Percentual sobre as enviadas. “Lidas” só aparece para clientes que deixam a confirmação de leitura ligada, então o número real costuma ser maior.
+            </p>
+          </div>
+        )}
 
         {status === "enviando" && <p className="mt-4 text-[12.5px] text-ink-soft">Mantenha esta página aberta até terminar. O WhatsApp limita a 250 mensagens por dia por negócio; o que passar disso continua no dia seguinte.</p>}
         {aviso && <p className="mt-3 rounded-xl bg-[#e6eefc] px-3.5 py-2.5 text-[12.5px] font-semibold text-[#1d4c9e]">{aviso}</p>}

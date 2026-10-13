@@ -4,6 +4,7 @@ import { FeatureLock } from "@/components/feature-lock";
 import { temRecurso, nomePlano } from "@/lib/planos";
 import PrimeirosPassos from "@/components/primeiros-passos";
 import IvvaEmNumeros from "@/components/ivva-em-numeros";
+import AtendimentoAgora from "@/components/atendimento-agora";
 import { termosDoNegocio } from "@/lib/termos";
 import KpiCard from "@/components/kpi-card";
 import { CalendarDays, MessageSquare, Users, Wallet } from "lucide-react";
@@ -209,6 +210,10 @@ export default async function DashboardPage() {
           rotuloAgendamentos={termos.agendamentosFuturos}
         />
       )}
+
+      <div className="mb-5">
+        <AtendimentoAgora />
+      </div>
 
       <div className={`grid grid-cols-2 gap-3.5 ${ehDono ? "md:grid-cols-4" : "md:grid-cols-3"}`}>
         <KpiCard label="Conversas este mês" numero={conversas ?? 0} icon={MessageSquare} spark={pontosLinha.map((p) => p.valor)} />

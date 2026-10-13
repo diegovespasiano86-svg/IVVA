@@ -92,3 +92,10 @@ export function planoMinimoPara(recurso: Recurso): PlanoId {
 export function nomePlano(plano: string | null | undefined): string {
   return PLANO_LABEL[normalizarPlano(plano)];
 }
+
+/** Mensalidade de tabela de cada plano, em reais. Usada só para estimar o retorno nos relatórios. */
+export const PRECO_MENSAL: Record<PlanoId, number> = { essencial: 297, profissional: 447, completo: 597 };
+
+export function precoMensal(plano: string | null | undefined): number {
+  return PRECO_MENSAL[(plano ?? "essencial") as PlanoId] ?? PRECO_MENSAL.essencial;
+}
