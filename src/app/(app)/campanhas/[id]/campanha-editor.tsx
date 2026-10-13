@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CalendarClock, CheckCircle2, CircleAlert, Rocket, ShieldCheck, Users } from "lucide-react";
 import PreviewWhatsApp from "@/components/preview-whatsapp";
+import ModeloNaMeta from "./modelo-na-meta";
 import { IDIOMAS, SEGMENTOS_CAMPANHA, normalizarNomeModelo } from "@/lib/campanhas";
 import { definirConsentimento, iniciarCampanha, prepararCampanha, salvarRascunho, type DadosRascunho } from "../actions";
 
@@ -261,8 +262,10 @@ export default function CampanhaEditor({
           <label htmlFor="previa" className="mt-3">Texto do modelo (para a prévia e para você copiar na Meta)</label>
           <textarea id="previa" value={previa} onChange={(e) => setPrevia(e.target.value)} rows={4} maxLength={1024} className="textarea" placeholder="Oi, {{1}}! ..." />
 
+          <ModeloNaMeta nome={nomeModeloOk} idioma={idioma} corpo={previa} whatsappAtivo={whatsappAtivo} />
+
           <details className="mt-3 rounded-xl border border-border bg-bg px-4 py-3">
-            <summary className="cursor-pointer text-[12.5px] font-bold text-purple">Como criar este modelo na Meta (leva poucos minutos)</summary>
+            <summary className="cursor-pointer text-[12.5px] font-bold text-purple">Prefiro criar pelo Gerenciador do WhatsApp (leva poucos minutos)</summary>
             <ol className="mt-2.5 list-decimal space-y-1.5 pl-5 text-[12.5px] leading-snug text-ink-soft">
               <li>Abra o Gerenciador do WhatsApp (business.facebook.com), em <strong>Modelos de mensagem</strong>, e clique em <strong>Criar modelo</strong>.</li>
               <li>Categoria <strong>Marketing</strong>. Idioma igual ao escolhido acima.</li>

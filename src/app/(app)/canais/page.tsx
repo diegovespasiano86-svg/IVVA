@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { desconectarWhatsApp } from "../conta/actions";
 import EmbeddedSignupButton from "../conta/embedded-signup-button";
 import WhatsAppForm from "../conta/whatsapp-form";
+import SituacaoNumero from "./situacao-numero";
 
 // As ações desta tela falam com a Meta (conexão do WhatsApp); damos mais tempo que o padrão da Vercel.
 export const maxDuration = 60;
@@ -110,6 +111,7 @@ export default async function CanaisPage() {
           </div>
         ) : (
           <div className="px-5 py-5">
+            <SituacaoNumero />
             <ol className="mb-6 grid gap-3 md:grid-cols-4">
               {PASSOS.map((p, i) => (
                 <li key={p.titulo} className="rounded-xl border border-border bg-bg px-4 py-3.5">

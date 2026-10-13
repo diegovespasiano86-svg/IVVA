@@ -254,3 +254,62 @@ export async function sendWhatsAppInteractiveButtons(
   }
   return data;
 }
+
+// ---------- Modelos de mensagem (templates) ----------
+// Criar e consultar modelos é feito na CONTA do WhatsApp Business (WABA), não no número.
+// A Meta analisa cada modelo antes de liberar o envio.
+
+export type CategoriaModelo = "MARKETING" | "UTILITY";
+export type SituacaoModelo = { nome: string; idioma: string; status: string; categoria: string | null; motivo: string | null };
+
+export async function criarModeloWhatsApp(
+  wabaId: string,
+  token: string,
+  modelo: { nome: string; idioma: string; categoria: CategoriaModelo; corpo: string; exemploNome?: string },
+): Promise<{ id: string | null; status: string }> {
+  const usaVariavel = /\{\{1\}\}/.test(modelo.corpo);
+  const res = await fetch(`https://graph.facebook.com/${GRAPH_API_VERSION}/${wabaId}/message_templates`, {
+    method: "POST",
+    signal: AbortSignal.timeout(15000),
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      name: modelo.nome,
+      language: modelo.idioma,
+      category: modelo.categoria,
+      components: [
+        {
+          type: "BODY",
+          text: modelo.corpo,
+          // A Meta exige um exemplo para cada variável do texto.
+          ...(usaVariavel ? { example: { body_text: [[modelo.exemploNome || "Maria"]] } } : {}),
+        },
+      ],
+    }),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    const err = new Error(data?.error?.error_user_msg ?? data?.error?.message ?? "Falha ao criar o modelo na Meta") as Error & { code?: number };
+    err.code = typeof data?.error?.code === "number" ? data.error.code : undefined;
+    throw err;
+  }
+  return { id: data?.id ?? null, status: String(data?.status ?? "PENDING") };
+}
+
+export async function consultarModeloWhatsApp(wabaId: string, token: string, nome: string): Promise<SituacaoModelo[]> {
+  const url = new URL(`https://graph.facebook.com/${GRAPH_API_VERSION}/${wabaId}/message_templates`);
+  url.searchParams.set("name", nome);
+  url.searchParams.set("fields", "name,language,status,category,rejected_reason");
+  const res = await fetch(url, { signal: AbortSignal.timeout(15000), headers: { Authorization: `Bearer ${token}` } });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data?.error?.message ?? "Falha ao consultar o modelo na Meta");
+  type Linha = { name: string; language: string; status: string; category?: string; rejected_reason?: string };
+  return ((data?.data ?? []) as Linha[])
+    .filter((m) => m.name === nome)
+    .map((m) => ({
+      nome: m.name,
+      idioma: m.language,
+      status: m.status,
+      categoria: m.category ?? null,
+      motivo: m.rejected_reason && m.rejected_reason !== "NONE" ? m.rejected_reason : null,
+    }));
+}

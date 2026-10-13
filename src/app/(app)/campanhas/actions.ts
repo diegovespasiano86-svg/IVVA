@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { IDIOMAS, SEGMENTOS_CAMPANHA, modeloPorId, normalizarNomeModelo } from "@/lib/campanhas";
 import { processarLotes } from "@/lib/campanhas-envio";
+import { consultarModeloWhatsApp, criarModeloWhatsApp, type CategoriaModelo, type SituacaoModelo } from "@/lib/whatsapp";
 
 // Toda ação aqui exige DONO. A regra é aplicada em duas camadas: aqui (mensagem amigável)
 // e no banco (RLS + funções), que recusa qualquer outra coisa mesmo se esta camada falhar.
@@ -166,3 +167,67 @@ export async function processarAgora(): Promise<Retorno<{ enviados: number; falh
   return { erro: null, ...r };
 }
 
+
+// ---------- Modelo de mensagem direto na Meta ----------
+// O dono cria o modelo daqui, sem precisar abrir o Gerenciador do WhatsApp.
+
+async function contaWhatsApp(supabase: Sb): Promise<{ wabaId: string; token: string } | { erro: string }> {
+  const secret = process.env.WHATSAPP_WEBHOOK_INTERNAL_SECRET;
+  if (!secret) return { erro: "Configuração do servidor incompleta. Fale com a gente." };
+  const [{ data: conta }, { data: contas }] = await Promise.all([
+    supabase.from("whatsapp_accounts").select("business_account_id, status").maybeSingle(),
+    supabase.rpc("whatsapp_conta_atual_srv", { p_secret: secret }),
+  ]);
+  const token = (contas as { access_token?: string }[] | null)?.[0]?.access_token;
+  if (!conta || conta.status !== "ativo" || !token) return { erro: "Conecte o WhatsApp em Canais antes de criar o modelo." };
+  if (!conta.business_account_id) return { erro: "Não achei a conta do WhatsApp Business deste número. Reconecte em Canais." };
+  return { wabaId: conta.business_account_id, token };
+}
+
+const IDS_IDIOMA = new Set(IDIOMAS.map((i) => i.id));
+
+export async function criarModeloNaMeta(d: {
+  nome: string;
+  idioma: string;
+  corpo: string;
+  categoria: CategoriaModelo;
+}): Promise<Retorno<{ status: string }>> {
+  const ctx = await donoDaSessao();
+  if ("erro" in ctx) return { erro: ctx.erro };
+
+  const nome = normalizarNomeModelo(d.nome);
+  const corpo = d.corpo.trim();
+  if (!nome) return { erro: "Dê um nome ao modelo (letras minúsculas, números e _)." };
+  if (!IDS_IDIOMA.has(d.idioma)) return { erro: "Idioma inválido." };
+  if (d.categoria !== "MARKETING" && d.categoria !== "UTILITY") return { erro: "Categoria inválida." };
+  if (corpo.length < 10) return { erro: "Escreva o texto do modelo (pelo menos 10 letras)." };
+  if (corpo.length > 1024) return { erro: "O texto do modelo passa de 1.024 letras." };
+  // A ivva só preenche o primeiro nome: qualquer outra variável ficaria vazia no envio.
+  if (/\{\{(?!1\}\})/.test(corpo)) return { erro: "Use só a variável {{1}} (o primeiro nome do cliente)." };
+  if (/^\s*\{\{1\}\}/.test(corpo) || /\{\{1\}\}\s*$/.test(corpo)) return { erro: "A Meta não aceita o texto começando ou terminando com {{1}}." };
+
+  const conta = await contaWhatsApp(ctx.supabase);
+  if ("erro" in conta) return { erro: conta.erro };
+
+  try {
+    const r = await criarModeloWhatsApp(conta.wabaId, conta.token, { nome, idioma: d.idioma, categoria: d.categoria, corpo });
+    return { erro: null, status: r.status };
+  } catch (e) {
+    return { erro: e instanceof Error ? e.message : "A Meta recusou a criação do modelo." };
+  }
+}
+
+export async function situacaoModeloNaMeta(nomeBruto: string, idioma: string): Promise<Retorno<{ situacao: SituacaoModelo | null }>> {
+  const ctx = await donoDaSessao();
+  if ("erro" in ctx) return { erro: ctx.erro };
+  const nome = normalizarNomeModelo(nomeBruto);
+  if (!nome) return { erro: "Informe o nome do modelo." };
+  const conta = await contaWhatsApp(ctx.supabase);
+  if ("erro" in conta) return { erro: conta.erro };
+  try {
+    const lista = await consultarModeloWhatsApp(conta.wabaId, conta.token, nome);
+    return { erro: null, situacao: lista.find((m) => m.idioma === idioma) ?? lista[0] ?? null };
+  } catch (e) {
+    return { erro: e instanceof Error ? e.message : "Não consegui consultar a Meta." };
+  }
+}
