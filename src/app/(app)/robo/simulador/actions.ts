@@ -64,7 +64,8 @@ export async function simularResposta(historico: MensagemSimulada[]): Promise<Re
     identidadeAssistente: tenant.identidade_assistente,
     conversationId: "simulacao",
     contactId: "simulacao",
-    contactNome: "Cliente de teste",
+    // Sem nome, como um cliente novo de verdade: o robô precisa perguntar e se apresentar.
+    contactNome: "",
     contactIsNovo: limpo.length <= 1,
     historico: limpo,
     profissionais: profissionais ?? [],
