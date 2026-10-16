@@ -1,0 +1,4 @@
+-- Corrige reconexão do WhatsApp: ao desconectar, a linha some mas o segredo
+-- 'whatsapp_token_<tenant>' fica no Vault; recriar com o mesmo nome falhava.
+-- Aplicada em 16/10/2026 via MCP (create or replace de public.whatsapp_set_token,
+-- agora procurando o segredo existente pelo nome antes de criar).
