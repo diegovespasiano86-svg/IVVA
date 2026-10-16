@@ -79,6 +79,25 @@ function montarSystemPrompt(ctx: ContextoConversa) {
   const regras = (id.regras ?? []).map((r) => `- ${r}`).join("\n");
   const horario = id.horario_atendimento?.trim();
 
+  // Nome que veio do perfil do WhatsApp (ou já salvo no CRM). Só vale se parece nome de gente, não número.
+  const nomeConhecido = /[a-zà-ú]/i.test(ctx.contactNome ?? "") && !/\d{4,}/.test(ctx.contactNome ?? "") ? ctx.contactNome.trim() : "";
+  const primeiroNome = nomeConhecido.split(/\s+/)[0] ?? "";
+  const ehPrimeiraResposta = !ctx.historico.some((m) => m.remetente !== "contato");
+
+  const linhasAbertura = [
+    ehPrimeiraResposta
+      ? `Esta é a sua PRIMEIRA resposta nesta conversa. Ela precisa, com palavras suas e naturais: (1) cumprimentar com gentileza, de acordo com o horário; (2) se apresentar pelo seu nome, ${nomeAssistente}, dizendo que é de ${ctx.tenantNome}; ` +
+        (primeiroNome
+          ? `(3) chamar a pessoa pelo primeiro nome, ${primeiroNome} (é o nome do perfil dela no WhatsApp — se soar como apelido ou nome de empresa, confirme com leveza como ela prefere ser chamada); `
+          : `(3) perguntar o nome da pessoa, porque você ainda não sabe; `) +
+        `(4) responder ou encaminhar o que ela pediu. Tudo isso numa mensagem curta, sem parecer roteiro.`
+      : `Você já se apresentou nesta conversa: não se apresente de novo.`,
+    primeiroNome
+      ? `Trate a pessoa pelo primeiro nome (${primeiroNome}) ao longo da conversa, com naturalidade, sem repetir em toda frase.`
+      : `Assim que a pessoa disser o nome, passe a chamá-la por ele e registre com atualizar_contato.`,
+    `Sempre que confirmar ou descobrir o nome, o e-mail, se é a primeira vez ou como conheceu ${ctx.tenantNome}, chame atualizar_contato na hora. Esses dados vão para o cadastro do cliente e para o funil de vendas.`,
+  ].join("\n\n");
+
   const linhasQualificacao = ctx.contactIsNovo
     ? `Esse é o primeiro contato de ${ctx.contactNome || "essa pessoa"} com ${ctx.tenantNome}. ` +
       `Em algum momento natural da conversa — sem parecer formulário, sem despejar tudo de uma vez — ` +
@@ -137,12 +156,13 @@ function montarSystemPrompt(ctx: ContextoConversa) {
     `Você é ${nomeAssistente}, quem atende o WhatsApp de ${ctx.tenantNome} — um negócio de serviços.`,
     `Tom de voz: ${tom}.`,
     `Nunca use uma saudação decorada ou genérica — responda como uma pessoa real do time responderia, adaptando ao que foi dito.`,
+    linhasAbertura,
     linhasQualificacao,
     linhaHistoricoAntigo,
     linhasAgenda,
     linhasVenda,
     horario ? `Horário de atendimento humano: ${horario}.` : "",
-    regras ? `Regras específicas desse negócio:\n${regras}` : "",
+    regras ? `Regras específicas desse negócio (obrigatórias — o dono configurou, siga todas):\n${regras}` : "",
     `Se o cliente pedir claramente pra falar com uma pessoa, reclamar de algo sério, ou se você não souber responder com segurança, chame a ferramenta solicitar_atendimento_humano explicando o motivo — não invente informação que você não tem.`,
     podeMudarPeloChat ? "" : `Neste atendimento você NÃO remarca nem cancela horários já marcados: se o cliente pedir, chame solicitar_atendimento_humano explicando o pedido e diga que a equipe confirma em breve.`,
     `Formatação: o WhatsApp só entende *negrito* com UM asterisco de cada lado. Nunca use ** (dois asteriscos), # de título, tabelas nem listas em markdown; para listar, use uma linha por item começando com um traço simples e sem negrito.`,
@@ -325,6 +345,23 @@ async function chamarClaude(system: string, messages: ClaudeMessage[], plano: st
 
 type Slot = { professional_id: string; professional_nome: string; data_hora: string };
 
+/** Move o cliente no funil do CRM (o banco só deixa andar para frente). Nunca derruba a conversa. */
+async function avancarFunil(ctx: ContextoConversa, alvo: "contato" | "agendado", secret: string, supabaseUrl: string, anonKey: string) {
+  if (ctx.simulacao) return;
+  try {
+    const { createClient } = await import("@supabase/supabase-js");
+    const { error } = await createClient(supabaseUrl, anonKey).rpc("ia_avancar_funil", {
+      p_secret: secret,
+      p_tenant_id: ctx.tenantId,
+      p_contact_id: ctx.contactId,
+      p_alvo: alvo,
+    });
+    if (error) console.error("[ia] falha ao avançar funil:", error.message);
+  } catch (err) {
+    console.error("[ia] falha ao avançar funil", err);
+  }
+}
+
 // Única lista de ferramentas que podem rodar de verdade no modo teste (só
 // leem dados). Tudo que não está aqui é bloqueado — se alguém criar uma
 // ferramenta nova que grava, ela já nasce bloqueada na simulação.
@@ -419,7 +456,9 @@ async function executarFerramenta(
       p_duracao_minutos: input.duracao_minutos ?? 30,
     });
     if (error) return { resultado: JSON.stringify({ erro: error.message }), handoff: false };
-    return { resultado: JSON.stringify(data), handoff: false, reservaFeita: Boolean((data as { ok?: boolean })?.ok) };
+    const reservaFeita = Boolean((data as { ok?: boolean })?.ok);
+    if (reservaFeita) await avancarFunil(ctx, "agendado", secret, supabaseUrl, anonKey);
+    return { resultado: JSON.stringify(data), handoff: false, reservaFeita };
   }
 
   if (nome === "remarcar_ou_cancelar_agendamento") {
@@ -566,6 +605,8 @@ export async function gerarRespostaWhatsApp(
     ctx = { ...ctx, plano: "essencial" };
   }
   const system = montarSystemPrompt(ctx);
+  // Cliente falou com o robô: sai da primeira etapa do funil (só anda para frente).
+  await avancarFunil(ctx, "contato", secret, supabaseUrl, anonKey);
 
   const messages: ClaudeMessage[] = ctx.historico.map((m) => ({
     role: m.remetente === "contato" ? "user" : "assistant",

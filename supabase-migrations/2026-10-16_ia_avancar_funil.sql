@@ -1,0 +1,4 @@
+-- Robô avança o cliente no funil do CRM (só para frente). Aplicada em 16/10/2026.
+-- 'contato'  = cliente conversou com o robô -> 2ª etapa do funil do negócio
+-- 'agendado' = robô marcou um horário      -> última etapa do funil
+-- (mesmo conteúdo aplicado via MCP: função public.ia_avancar_funil(p_secret, p_tenant_id, p_contact_id, p_alvo))
