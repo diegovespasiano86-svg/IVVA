@@ -83,6 +83,11 @@ export async function conectarWhatsApp(
     p_access_token: accessToken,
   });
   if (tokenError) {
+    // Sem token guardado não há conexão: não deixa o número aparecer como "ativo".
+    console.error("[whatsapp] falha ao salvar token:", tokenError.message);
+    await supabase.from("whatsapp_accounts").update({ status: "erro", updated_at: new Date().toISOString() }).eq("tenant_id", perfil.tenant_id);
+    revalidatePath("/canais");
+    revalidatePath("/", "layout");
     return "Não consegui salvar o token com segurança. Tenta de novo.";
   }
 
