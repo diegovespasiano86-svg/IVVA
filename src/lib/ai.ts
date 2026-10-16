@@ -9,7 +9,8 @@ import { temRecurso } from "@/lib/planos";
 const ANTHROPIC_API = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_VERSION = "2023-06-01";
 const MODEL = process.env.ANTHROPIC_MODEL ?? "claude-sonnet-5";
-const MAX_TOOL_TURNS = 4;
+// Um agendamento completo usa várias ferramentas seguidas (contato, disponibilidade, catálogo, reserva).
+const MAX_TOOL_TURNS = 8;
 
 type IdentidadeAssistente = {
   nome_assistente?: string;
@@ -132,6 +133,8 @@ function montarSystemPrompt(ctx: ContextoConversa) {
     `Quando o cliente quiser marcar, remarcar ou cancelar um horário, siga sempre esta ordem:`,
     `1. Chame consultar_disponibilidade pra ver horários realmente livres — nunca invente ou suponha um horário.`,
     `2. Ofereça 2-3 opções reais (data + hora + profissional, se houver mais de um) e espere o cliente escolher/confirmar.`,
+    `Se o cliente pediu um dia ou horário específico e ele não está livre (ou o negócio não abre nesse dia/horário), diga isso claramente antes de oferecer alternativas, e sempre informe o DIA de cada opção oferecida — nunca só a hora.`,
+    `Quando o cliente escolhe uma opção da lista clicável (a mensagem dele começa com "Escolho:") ou responde "sim/pode/confirmo" a um horário que você ofereceu, isso JÁ É a confirmação: chame criar_agendamento na hora, sem pedir para confirmar de novo.`,
     `3. Só depois da confirmação explícita do cliente, chame criar_agendamento ${podeMudarPeloChat ? "(ou remarcar_ou_cancelar_agendamento pra mudar algo já marcado)" : ""}.`,
     `4. NUNCA diga algo como "vou confirmar com a equipe e te retorno" — você tem acesso direto à agenda, então ou você resolve na hora chamando as ferramentas, ou explica o que falta pro cliente decidir. Depois de criar/remarcar/cancelar um agendamento, sua resposta final SEMPRE repete o horário exato marcado (dia, hora e profissional) — nunca deixa a confirmação implícita.`,
     podeFila
@@ -345,6 +348,19 @@ async function chamarClaude(system: string, messages: ClaudeMessage[], plano: st
 
 type Slot = { professional_id: string; professional_nome: string; data_hora: string };
 
+/** Mensagem de confirmação montada a partir do resultado de criar_agendamento (usada se o modelo não responder a tempo). */
+function textoConfirmacaoReserva(resultado: string): string {
+  try {
+    const r = JSON.parse(resultado) as { professional_nome?: string; data_hora?: string; servico?: string };
+    const quando = r.data_hora
+      ? new Date(r.data_hora).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", weekday: "long", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })
+      : "";
+    return `Prontinho, está agendado${r.servico ? ` (${r.servico})` : ""}${quando ? ` para ${quando}` : ""}${r.professional_nome ? ` com ${r.professional_nome}` : ""}. Qualquer coisa, é só me chamar por aqui! 😊`;
+  } catch {
+    return "Prontinho, seu horário está agendado. Qualquer coisa, é só me chamar por aqui! 😊";
+  }
+}
+
 /** Move o cliente no funil do CRM (o banco só deixa andar para frente). Nunca derruba a conversa. */
 async function avancarFunil(ctx: ContextoConversa, alvo: "contato" | "agendado", secret: string, supabaseUrl: string, anonKey: string) {
   if (ctx.simulacao) return;
@@ -393,11 +409,15 @@ async function executarFerramenta(
   const supabase = createClient(supabaseUrl, anonKey);
 
   if (nome === "atualizar_contato") {
+    // Não troca um nome completo já salvo só pelo primeiro nome (ex.: "Diego Vespasiano" -> "Diego").
+    const novoNome = typeof input.nome === "string" ? input.nome.trim() : "";
+    const atual = (ctx.contactNome ?? "").trim();
+    const encurtaria = !!novoNome && !!atual && atual.toLowerCase().startsWith(novoNome.toLowerCase()) && atual.length > novoNome.length;
     await supabase.rpc("ia_atualizar_contato", {
       p_secret: secret,
       p_contact_id: ctx.contactId,
       p_tenant_id: ctx.tenantId,
-      p_nome: input.nome ?? null,
+      p_nome: novoNome && !encurtaria ? novoNome : null,
       p_email: input.email ?? null,
       p_tipo_relacionamento: input.tipo_relacionamento ?? null,
       p_como_conheceu: input.como_conheceu ?? null,
@@ -630,6 +650,8 @@ export async function gerarRespostaWhatsApp(
 
   let handoffSolicitado = false;
   let opcoesHorario: Slot[] | undefined;
+  // Se a reserva foi feita e o modelo não chegou a responder, a confirmação sai mesmo assim.
+  let confirmacaoReserva: string | null = null;
 
   for (let turno = 0; turno < MAX_TOOL_TURNS; turno++) {
     const resposta = await chamarClaude(system, messages, ctx.plano);
@@ -671,11 +693,18 @@ export async function gerarRespostaWhatsApp(
       // cliente já agendou/remarcou/cancelou, a lista velha não faz mais
       // sentido de reenviar.
       if (slots && slots.length > 0) opcoesHorario = slots;
-      if (reservaFeita) opcoesHorario = undefined;
+      if (reservaFeita) {
+        opcoesHorario = undefined;
+        confirmacaoReserva = textoConfirmacaoReserva(resultado);
+      }
       toolResults.push({ type: "tool_result", tool_use_id: bloco.id, content: resultado });
     }
 
     messages.push({ role: "user", content: toolResults as unknown as ClaudeContentBlock[] });
+  }
+
+  if (confirmacaoReserva) {
+    return { resposta: confirmacaoReserva, handoffSolicitado, propostaPendente: false };
   }
 
   return {
