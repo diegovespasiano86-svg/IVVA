@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { sendWhatsAppText } from "@/lib/whatsapp";
+import { erroDeContaWhatsApp, sendWhatsAppText } from "@/lib/whatsapp";
 import { processarResumosPendentes } from "@/lib/resumo-conversas";
 import { podeEnviarAutomatico } from "@/lib/automacao";
 import { processarResumosHistoricoPendentes } from "@/lib/whatsapp-historico";
@@ -96,11 +96,13 @@ export async function GET(request: NextRequest) {
       } else {
         falhas++;
         console.error("[cron pos-venda] falha ao enviar", p.appointment_id, err);
-        await supabase.rpc("record_whatsapp_send_failure", {
-          p_secret: secret,
-          p_tenant_id: p.tenant_id,
-          p_erro: err instanceof Error ? err.message : "Falha ao enviar mensagem de pós-venda",
-        });
+        if (erroDeContaWhatsApp(err)) {
+          await supabase.rpc("record_whatsapp_send_failure", {
+            p_secret: secret,
+            p_tenant_id: p.tenant_id,
+            p_erro: err instanceof Error ? err.message : "Falha ao enviar mensagem de pós-venda",
+          });
+        }
       }
     }
   }

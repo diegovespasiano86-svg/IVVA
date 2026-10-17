@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { sendWhatsAppTemplate } from "@/lib/whatsapp";
+import { erroDeContaWhatsApp, sendWhatsAppTemplate } from "@/lib/whatsapp";
 
 type Item = {
   recipient_id: string;
@@ -16,9 +16,6 @@ type Item = {
 
 export type ResultadoEnvio = { enviados: number; falhas: number; lotes: number };
 
-// Erros que indicam problema da CONTA/TOKEN (e não de um destinatário específico).
-// Códigos da Meta: 190 = token inválido/expirado, 10 e 200-299 = permissão. Erro de destinatário NÃO derruba a conta.
-const erroDeConta = (code: unknown) => typeof code === "number" && (code === 190 || code === 10 || (code >= 200 && code <= 299));
 
 const limparVariavel = (v: string | null) => (v ?? "").replace(/\s+/g, " ").trim().slice(0, 60) || "cliente";
 
@@ -81,7 +78,7 @@ export async function processarLotes(opts: { maxMs?: number; limite?: number; te
               p_ok: false,
               p_erro: msg.slice(0, 400),
             });
-            if (erroDeConta((err as { code?: unknown } | null)?.code)) {
+            if (erroDeContaWhatsApp(err)) {
               await supabase.rpc("record_whatsapp_send_failure", { p_secret: secret, p_tenant_id: item.tenant_id, p_erro: msg.slice(0, 400) });
             }
             total.falhas++;

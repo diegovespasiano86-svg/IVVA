@@ -73,6 +73,16 @@ export async function sendWhatsAppTemplate(
   return data;
 }
 
+/**
+ * true quando a falha é da CONTA/TOKEN (e não de um destinatário específico). Códigos da Meta:
+ * 190 = token inválido/expirado, 10 e 200-299 = permissão. Erro de destinatário (ex.: 131030, número
+ * fora da lista do número de teste) não deve marcar a conexão inteira como "erro".
+ */
+export function erroDeContaWhatsApp(err: unknown): boolean {
+  const code = (err as { code?: unknown } | null)?.code;
+  return typeof code === "number" && (code === 190 || code === 10 || (code >= 200 && code <= 299));
+}
+
 // Mensagem de texto livre — só funciona dentro da janela de 24h desde a
 // última mensagem do cliente (regra da própria Meta). Usada quando um
 // humano assume a conversa.
@@ -102,7 +112,9 @@ export async function sendWhatsAppText(
 
   const data = await res.json();
   if (!res.ok) {
-    throw new Error(data?.error?.message ?? "Falha ao enviar WhatsApp");
+    const err = new Error(data?.error?.message ?? "Falha ao enviar WhatsApp") as Error & { code?: number };
+    err.code = typeof data?.error?.code === "number" ? data.error.code : undefined;
+    throw err;
   }
   return data;
 }
@@ -206,7 +218,9 @@ export async function sendWhatsAppInteractiveList(
 
   const data = await res.json();
   if (!res.ok) {
-    throw new Error(data?.error?.message ?? "Falha ao enviar lista interativa do WhatsApp");
+    const err = new Error(data?.error?.message ?? "Falha ao enviar lista interativa do WhatsApp") as Error & { code?: number };
+    err.code = typeof data?.error?.code === "number" ? data.error.code : undefined;
+    throw err;
   }
   return data;
 }
@@ -250,7 +264,9 @@ export async function sendWhatsAppInteractiveButtons(
 
   const data = await res.json();
   if (!res.ok) {
-    throw new Error(data?.error?.message ?? "Falha ao enviar botões interativos do WhatsApp");
+    const err = new Error(data?.error?.message ?? "Falha ao enviar botões interativos do WhatsApp") as Error & { code?: number };
+    err.code = typeof data?.error?.code === "number" ? data.error.code : undefined;
+    throw err;
   }
   return data;
 }

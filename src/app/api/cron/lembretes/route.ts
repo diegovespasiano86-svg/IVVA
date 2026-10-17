@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { sendWhatsAppInteractiveButtons } from "@/lib/whatsapp";
+import { erroDeContaWhatsApp, sendWhatsAppInteractiveButtons } from "@/lib/whatsapp";
 import { podeEnviarAutomatico } from "@/lib/automacao";
 
 // Roda 1x por dia (2º e último cron disponível no plano Hobby da Vercel).
@@ -87,11 +87,13 @@ export async function GET(request: NextRequest) {
       } else {
         falhas++;
         console.error("[cron lembretes] falha ao enviar", p.appointment_id, err);
-        await supabase.rpc("record_whatsapp_send_failure", {
-          p_secret: secret,
-          p_tenant_id: p.tenant_id,
-          p_erro: err instanceof Error ? err.message : "Falha ao enviar lembrete de confirmação",
-        });
+        if (erroDeContaWhatsApp(err)) {
+          await supabase.rpc("record_whatsapp_send_failure", {
+            p_secret: secret,
+            p_tenant_id: p.tenant_id,
+            p_erro: err instanceof Error ? err.message : "Falha ao enviar lembrete de confirmação",
+          });
+        }
       }
     }
   }

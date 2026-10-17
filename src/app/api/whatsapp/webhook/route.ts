@@ -6,6 +6,7 @@ import {
   sendWhatsAppAudio,
   sendWhatsAppInteractiveList,
   baixarMidiaWhatsApp,
+  erroDeContaWhatsApp,
   type WhatsAppCreds,
 } from "@/lib/whatsapp";
 import { gerarRespostaWhatsApp, type ContextoConversa, type ResultadoIA } from "@/lib/ai";
@@ -520,11 +521,14 @@ async function enviarRespostaEregistrar(params: {
       envio = await sendWhatsAppText(creds, waId, resposta);
     } catch (err) {
       console.error("[whatsapp webhook] falha ao ENVIAR resposta pro WhatsApp", err);
-      await supabase.rpc("record_whatsapp_send_failure", {
-        p_secret: internalSecret,
-        p_tenant_id: resultado.tenant_id,
-        p_erro: err instanceof Error ? err.message : "Falha desconhecida ao enviar mensagem",
-      });
+      // Só problema de conta/token derruba a conexão; falha com um destinatário não.
+      if (erroDeContaWhatsApp(err)) {
+        await supabase.rpc("record_whatsapp_send_failure", {
+          p_secret: internalSecret,
+          p_tenant_id: resultado.tenant_id,
+          p_erro: err instanceof Error ? err.message : "Falha desconhecida ao enviar mensagem",
+        });
+      }
       return;
     }
   }
@@ -603,11 +607,13 @@ async function processarMensagemAdmin(params: {
       await supabase.rpc("record_whatsapp_send_success", { p_secret: internalSecret, p_tenant_id: admin.tenant_id });
     } catch (err) {
       console.error("[whatsapp webhook][admin] falha ao enviar", err);
-      await supabase.rpc("record_whatsapp_send_failure", {
-        p_secret: internalSecret,
-        p_tenant_id: admin.tenant_id,
-        p_erro: err instanceof Error ? err.message : "Falha ao enviar mensagem no canal do dono",
-      });
+      if (erroDeContaWhatsApp(err)) {
+        await supabase.rpc("record_whatsapp_send_failure", {
+          p_secret: internalSecret,
+          p_tenant_id: admin.tenant_id,
+          p_erro: err instanceof Error ? err.message : "Falha ao enviar mensagem no canal do dono",
+        });
+      }
     }
   };
 
