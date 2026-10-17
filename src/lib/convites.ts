@@ -42,7 +42,11 @@ export async function criarConviteProfissional(params: {
 
   if (atende && !professionalId) {
     const bloqueio = await bloqueioNovoProfissional(supabase, tenantId);
-    if (bloqueio) return { erro: bloqueio, link: null, emailEnviado: false, emailMotivo: null };
+    if (bloqueio) {
+      // Administrador não precisa de agenda: diz como convidar sem ela, em vez de só barrar.
+      const dica = papel === "dono" ? ' Para convidar sem criar agenda, desmarque "Também atende clientes" e convide de novo.' : "";
+      return { erro: bloqueio + dica, link: null, emailEnviado: false, emailMotivo: null };
+    }
   }
 
   // Convites antigos pendentes do mesmo profissional ou do mesmo e-mail deixam de valer.

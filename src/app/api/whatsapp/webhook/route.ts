@@ -473,7 +473,7 @@ type ResultadoInbound = {
   contact_is_novo: boolean;
   whatsapp_phone_number_id: string;
   whatsapp_access_token: string;
-  historico: { remetente: "contato" | "bot" | "humano"; conteudo: string }[];
+  historico: { remetente: "contato" | "bot" | "humano"; conteudo: string; created_at?: string }[];
   profissionais: { id: string; nome: string }[];
   indicacao_recompensa_ativo: boolean;
   indicacao_recompensa_texto: string | null;

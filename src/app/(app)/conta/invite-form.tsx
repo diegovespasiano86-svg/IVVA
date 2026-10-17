@@ -127,7 +127,11 @@ export default function InviteForm({ rotuloBotao = "+ Convidar" }: { rotuloBotao
         </div>
       </form>
 
-      {state.erro && <p className="mt-2 text-[12px] font-semibold text-coral">{state.erro}</p>}
+      {state.erro && (
+        <p role="alert" className="mt-3 rounded-[10px] border border-coral/40 bg-coral/10 px-3.5 py-3 text-[12.5px] font-semibold text-coral">
+          O convite não foi criado. {state.erro}
+        </p>
+      )}
 
       {state.link && !state.erro && (
         <div className="mt-3 rounded-[10px] border border-teal/30 bg-teal/5 px-3.5 py-3">

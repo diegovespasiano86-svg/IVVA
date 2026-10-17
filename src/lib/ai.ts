@@ -20,7 +20,26 @@ type IdentidadeAssistente = {
   voz?: string;
 };
 
-type HistoricoItem = { remetente: "contato" | "bot" | "humano"; conteudo: string };
+type HistoricoItem = { remetente: "contato" | "bot" | "humano"; conteudo: string; created_at?: string };
+
+// Depois desse tempo sem mensagens, o cliente está numa visita nova: o robô cumprimenta de novo e não
+// retoma assuntos antigos por conta própria.
+const HORAS_NOVA_VISITA = 6;
+
+/** Separa a visita atual das anteriores pelo intervalo entre mensagens (sem horário, tudo é a visita atual). */
+function separarVisitas(historico: HistoricoItem[]) {
+  let inicio = 0;
+  for (let i = historico.length - 1; i > 0; i--) {
+    const atual = historico[i].created_at ? new Date(historico[i].created_at!).getTime() : NaN;
+    const anterior = historico[i - 1].created_at ? new Date(historico[i - 1].created_at!).getTime() : NaN;
+    if (Number.isFinite(atual) && Number.isFinite(anterior) && atual - anterior >= HORAS_NOVA_VISITA * 3600 * 1000) {
+      inicio = i;
+      break;
+    }
+  }
+  const ultimaAnterior = inicio > 0 ? historico[inicio - 1].created_at ?? null : null;
+  return { visitaAtual: historico.slice(inicio), houveVisitaAnterior: inicio > 0, ultimaAnterior };
+}
 
 type Profissional = { id: string; nome: string };
 
@@ -83,10 +102,18 @@ function montarSystemPrompt(ctx: ContextoConversa) {
   // Nome que veio do perfil do WhatsApp (ou já salvo no CRM). Só vale se parece nome de gente, não número.
   const nomeConhecido = /[a-zà-ú]/i.test(ctx.contactNome ?? "") && !/\d{4,}/.test(ctx.contactNome ?? "") ? ctx.contactNome.trim() : "";
   const primeiroNome = nomeConhecido.split(/\s+/)[0] ?? "";
-  const ehPrimeiraResposta = !ctx.historico.some((m) => m.remetente !== "contato");
+  const { visitaAtual, houveVisitaAnterior, ultimaAnterior } = separarVisitas(ctx.historico);
+  const ehPrimeiraResposta = !visitaAtual.some((m) => m.remetente !== "contato");
+  const quandoUltimaVisita = ultimaAnterior
+    ? new Date(ultimaAnterior).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "long" })
+    : "";
 
   const linhasAbertura = [
-    ehPrimeiraResposta
+    ehPrimeiraResposta && houveVisitaAnterior
+      ? `A pessoa está voltando a falar com vocês depois de um tempo (a última conversa foi em ${quandoUltimaVisita}). Esta é a sua primeira resposta nesta nova conversa: (1) cumprimente de novo com gentileza, de acordo com o horário; (2) diga rapidamente quem fala, ${nomeAssistente} de ${ctx.tenantNome}, sem a apresentação completa de primeiro contato; ` +
+        (primeiroNome ? `(3) chame a pessoa pelo primeiro nome, ${primeiroNome}, com o tom de quem reconhece um cliente que já conhece; ` : `(3) pergunte o nome da pessoa, porque você ainda não sabe; `) +
+        `(4) responda ao que ela pediu agora. Não retome por conta própria assuntos, pedidos ou horários das conversas antigas: só fale deles se a pessoa trouxer o assunto.`
+      : ehPrimeiraResposta
       ? `Esta é a sua PRIMEIRA resposta nesta conversa. Ela precisa, com palavras suas e naturais: (1) cumprimentar com gentileza, de acordo com o horário; (2) se apresentar pelo seu nome, ${nomeAssistente}, dizendo que é de ${ctx.tenantNome}; ` +
         (primeiroNome
           ? `(3) chamar a pessoa pelo primeiro nome, ${primeiroNome} (é o nome do perfil dela no WhatsApp — se soar como apelido ou nome de empresa, confirme com leveza como ela prefere ser chamada); `
@@ -628,7 +655,12 @@ export async function gerarRespostaWhatsApp(
   // Cliente falou com o robô: sai da primeira etapa do funil (só anda para frente).
   await avancarFunil(ctx, "contato", secret, supabaseUrl, anonKey);
 
-  const messages: ClaudeMessage[] = ctx.historico.map((m) => ({
+  // Só a visita atual vai para a IA (conversas de dias atrás confundem o atendimento de hoje). Se ela
+  // começar por uma mensagem do negócio (ex.: lembrete automático), volta até a última fala do cliente,
+  // porque a conversa enviada à IA precisa começar pelo cliente.
+  let inicioVisita = ctx.historico.length - separarVisitas(ctx.historico).visitaAtual.length;
+  while (inicioVisita > 0 && ctx.historico[inicioVisita].remetente !== "contato") inicioVisita--;
+  const messages: ClaudeMessage[] = ctx.historico.slice(inicioVisita).map((m) => ({
     role: m.remetente === "contato" ? "user" : "assistant",
     content: m.conteudo,
   }));
