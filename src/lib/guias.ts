@@ -8,12 +8,22 @@ export type Guia = {
   resumo: string;
   passos: string[];
   video?: string;
+  /** imagem de capa do vídeo (mesmo nome, .jpg) */
+  poster?: string;
+  /** duração mostrada no cartão, ex.: "0:21" */
+  duracao?: string;
+  /** palavras que a pessoa pode digitar na busca e que não estão no título */
+  palavras?: string[];
   soDono?: boolean;
 };
 
 export const GUIAS: Guia[] = [
   {
     id: "inicio",
+    video: "/ajuda/inicio.mp4",
+    poster: "/ajuda/inicio.jpg",
+    duracao: "0:53",
+    palavras: ["resultado","painel","dashboard","números","primeiros passos"],
     titulo: "Início",
     href: "/dashboard",
     resumo: "O resultado do mês e o que o robô fez por você, em linguagem de dono de negócio.",
@@ -25,6 +35,10 @@ export const GUIAS: Guia[] = [
   },
   {
     id: "conversas",
+    video: "/ajuda/conversas.mp4",
+    poster: "/ajuda/conversas.jpg",
+    duracao: "0:21",
+    palavras: ["whatsapp","atendimento","humano","assumir","monitor","mensagem"],
     titulo: "Conversas",
     href: "/conversas",
     resumo: "A caixa de atendimento do WhatsApp, com o robô e a sua equipe no mesmo lugar.",
@@ -36,6 +50,10 @@ export const GUIAS: Guia[] = [
   },
   {
     id: "clientes",
+    video: "/ajuda/crm.mp4",
+    poster: "/ajuda/crm.jpg",
+    duracao: "0:17",
+    palavras: ["crm","funil","contatos","etapas","tarefas","importar"],
     titulo: "Clientes e CRM",
     href: "/crm",
     resumo: "Cada cliente vira um cartão no funil, com histórico, etiquetas e tarefas.",
@@ -47,6 +65,10 @@ export const GUIAS: Guia[] = [
   },
   {
     id: "campanhas",
+    video: "/ajuda/campanhas.mp4",
+    poster: "/ajuda/campanhas.jpg",
+    duracao: "0:15",
+    palavras: ["disparo","mensagem em massa","promoção","reengajamento"],
     titulo: "Campanhas e automações",
     href: "/campanhas",
     resumo: "Envie mensagens para quem aceitou receber e deixe lembretes e pós-venda no automático.",
@@ -59,6 +81,10 @@ export const GUIAS: Guia[] = [
   },
   {
     id: "agenda",
+    video: "/ajuda/agenda.mp4",
+    poster: "/ajuda/agenda.jpg",
+    duracao: "0:19",
+    palavras: ["horário","agendar","remarcar","cancelar","profissional","calendário"],
     titulo: "Agenda",
     href: "/calendario",
     resumo: "Os horários marcados por você e pelo robô, por profissional.",
@@ -70,6 +96,7 @@ export const GUIAS: Guia[] = [
   },
   {
     id: "checkout",
+    palavras: ["pagamento","pix","venda","recibo","estorno","comissão"],
     titulo: "Checkout",
     href: "/checkout",
     resumo: "Monte a venda, gere o Pix e envie o link de pagamento pelo WhatsApp.",
@@ -82,6 +109,10 @@ export const GUIAS: Guia[] = [
   },
   {
     id: "catalogo",
+    video: "/ajuda/catalogo.mp4",
+    poster: "/ajuda/catalogo.jpg",
+    duracao: "0:21",
+    palavras: ["estoque","produto","serviço","insumo","compras","preço"],
     titulo: "Catálogo e estoque",
     href: "/catalogo",
     resumo: "Seus serviços, produtos e pacotes. O estoque é opcional e só vale para produtos.",
@@ -92,7 +123,55 @@ export const GUIAS: Guia[] = [
     ],
   },
   {
+    id: "base-conhecimento",
+    video: "/ajuda/base-conhecimento.mp4",
+    poster: "/ajuda/base-conhecimento.jpg",
+    duracao: "0:25",
+    titulo: "Base de conhecimento",
+    href: "/base-conhecimento",
+    resumo: "Ensine o robô sobre o seu negócio: preços, horários, regras e serviços.",
+    passos: [
+      "Escreva uma informação por vez, suba um arquivo (.csv, PDF ou Word) ou grave um áudio.",
+      "Ou cole o endereço do seu site em “Ler meu site”: a ivva sugere os itens e você revisa antes de salvar.",
+      "Quanto mais completa a base, melhor o robô responde.",
+    ],
+    soDono: true,
+    palavras: ["ensinar", "treinar", "preço", "preços", "horário", "site", "arquivo", "áudio", "pdf", "perguntas"],
+  },
+  {
+    id: "calibrar",
+    video: "/ajuda/calibrar.mp4",
+    poster: "/ajuda/calibrar.jpg",
+    duracao: "0:23",
+    titulo: "Calibrar o robô",
+    href: "/robo/simulador",
+    resumo: "Teste o robô como se fosse o seu cliente e corrija as respostas erradas.",
+    passos: [
+      "No simulador, faça as perguntas que seus clientes mais fazem.",
+      "Se uma resposta sair errada, clique em 👎 e escreva como ele deveria responder.",
+      "Salve na base de conhecimento: o robô aprende na hora.",
+    ],
+    soDono: true,
+    palavras: ["testar", "simulador", "corrigir", "errado", "resposta", "polegar", "treinar"],
+  },
+  {
+    id: "indique",
+    video: "/ajuda/indique.mp4",
+    poster: "/ajuda/indique.jpg",
+    duracao: "0:20",
+    titulo: "Indique e ganhe",
+    href: "/indique",
+    resumo: "Indique a ivva e pague menos na sua mensalidade.",
+    passos: [
+      "Copie o seu link de indicação.",
+      "Cada negócio que assinar um plano mensal pelo seu link e continuar ativo depois de 30 dias dá R$ 150 de desconto na sua mensalidade seguinte.",
+    ],
+    soDono: true,
+    palavras: ["desconto", "indicação", "link", "crédito", "mensalidade", "amigo"],
+  },
+  {
     id: "robo",
+    palavras: ["ia","personalidade","regras","assistente","tom de voz"],
     titulo: "Robô (IA)",
     href: "/robo",
     resumo: "Personalidade, regras, base de conhecimento e o simulador para testar antes de atender de verdade.",
@@ -105,6 +184,10 @@ export const GUIAS: Guia[] = [
   },
   {
     id: "relatorios",
+    video: "/ajuda/relatorios.mp4",
+    poster: "/ajuda/relatorios.jpg",
+    duracao: "0:18",
+    palavras: ["números","exportar","excel","csv","resumo semanal","faturamento"],
     titulo: "Relatórios",
     href: "/relatorios",
     resumo: "Números por período: resultado da IA, atendimento, financeiro, clientes e avaliações.",
@@ -117,6 +200,10 @@ export const GUIAS: Guia[] = [
   },
   {
     id: "canais",
+    video: "/ajuda/canais.mp4",
+    poster: "/ajuda/canais.jpg",
+    duracao: "0:20",
+    palavras: ["whatsapp","conectar","meta","api","número","conexão"],
     titulo: "Canais (WhatsApp)",
     href: "/canais",
     resumo: "Conecte o WhatsApp do seu negócio pela API oficial da Meta.",
@@ -129,6 +216,7 @@ export const GUIAS: Guia[] = [
   },
   {
     id: "conta",
+    palavras: ["equipe","senha","assinatura","plano","fatura","nomes","convidar","cartão"],
     titulo: "Conta e equipe",
     href: "/conta",
     resumo: "Equipe, nomes que você usa no painel, uso de conversas e assinatura.",

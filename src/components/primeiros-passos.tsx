@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, BookOpen, Bot, CalendarCheck, Check, MessageCircle, Users } from "lucide-react";
+import { ArrowRight, BookOpen, Bot, CalendarCheck, Check, MessageCircle, PlayCircle, Users } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import type { Termos } from "@/lib/termos";
 
@@ -9,6 +9,8 @@ type Passo = {
   href: string;
   feito: boolean;
   icon: typeof Bot;
+  /** guia da ajuda com o vídeo deste passo */
+  guia: string;
 };
 
 /** Checklist de ativação do negócio. Some sozinho quando tudo está pronto. */
@@ -31,6 +33,7 @@ export default async function PrimeirosPassos({ termos }: { termos: Termos }) {
       href: "/canais",
       feito: conta?.status === "ativo",
       icon: MessageCircle,
+      guia: "canais",
     },
     {
       titulo: "Ensinar o robô sobre o seu negócio",
@@ -38,6 +41,7 @@ export default async function PrimeirosPassos({ termos }: { termos: Termos }) {
       href: "/base-conhecimento",
       feito: (conhecimento ?? 0) > 0,
       icon: BookOpen,
+      guia: "base-conhecimento",
     },
     {
       titulo: `Cadastrar ${termos.profissionais.toLowerCase()} e agenda`,
@@ -45,6 +49,7 @@ export default async function PrimeirosPassos({ termos }: { termos: Termos }) {
       href: "/calendario",
       feito: (profissionais ?? 0) > 0,
       icon: Users,
+      guia: "agenda",
     },
     {
       titulo: "Revisar a personalidade e as regras",
@@ -52,6 +57,7 @@ export default async function PrimeirosPassos({ termos }: { termos: Termos }) {
       href: "/robo",
       feito: !!botCfg,
       icon: Bot,
+      guia: "calibrar",
     },
     {
       titulo: `Receber ${termos.agendamento === "Agendamento" ? "o primeiro agendamento" : "a primeira " + termos.agendamento.toLowerCase()}`,
@@ -59,6 +65,7 @@ export default async function PrimeirosPassos({ termos }: { termos: Termos }) {
       href: "/conversas",
       feito: (agendamentos ?? 0) > 0,
       icon: CalendarCheck,
+      guia: "conversas",
     },
   ];
 
@@ -87,7 +94,7 @@ export default async function PrimeirosPassos({ termos }: { termos: Termos }) {
           const Icon = p.icon;
           const destaque = p === proximo;
           return (
-            <li key={p.titulo} className="bg-surface">
+            <li key={p.titulo} className="relative bg-surface">
               <Link href={p.href} className={`flex h-full flex-col gap-2 px-4 py-4 hover:bg-surface-soft ${destaque ? "bg-[#f6f4fe]" : ""}`}>
                 <span
                   className={`flex h-9 w-9 items-center justify-center rounded-full ${
@@ -103,6 +110,9 @@ export default async function PrimeirosPassos({ termos }: { termos: Termos }) {
                     Continuar <ArrowRight size={13} />
                   </span>
                 )}
+              </Link>
+              <Link href={`/ajuda?abrir=${p.guia}`} className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-surface-soft px-2 py-1 text-[11px] font-bold text-ink-soft hover:text-purple" aria-label={`Ver vídeo: ${p.titulo}`}>
+                <PlayCircle size={12} /> Vídeo
               </Link>
             </li>
           );

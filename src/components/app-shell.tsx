@@ -18,6 +18,8 @@ import { logout } from "@/app/(app)/actions";
 import { Logo } from "@/components/logo";
 import MotionEffects from "@/components/motion-effects";
 import Aparencia from "@/components/aparencia";
+import AjudaFlutuante from "@/components/ajuda/flutuante";
+import { guiasDoPerfil, norm } from "@/lib/ajuda-busca";
 import { navGroupsForRole, type NavGroup, type Role } from "@/lib/nav";
 import type { Termos } from "@/lib/termos";
 
@@ -460,27 +462,37 @@ export default function AppShell({
       )}
 
       <MotionEffects />
-      {paletteOpen && <Palette groups={groups} onClose={() => setPaletteOpen(false)} />}
+      <AjudaFlutuante ehDono={role === "dono"} />
+      {paletteOpen && <Palette groups={groups} ehDono={role === "dono"} onClose={() => setPaletteOpen(false)} />}
     </div>
   );
 }
 
 /** Busca rápida (Ctrl+K): salta para qualquer tela. */
-function Palette({ groups, onClose }: { groups: NavGroup[]; onClose: () => void }) {
+function Palette({ groups, ehDono, onClose }: { groups: NavGroup[]; ehDono: boolean; onClose: () => void }) {
   const router = useRouter();
   const [q, setQ] = useState("");
   const [sel, setSel] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const all = useMemo(
-    () => groups.flatMap((g) => g.items.map((i) => ({ href: i.href, label: i.label, group: g.label }))),
+    () => groups.flatMap((g) => g.items.map((i) => ({ href: i.href, label: i.label, group: g.label, extra: "" }))),
     [groups],
   );
+  // guias e vídeos da ajuda também aparecem na busca (por título e palavras-chave)
+  const ajuda = useMemo(
+    () => guiasDoPerfil(ehDono).map((g) => ({ href: `/ajuda?abrir=${g.id}`, label: g.titulo, group: g.video ? "Ajuda · vídeo" : "Ajuda", extra: (g.palavras ?? []).join(" ") })),
+    [ehDono],
+  );
   const results = useMemo(() => {
-    const n = q.trim().toLowerCase();
+    const n = norm(q.trim());
     if (!n) return all;
-    return all.filter((r) => `${r.label} ${r.group}`.toLowerCase().includes(n));
-  }, [all, q]);
+    const termos = n.split(/s+/);
+    return [...all, ...ajuda].filter((r) => {
+      const texto = norm(`${r.label} ${r.group} ${r.extra}`);
+      return termos.every((t) => texto.includes(t));
+    });
+  }, [all, ajuda, q]);
 
   useEffect(() => inputRef.current?.focus(), []);
 
@@ -519,7 +531,7 @@ function Palette({ groups, onClose }: { groups: NavGroup[]; onClose: () => void 
         <ul className="max-h-[50vh] overflow-y-auto p-2">
           {results.length === 0 && <li className="px-3 py-6 text-center text-[13.5px] text-ink-soft">Nada encontrado.</li>}
           {results.map((r, idx) => (
-            <li key={r.href}>
+            <li key={r.href + r.group}>
               <button
                 type="button"
                 onMouseEnter={() => setSel(idx)}
