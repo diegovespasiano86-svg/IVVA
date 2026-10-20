@@ -116,7 +116,10 @@ export const NAV_GROUPS: NavGroup[] = [
     id: "canais",
     label: "Canais",
     icon: Plug,
-    items: [{ href: "/canais", label: "WhatsApp e canais", roles: DONO }],
+    items: [
+      { href: "/canais", label: "WhatsApp e canais", roles: DONO },
+      { href: "/integracoes", label: "Integrações e API", roles: DONO },
+    ],
   },
   {
     id: "config",
