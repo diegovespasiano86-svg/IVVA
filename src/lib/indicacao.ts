@@ -9,6 +9,7 @@ export const REGRAS_INDICACAO = [
   "Vale para quem ainda não tem conta na ivva e assina pelo seu link, escolhendo um plano mensal.",
   "O desconto é liberado 30 dias depois da contratação do plano do indicado, se a assinatura dele continuar ativa.",
   "O valor entra como crédito na sua assinatura e abate a próxima mensalidade. Se sobrar, abate as seguintes.",
+  "Quem foi indicado ganha 10% de desconto na primeira mensalidade, aplicado automaticamente no pagamento (planos mensais).",
   "Planos anuais não participam da indicação.",
   "Não vale indicar a si mesmo nem quem já tem conta na ivva, e cada pessoa indicada conta uma vez.",
   "A ivva pode recusar indicações que pareçam fraude.",

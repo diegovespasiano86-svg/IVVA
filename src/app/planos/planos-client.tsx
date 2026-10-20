@@ -87,6 +87,11 @@ function CadastroPanel({
         Assinando <strong className="text-[#f7f6f2]">{plano.nome}</strong> ·{" "}
         {anual ? `R$ ${fmt(totalAnual(plano))}/ano (2 meses grátis)` : `R$ ${plano.preco}/mês`} · 14 dias grátis
       </p>
+      {refCodigo && !anual && (
+        <p className="-mt-2 mb-4 text-center text-[12.5px] font-semibold text-[#2fbf9f]">
+          Link de indicação: se o código for válido, você ganha 10% na primeira mensalidade.
+        </p>
+      )}
       <div className="rounded-3xl bg-white p-7 shadow-[0_40px_90px_-30px_rgba(0,0,0,0.6)]">
         <h2 className="text-[20px] font-extrabold text-[#0e0e13]">Conte um pouco sobre você e o seu negócio</h2>
         <p className="mt-1 text-[13px] text-[#6b6577]">Leva 1 minuto. Em seguida vem o pagamento, com 14 dias grátis.</p>

@@ -25,6 +25,8 @@ export async function createCheckoutSession(params: {
   email?: string;
   /** Dados do cadastro (nome, telefone, tipo de negócio) guardados na sessão. */
   extraMetadata?: Record<string, string>;
+  /** Id de um cupom da Stripe a aplicar (ex.: desconto do indicado). */
+  cupom?: string;
 }) {
   const body = new URLSearchParams({
     mode: "subscription",
@@ -37,6 +39,7 @@ export async function createCheckoutSession(params: {
     "metadata[plano]": params.plano,
   });
   if (params.email) body.set("customer_email", params.email);
+  if (params.cupom) body.set("discounts[0][coupon]", params.cupom);
   for (const [k, v] of Object.entries(params.extraMetadata ?? {})) {
     if (v) body.set(`metadata[${k}]`, v.slice(0, 480));
   }
@@ -306,4 +309,17 @@ export async function getFimDoTeste(customerId: string): Promise<number | null> 
   if (!res.ok) throw new Error(data?.error?.message ?? "Falha ao consultar assinatura");
   const fim = (data?.data ?? [])[0]?.trial_end;
   return typeof fim === "number" ? fim * 1000 : null;
+}
+
+// Cupom do "Indique e ganhe" para quem foi indicado: 10% na primeira mensalidade (a primeira cobrança
+// vem depois do teste grátis). Criado sob demanda na primeira vez; se já existir, só reaproveita.
+export const CUPOM_INDICADO = "INDICADO10";
+export async function garantirCupomIndicado(): Promise<string> {
+  const body = new URLSearchParams({ id: CUPOM_INDICADO, percent_off: "10", duration: "once", name: "Indicado ivva: 10% na primeira mensalidade" });
+  const res = await fetch(`${STRIPE_API}/coupons`, { method: "POST", headers: stripeHeaders(), body });
+  if (!res.ok) {
+    const data = await res.json().catch(() => null);
+    if (data?.error?.code !== "resource_already_exists") throw new Error(data?.error?.message ?? "Falha ao criar cupom");
+  }
+  return CUPOM_INDICADO;
 }

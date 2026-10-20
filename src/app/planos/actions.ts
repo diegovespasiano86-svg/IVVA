@@ -3,7 +3,7 @@
 import { origemDoApp } from "@/lib/origem";
 
 import { createClient } from "@supabase/supabase-js";
-import { createCheckoutSession } from "@/lib/stripe";
+import { createCheckoutSession, garantirCupomIndicado } from "@/lib/stripe";
 import { getSegmento } from "@/lib/segmentos";
 
 const PRICE_ENV: Record<string, string | undefined> = {
@@ -80,10 +80,13 @@ export async function iniciarCadastro(_prev: CadastroState, formData: FormData):
   }
 
   // Indique e ganhe: guarda a indicação (código do link de quem indicou). Falha aqui nunca impede o cadastro.
+  let cupom: string | undefined;
   const refCodigo = String(formData.get("ref") ?? "").trim();
   if (refCodigo && /^[A-Za-z0-9]{3,20}$/.test(refCodigo)) {
     try {
-      await supabase.rpc("indicacao_registrar", { p_secret: secret, p_codigo: refCodigo, p_email: email });
+      const { data: ind } = await supabase.rpc("indicacao_registrar", { p_secret: secret, p_codigo: refCodigo, p_email: email });
+      // Indicado por código válido, em plano mensal: 10% na primeira mensalidade.
+      if ((ind as { ok?: boolean } | null)?.ok && !anual) cupom = await garantirCupomIndicado();
     } catch (e) {
       console.error("[cadastro] indicacao_registrar falhou", e);
     }
@@ -97,6 +100,7 @@ export async function iniciarCadastro(_prev: CadastroState, formData: FormData):
       priceId,
       plano,
       nomeNegocio,
+      cupom,
       email,
       extraMetadata: { nome, segmento, telefone: telefone.replace(/\D/g, ""), ciclo: anual ? "anual" : "mensal" },
       returnUrl: `${origin}/bem-vindo?session_id={CHECKOUT_SESSION_ID}`,
