@@ -79,6 +79,18 @@ export async function iniciarCadastro(_prev: CadastroState, formData: FormData):
     };
   }
 
+  // Origem do cadastro (UTM/site de origem): só texto curto, guardado no lead. Falha aqui nunca impede o cadastro.
+  try {
+    const bruto = JSON.parse(String(formData.get("origem") ?? "{}")) as Record<string, unknown>;
+    const origem: Record<string, string> = {};
+    for (const k of ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "referrer"]) {
+      if (typeof bruto[k] === "string" && bruto[k]) origem[k] = (bruto[k] as string).slice(0, 80);
+    }
+    if (Object.keys(origem).length) await supabase.rpc("lead_origem", { p_secret: secret, p_email: email, p_origem: origem });
+  } catch (e) {
+    console.error("[cadastro] lead_origem falhou", e);
+  }
+
   // Indique e ganhe: guarda a indicação (código do link de quem indicou). Falha aqui nunca impede o cadastro.
   let cupom: string | undefined;
   const refCodigo = String(formData.get("ref") ?? "").trim();

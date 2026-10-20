@@ -58,6 +58,30 @@ const CAMPO =
   "w-full rounded-xl border border-[rgba(14,14,19,0.16)] bg-white px-4 py-2.5 text-[14px] text-[#0e0e13] outline-none placeholder:text-[#8a8896] focus:ring-2 focus:ring-[#2fbf9f]";
 const ROTULO = "mb-1 block text-[12.5px] font-bold text-[#0e0e13]";
 
+// De onde o visitante veio (utm_* da campanha e site de origem). Guarda a primeira origem da visita na sessão.
+function lerOrigem(): string {
+  try {
+    const guardada = sessionStorage.getItem("ivva-origem");
+    if (guardada) return guardada;
+    const p = new URLSearchParams(window.location.search);
+    const o: Record<string, string> = {};
+    for (const k of ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"]) {
+      const val = (p.get(k) ?? "").trim().slice(0, 80);
+      if (val) o[k] = val;
+    }
+    let ref = "";
+    try {
+      ref = document.referrer ? new URL(document.referrer).hostname : "";
+    } catch {}
+    if (ref && ref !== window.location.hostname) o.referrer = ref.slice(0, 80);
+    const json = JSON.stringify(o);
+    sessionStorage.setItem("ivva-origem", json);
+    return json;
+  } catch {
+    return "{}";
+  }
+}
+
 // Etapa de cadastro antes do pagamento. Os valores ficam guardados no estado para não sumirem se der erro.
 function CadastroPanel({
   plano,
@@ -73,6 +97,7 @@ function CadastroPanel({
   onVoltar: () => void;
 }) {
   const [state, formAction, pending] = useActionState(iniciarCadastro, ESTADO_INICIAL);
+  const [origem] = useState(lerOrigem);
   const [v, setV] = useState({ nome: "", email: "", telefone: "", nome_negocio: "", segmento: "", aceite: false });
   const set = (k: keyof typeof v) => (e: { target: { value: string; checked?: boolean; type?: string } }) =>
     setV((x) => ({ ...x, [k]: k === "aceite" ? Boolean(e.target.checked) : e.target.value }));
@@ -100,6 +125,7 @@ function CadastroPanel({
           <input type="hidden" name="plano" value={plano.key} />
           <input type="hidden" name="ciclo" value={anual ? "anual" : "mensal"} />
           <input type="hidden" name="ref" value={refCodigo} />
+          <input type="hidden" name="origem" value={origem} />
           <div>
             <label htmlFor="cad-nome" className={ROTULO}>Seu nome</label>
             <input id="cad-nome" name="nome" required autoComplete="name" placeholder="Como podemos te chamar" className={CAMPO} defaultValue={v.nome} onChange={set("nome")} />

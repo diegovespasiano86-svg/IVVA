@@ -47,7 +47,7 @@ export default async function AdminPage() {
     redirect("/dashboard");
   }
 
-  const [{ data }, { data: chamadosData }, { data: usoData }, { data: pendentesData }, { data: leadsData }] = await Promise.all([
+  const [{ data }, { data: chamadosData }, { data: usoData }, { data: pendentesData }, { data: leadsData }, { data: origensData }] = await Promise.all([
     supabase.rpc("admin_tenants_overview"),
     supabase.rpc("admin_chamados_recentes"),
     supabase.rpc("admin_ia_uso_overview"),
@@ -64,7 +64,22 @@ export default async function AdminPage() {
       .in("status", ["cadastro_iniciado", "pagamento_aberto"])
       .order("updated_at", { ascending: false })
       .limit(50),
+    // Origem de todos os cadastros dos últimos 30 dias (para ver qual canal traz gente).
+    supabase
+      .from("leads_cadastro")
+      .select("origem, status")
+      .gte("created_at", new Date(Date.now() - 30 * 86400000).toISOString())
+      .limit(2000),
   ]);
+  const canais = new Map<string, { cadastros: number; pagos: number }>();
+  for (const o of (origensData ?? []) as { origem: Record<string, string> | null; status: string }[]) {
+    const nome = o.origem?.utm_source ? `` : o.origem?.referrer ?? "direto ou sem informação";
+    const c = canais.get(nome) ?? { cadastros: 0, pagos: 0 };
+    c.cadastros++;
+    if (o.status === "pago" || o.status === "conta_criada") c.pagos++;
+    canais.set(nome, c);
+  }
+  const resumoCanais = [...canais.entries()].sort((a, b) => b[1].cadastros - a[1].cadastros).slice(0, 10);
   const leads = (leadsData ?? []) as { nome: string; email: string; telefone: string | null; nome_negocio: string | null; segmento: string | null; plano: string | null; status: string; updated_at: string }[];
   const pendentes = (pendentesData ?? []) as { email: string; nome_negocio: string | null; plano: string | null; status: string; created_at: string }[];
   const tenants = (data ?? []) as AdminTenantRow[];
@@ -145,6 +160,20 @@ export default async function AdminPage() {
             </p>
           </div>
         </div>
+
+        {resumoCanais.length > 0 && (
+          <div className="mb-6">
+            <p className="mb-1 text-[14px] font-bold">De onde vêm os cadastros <span className="font-normal text-ink-faint">(últimos 30 dias)</span></p>
+            <div className="card divide-y divide-border">
+              {resumoCanais.map(([nome, c]) => (
+                <div key={nome} className="flex items-center justify-between gap-3 px-4 py-2.5 text-[13px]">
+                  <span className="min-w-0 truncate font-semibold">{nome}</span>
+                  <span className="shrink-0 text-ink-soft">{c.cadastros} cadastro{c.cadastros === 1 ? "" : "s"} · {c.pagos} pago{c.pagos === 1 ? "" : "s"}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {leads.length > 0 && (
           <div className="mb-6">
