@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 // conferido, a demonstração fica fechada (nunca aberta).
 
 const LIMITE_VISITANTE_HORA = 12;
-const LIMITE_GLOBAL_DIA = 400;
+const LIMITE_GLOBAL_DIA = 1000;
 
 export function chaveDoVisitante(req: Request): string {
   const ip = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || req.headers.get("x-real-ip") || "sem-ip";

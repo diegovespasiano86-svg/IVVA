@@ -3,6 +3,7 @@ import { Bot, FlaskConical } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import AssistantForm from "./assistant-form";
+import LinkPublico from "./link-publico";
 import BotSettingsForm from "./bot-settings-form";
 import { temRecurso } from "@/lib/planos";
 
@@ -115,6 +116,8 @@ export default async function RoboPage() {
           Começar a calibrar
         </Link>
       </div>
+
+      <LinkPublico />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="card px-5 py-5">
