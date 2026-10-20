@@ -5,6 +5,7 @@ import { temRecurso, nomePlano } from "@/lib/planos";
 import PrimeirosPassos from "@/components/primeiros-passos";
 import BoasVindasVideo from "@/components/ajuda/boas-vindas-video";
 import IvvaEmNumeros from "@/components/ivva-em-numeros";
+import ResultadoEmReais from "@/components/resultado-em-reais";
 import AtendimentoAgora from "@/components/atendimento-agora";
 import { termosDoNegocio } from "@/lib/termos";
 import KpiCard from "@/components/kpi-card";
@@ -214,6 +215,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           rotuloAgendamentos={termos.agendamentosFuturos}
         />
       )}
+
+      {ehDono && <ResultadoEmReais inicioMes={startOfMonth.toISOString()} />}
 
       <div className="mb-5">
         <AtendimentoAgora />

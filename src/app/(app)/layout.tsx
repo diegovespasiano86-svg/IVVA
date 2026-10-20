@@ -1,3 +1,4 @@
+import { getFimDoTeste } from "@/lib/stripe";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import AppShell from "@/components/app-shell";
@@ -98,13 +99,17 @@ export default async function AppLayout({
     try {
       const { data: assinatura } = await supabase
         .from("subscriptions")
-        .select("status, created_at")
+        .select("status, created_at, stripe_customer_id")
         .eq("tenant_id", perfil.tenant_id)
         .maybeSingle();
       if (assinatura && (assinatura.status === "trial" || assinatura.status === "trialing") && assinatura.created_at) {
-        const fim = new Date(assinatura.created_at).getTime() + 14 * 24 * 60 * 60 * 1000;
+        let fim = new Date(assinatura.created_at).getTime() + 14 * 24 * 60 * 60 * 1000;
+        // Data real da Stripe (vale também para teste estendido); se falhar, fica a conta de 14 dias.
+        try {
+          if (assinatura.stripe_customer_id) fim = (await getFimDoTeste(assinatura.stripe_customer_id)) ?? fim;
+        } catch {}
         const dias = Math.ceil((fim - Date.now()) / (24 * 60 * 60 * 1000));
-        if (dias >= 0 && dias <= 14) diasDeTeste = dias;
+        if (dias >= 0 && dias <= 60) diasDeTeste = dias;
       }
     } catch (err) {
       console.error("[layout] falha ao ler o teste grátis", err);

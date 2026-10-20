@@ -293,3 +293,17 @@ export async function creditarCliente(params: { customerId: string; centavos: nu
   const data = await res.json();
   if (!res.ok) throw new Error(data?.error?.message ?? "Falha ao creditar o desconto");
 }
+
+// Data real em que o teste grátis termina (trial_end da assinatura em trial). Guardada por 10 minutos
+// para não consultar a Stripe a cada tela; quem chama cai na conta de 14 dias se isto falhar.
+export async function getFimDoTeste(customerId: string): Promise<number | null> {
+  const params = new URLSearchParams({ customer: customerId, status: "trialing", limit: "1" });
+  const res = await fetch(`${STRIPE_API}/subscriptions?${params}`, {
+    headers: stripeHeaders(),
+    next: { revalidate: 600 },
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data?.error?.message ?? "Falha ao consultar assinatura");
+  const fim = (data?.data ?? [])[0]?.trial_end;
+  return typeof fim === "number" ? fim * 1000 : null;
+}
