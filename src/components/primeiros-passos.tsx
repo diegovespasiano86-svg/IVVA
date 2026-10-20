@@ -13,8 +13,8 @@ type Passo = {
   guia: string;
 };
 
-/** Checklist de ativação do negócio. Some sozinho quando tudo está pronto. */
-export default async function PrimeirosPassos({ termos }: { termos: Termos }) {
+/** Calcula os passos de ativação do negócio (usado pelo cartão do início e pelo botão flutuante). */
+export async function carregarPassos(termos: Termos): Promise<Passo[]> {
   const supabase = await createClient();
 
   const [{ data: conta }, { count: conhecimento }, { count: profissionais }, { data: botCfg }, { count: agendamentos }] =
@@ -68,7 +68,12 @@ export default async function PrimeirosPassos({ termos }: { termos: Termos }) {
       guia: "conversas",
     },
   ];
+  return passos;
+}
 
+/** Checklist de ativação do negócio. Some sozinho quando tudo está pronto. */
+export default async function PrimeirosPassos({ termos }: { termos: Termos }) {
+  const passos = await carregarPassos(termos);
   const feitos = passos.filter((p) => p.feito).length;
   if (feitos === passos.length) return null;
   const proximo = passos.find((p) => !p.feito);

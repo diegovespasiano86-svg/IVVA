@@ -1,3 +1,4 @@
+import ProximoPasso from "@/components/proximo-passo";
 import { getFimDoTeste } from "@/lib/stripe";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -209,6 +210,7 @@ export default async function AppLayout({
           </Alert>
         )}
         {children}
+        {role === "dono" && <ProximoPasso termos={termos} />}
     </AppShell>
   );
 }
