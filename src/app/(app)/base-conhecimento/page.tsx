@@ -1,4 +1,5 @@
-import { FileUp, Lightbulb, Mic, PenLine, Wand2 } from "lucide-react";
+import { FileUp, FlaskConical, Lightbulb, Mic, PenLine, Wand2 } from "lucide-react";
+import SimuladorChat from "../robo/simulador/chat";
 import { createClient } from "@/lib/supabase/server";
 import { confirmarSugestaoConhecimento, ignorarSugestaoConhecimento } from "./actions";
 import { criarBloco, organizarAutomaticamente } from "./blocos-actions";
@@ -76,6 +77,19 @@ export default async function BaseConhecimentoPage() {
           </div>
         </div>
       </section>
+
+      {/* ---- teste do robô na mesma tela: edita a base, pergunta, vê a fonte e corrige ---- */}
+      <details className="card mb-5 overflow-hidden">
+        <summary className="flex cursor-pointer items-center gap-2 px-5 py-3.5 text-[14px] font-bold">
+          <FlaskConical size={16} className="text-purple" aria-hidden="true" /> Testar o robô aqui, sem sair da tela
+        </summary>
+        <div className="border-t border-border p-4">
+          <p className="mb-3 text-[12.5px] text-ink-soft">
+            Modo teste seguro: nada é enviado por WhatsApp. Pergunte como um cliente, veja de qual item da base saiu a resposta e ajuste abaixo.
+          </p>
+          <SimuladorChat nomeAssistente="Seu robô" />
+        </div>
+      </details>
 
       {/* ---- passo 1: nicho ---- */}
       <NichoSeletor segmentoAtual={tenant?.segmento ?? null} totalItens={curtas.length} />
