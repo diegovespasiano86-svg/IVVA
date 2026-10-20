@@ -30,7 +30,7 @@ function Resposta({ texto, onNavegar }: { texto: string; onNavegar: () => void }
   );
 }
 
-/** Botão "Ajuda" em todas as telas: vídeo e passos da tela atual, busca e assistente. */
+/** Botão "Aprender" em todas as telas: vídeo e passos da tela atual, busca e assistente. */
 export default function AjudaFlutuante({ ehDono }: { ehDono: boolean }) {
   const pathname = usePathname();
   const [aberto, setAberto] = useState(false);
@@ -84,19 +84,19 @@ export default function AjudaFlutuante({ ehDono }: { ehDono: boolean }) {
       <button
         type="button"
         onClick={() => setAberto(true)}
-        aria-label="Abrir a ajuda"
+        aria-label="Abrir Aprender"
         className="fixed bottom-24 right-4 z-40 flex h-12 items-center gap-2 rounded-full bg-purple px-4 text-[13px] font-extrabold text-white shadow-[0_10px_28px_-8px_rgba(109,91,224,0.8)] transition-transform hover:scale-105 md:bottom-1/3 print:hidden"
       >
-        <CircleHelp size={19} /> <span className="hidden sm:inline">Ajuda</span>
+        <CircleHelp size={19} /> <span className="hidden sm:inline">Aprender</span>
       </button>
 
       {aberto && (
-        <div className="fixed inset-0 z-[65] print:hidden" role="dialog" aria-modal="true" aria-label="Ajuda">
+        <div className="fixed inset-0 z-[65] print:hidden" role="dialog" aria-modal="true" aria-label="Aprender">
           <button className="absolute inset-0 bg-ink-deep/30" aria-label="Fechar ajuda" onClick={() => setAberto(false)} />
           <aside className="absolute bottom-0 right-0 top-0 flex w-full max-w-[400px] flex-col bg-surface shadow-[-24px_0_64px_-12px_rgba(20,18,27,0.4)]">
             <header className="flex items-center justify-between border-b border-border px-5 py-4">
               <div>
-                <p className="text-[15px] font-extrabold">Ajuda</p>
+                <p className="text-[15px] font-extrabold">Aprender</p>
                 <p className="text-[12px] text-ink-soft">Vídeos, passos e um assistente para tirar dúvidas.</p>
               </div>
               <button type="button" onClick={() => setAberto(false)} aria-label="Fechar" className="rounded-full p-1.5 text-ink-soft hover:bg-surface-soft">
@@ -158,7 +158,7 @@ export default function AjudaFlutuante({ ehDono }: { ehDono: boolean }) {
                     </ol>
                   </div>
                 ) : (
-                  <p className="text-[13px] text-ink-soft">Não há um guia específico para esta tela. Veja todos na central de ajuda ou pergunte ao assistente.</p>
+                  <p className="text-[13px] text-ink-soft">Não há um guia específico para esta tela. Veja todos na página Aprender ou pergunte ao assistente.</p>
                 )}
 
                 <Link href="/ajuda" onClick={() => setAberto(false)} className="btn btn-secondary btn-sm mt-5">

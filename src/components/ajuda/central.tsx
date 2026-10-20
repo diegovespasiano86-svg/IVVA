@@ -23,7 +23,7 @@ export default function CentralAjuda({ guias, busca, abrir }: { guias: Guia[]; b
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="O que você quer fazer? Ex.: conectar WhatsApp, estoque, Pix, senha"
-          aria-label="Buscar na ajuda"
+          aria-label="Buscar em Aprender"
           className="input h-12 !pl-11 text-[14.5px]"
         />
       </label>
@@ -56,7 +56,7 @@ export default function CentralAjuda({ guias, busca, abrir }: { guias: Guia[]; b
         <h2 className="mb-2.5 text-[15px] font-extrabold">{buscando ? "Guias" : "Guia escrito de cada tela"}</h2>
         {resultado.length === 0 && (
           <p className="card px-5 py-6 text-center text-[13.5px] text-ink-soft">
-            Nada encontrado para “{q}”. Tente outra palavra ou pergunte ao assistente no botão Ajuda, no canto da tela.
+            Nada encontrado para “{q}”. Tente outra palavra ou pergunte ao assistente no botão Aprender, no canto da tela.
           </p>
         )}
         <div className="space-y-2.5">

@@ -19,7 +19,7 @@ export default async function AjudaPage({ searchParams }: { searchParams: Promis
     <div className="mx-auto max-w-[960px]">
       <PageHeader
         icon={CircleHelp}
-        title="Central de ajuda"
+        title="Aprender"
         subtitle="Busque por uma palavra, assista aos vídeos passo a passo ou abra o guia de cada tela."
       />
 
@@ -29,7 +29,7 @@ export default async function AjudaPage({ searchParams }: { searchParams: Promis
         <div>
           <p className="text-[14px] font-extrabold">Não achou o que precisava?</p>
           <p className="text-[12.5px] text-ink-soft">
-            Pergunte ao assistente no botão Ajuda, no canto da tela, ou fale com a gente pelo WhatsApp: (11) 99958-8396. Se preferir, escreva para contato@ivva.app.br.
+            Pergunte ao assistente no botão Aprender, no canto da tela, ou fale com a gente pelo WhatsApp: (11) 99958-8396. Se preferir, escreva para contato@ivva.app.br.
           </p>
         </div>
         <a href={WHATSAPP} target="_blank" rel="noreferrer" className="btn btn-primary btn-md">

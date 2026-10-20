@@ -3,6 +3,7 @@ import { LineAreaChart, HBarList, VBarChart, StatusTile, CardVazio } from "@/com
 import { FeatureLock } from "@/components/feature-lock";
 import { temRecurso, nomePlano } from "@/lib/planos";
 import PrimeirosPassos from "@/components/primeiros-passos";
+import BoasVindasVideo from "@/components/ajuda/boas-vindas-video";
 import IvvaEmNumeros from "@/components/ivva-em-numeros";
 import AtendimentoAgora from "@/components/atendimento-agora";
 import { termosDoNegocio } from "@/lib/termos";
@@ -11,7 +12,8 @@ import { CalendarDays, MessageSquare, Users, Wallet } from "lucide-react";
 
 const DIAS_SEMANA = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
-export default async function DashboardPage() {
+export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ "boas-vindas"?: string }> }) {
+  const boasVindas = (await searchParams)["boas-vindas"] === "1";
   const supabase = await createClient();
 
   const {
@@ -197,6 +199,8 @@ export default async function DashboardPage() {
           </p>
         </div>
       </section>
+
+      {ehDono && <BoasVindasVideo forcar={boasVindas} />}
 
       {ehDono && <PrimeirosPassos termos={termos} />}
 

@@ -100,5 +100,5 @@ export default async function AtivarPage(props: { searchParams: Promise<{ sessio
     );
   }
 
-  redirect("/dashboard");
+  redirect("/dashboard?boas-vindas=1");
 }
