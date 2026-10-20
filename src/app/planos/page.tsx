@@ -1,6 +1,7 @@
 import { GlowBackdrop } from "./brand-fx";
 import IvvaLogo from "./logo";
 import PlanosClient from "./planos-client";
+import DemoViva from "./demo-viva";
 import {
   CONVERSAS_POR_PLANO,
   PACOTE_AVULSO,
@@ -92,6 +93,8 @@ export default function PlanosPage() {
             quando quiser.
           </p>
         </div>
+
+        <DemoViva />
 
         <PlanosClient planos={PLANOS} />
 
