@@ -1,5 +1,6 @@
 import { getCheckoutSession } from "@/lib/stripe";
 import SetupForm from "./setup-form";
+import { TrackEvent } from "@/components/tracking";
 
 const CARTAO = "rounded-3xl bg-white p-7 text-[#0e0e13] shadow-[0_40px_90px_-30px_rgba(0,0,0,0.6)]";
 
@@ -41,6 +42,8 @@ export default async function BemVindoPage(props: {
 
   return (
     <div className={CARTAO}>
+      {/* Cadastro concluído (teste de 14 dias iniciado): evento de conversão, uma vez por sessão de pagamento. */}
+      <TrackEvent ga="sign_up" fb={["CompleteRegistration", "StartTrial"]} dedupeKey={sessionId} params={{ method: "stripe" }} />
       <h1 className="text-[20px] font-extrabold">Pagamento confirmado 🎉</h1>
       <p className="mt-1 text-[13.5px] text-[#6b6577]">
         Falta pouco pra {nomeNegocio} começar a usar a ivva — só criar seu acesso.

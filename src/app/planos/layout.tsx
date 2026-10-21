@@ -1,3 +1,4 @@
+import Tracking from "@/components/tracking";
 import { Plus_Jakarta_Sans, Instrument_Serif } from "next/font/google";
 
 // Fontes escopadas só pra /planos — igual ao site público ivva.app.br —
@@ -33,6 +34,7 @@ export default function PlanosLayout({ children }: { children: React.ReactNode }
         }
       `}</style>
       {children}
+      <Tracking />
     </div>
   );
 }
