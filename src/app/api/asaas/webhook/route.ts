@@ -30,19 +30,26 @@ export async function POST(req: Request) {
   if (!pg || (evento !== "PAYMENT_RECEIVED" && evento !== "PAYMENT_CONFIRMED")) return NextResponse.json({ ok: true });
 
   // A cobrança da ivva é identificada pelo QR estático, pelo link de pagamento ou, na falta deles, pela própria cobrança.
-  const chaveCobranca = pg.pixQrCodeId || pg.paymentLink || pg.id;
-  if (!chaveCobranca) return NextResponse.json({ ok: true });
+  // Pix pago pelo link também traz um pixQrCodeId próprio (que não é o da ivva), então tenta cada chave até achar.
+  const chaves = [pg.pixQrCodeId, pg.paymentLink, pg.id].filter((c): c is string => !!c);
+  if (!chaves.length) return NextResponse.json({ ok: true });
 
-  const { data, error } = await supabase.rpc("cobranca_paga", {
-    p_secret: secret,
-    p_asaas_id: chaveCobranca,
-    p_forma: FORMA[pg.billingType ?? ""] ?? "pix",
-  });
-  if (error) {
-    console.error("[asaas-webhook] cobranca_paga falhou", error.message);
-    return NextResponse.json({ ok: false }, { status: 500 }); // o Asaas tenta de novo
+  let chaveCobranca = chaves[0];
+  let r: { ok: boolean; motivo?: string; sem_registro?: boolean; repetido?: boolean } = { ok: false };
+  for (const chave of chaves) {
+    const { data, error } = await supabase.rpc("cobranca_paga", {
+      p_secret: secret,
+      p_asaas_id: chave,
+      p_forma: FORMA[pg.billingType ?? ""] ?? "pix",
+    });
+    if (error) {
+      console.error("[asaas-webhook] cobranca_paga falhou", error.message);
+      return NextResponse.json({ ok: false }, { status: 500 }); // o Asaas tenta de novo
+    }
+    r = data as typeof r;
+    chaveCobranca = chave;
+    if (r.motivo !== "cobranca_desconhecida") break;
   }
-  const r = data as { ok: boolean; motivo?: string; sem_registro?: boolean; repetido?: boolean };
   if (r.sem_registro) console.error("[asaas-webhook] pago, mas a baixa falhou (ver cobrancas.erro)", chaveCobranca);
 
   // Link de uso único: desativa depois de pago.
