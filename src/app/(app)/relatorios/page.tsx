@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BarChart3, Bot, CalendarCheck, Clock, Download, FileSpreadsheet, MessageSquare, Sparkles, Users, Wallet } from "lucide-react";
+import { BarChart3, Bot, CalendarCheck, Clock, Download, FileSpreadsheet, MessageSquare, Sparkles, Upload, Users, Wallet } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import PageHeader from "@/components/page-header";
 import KpiCard from "@/components/kpi-card";
@@ -66,7 +66,14 @@ export default async function RelatoriosPage({ searchParams }: { searchParams: P
         icon={BarChart3}
         title="Relatórios"
         subtitle={`${periodo.label}. Dados do seu negócio em tempo real.`}
-        actions={<PrintButton />}
+        actions={
+          <div className="flex flex-wrap items-center gap-2 print:hidden">
+            <Link href="/relatorios/importar" className="btn btn-secondary btn-md">
+              <Upload size={15} /> Importar vendas antigas
+            </Link>
+            <PrintButton />
+          </div>
+        }
       />
 
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3 print:hidden">
