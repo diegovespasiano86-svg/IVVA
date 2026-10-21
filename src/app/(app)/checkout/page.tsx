@@ -33,6 +33,8 @@ export default async function CheckoutPage(props: {
   const ehDono = perfil?.role === "dono";
   const termos = await carregarTermos(supabase);
   const temComissao = temRecurso(tenant?.plano, "comissao_automatica");
+  const { data: asaasData } = await supabase.rpc("asaas_conta_estado");
+  const asaasConectada = !!(asaasData as { conectada?: boolean } | null)?.conectada;
   const pix: PixConfig = tenant?.pix_chave && tenant.pix_beneficiario && tenant.pix_cidade
     ? { chave: tenant.pix_chave, beneficiario: tenant.pix_beneficiario, cidade: tenant.pix_cidade }
     : null;
@@ -152,6 +154,7 @@ export default async function CheckoutPage(props: {
         temComissao={temComissao}
         pix={pix}
         ehDono={ehDono}
+        asaasConectada={asaasConectada}
       />
 
       {!pagamentos || pagamentos.length === 0 ? (

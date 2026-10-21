@@ -3,6 +3,7 @@ import { Plug } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { origemDoApp } from "@/lib/origem";
 import NovaChave from "./nova-chave";
+import ConectarAsaas from "./conectar-asaas";
 import { revogarChave } from "./actions";
 
 type Chave = { id: string; nome: string; prefixo: string; criada_em: string; ultimo_uso: string | null };
@@ -11,12 +12,22 @@ export default async function IntegracoesPage() {
   const supabase = await createClient();
   const { data } = await supabase.rpc("api_chave_listar");
   const chaves = (data ?? []) as Chave[];
+  const { data: asaasData } = await supabase.rpc("asaas_conta_estado");
+  const asaasEstado = asaasData as { conectada: boolean; ambiente?: string } | null;
   const origem = await origemDoApp();
   const quando = (d: string) => new Date(d).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 
   return (
     <div>
       <PageHeader icon={Plug} title="Integrações e API" subtitle="Mande contatos de formulários, anúncios e planilhas direto para o seu CRM, pelo Zapier, n8n ou outra ferramenta." />
+
+      <div className="card mb-4 px-5 py-5">
+        <p className="text-[14px] font-bold">Receber pagamentos (Asaas)</p>
+        <p className="mb-3 mt-1 text-[12.5px] text-ink-soft">
+          Conecte a sua conta Asaas para cobrar por Pix e cartão no Checkout e pelo robô. O dinheiro cai direto na sua conta Asaas; a ivva só recebe o aviso de pagamento e dá baixa no estoque e nos relatórios.
+        </p>
+        <ConectarAsaas conectada={!!asaasEstado?.conectada} ambiente={asaasEstado?.ambiente ?? null} />
+      </div>
 
       <div className="card mb-4 px-5 py-5">
         <p className="text-[14px] font-bold">Chaves de acesso</p>

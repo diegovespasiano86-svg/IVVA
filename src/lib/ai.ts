@@ -1,7 +1,7 @@
 // Cliente da IA generativa (Claude) que responde pelo WhatsApp. Sem SDK —
 // fetch direto na Messages API, no mesmo espírito do lib/stripe.ts.
 
-import { createPixPaymentIntent } from "@/lib/stripe";
+import { criarLinkPagamento, criarPixEstatico, lerContaAsaas } from "@/lib/asaas";
 import { sendWhatsAppText } from "@/lib/whatsapp";
 import { podeEnviarAutomatico } from "@/lib/automacao";
 import { temRecurso } from "@/lib/planos";
@@ -322,12 +322,13 @@ const TOOLS = [
   },
   {
     name: "solicitar_pagamento_pix",
-    description: "Gera uma cobrança Pix (código copia-e-cola) pra sinal de um serviço de ticket alto. Só use depois que o cliente já confirmou o serviço/valor e concordou em pagar o sinal.",
+    description: "Gera uma cobrança para o cliente pagar agora: Pix (código copia-e-cola) ou link para Pix/cartão. Serve para sinal ou para o valor do serviço. Só use depois que o cliente confirmou o que vai pagar e o valor, e concordou em pagar agora. Use SEMPRE valores do catálogo ou da base de conhecimento; nunca invente valor.",
     input_schema: {
       type: "object",
       properties: {
-        valor_reais: { type: "number", description: "Valor do sinal em reais (ex: 50 pra R$50,00)" },
+        valor_reais: { type: "number", description: "Valor a cobrar em reais (ex: 50 pra R$50,00)" },
         descricao: { type: "string", description: "O que é a cobrança (ex: 'Sinal - coloração')" },
+        forma: { type: "string", enum: ["pix", "link"], description: "'pix' = código copia-e-cola (padrão); 'link' = link onde o cliente escolhe Pix ou cartão. Use 'link' se o cliente quiser pagar no cartão." },
       },
       required: ["valor_reais", "descricao"],
     },
@@ -600,30 +601,67 @@ async function executarFerramenta(
   }
 
   if (nome === "solicitar_pagamento_pix") {
+    // Cobrança pela conta Asaas do negócio. Quando o cliente pagar, o Asaas avisa e a venda é registrada sozinha.
+    const indisponivel = {
+      resultado: JSON.stringify({
+        erro: "pagamento_indisponivel",
+        aviso_para_voce: "O pagamento online não está disponível neste negócio. Explique ao cliente com gentileza e ofereça alternativa (pagar no local, ou chamar um humano).",
+      }),
+      handoff: false,
+    };
     try {
-      const valorReais = Number(input.valor_reais);
-      const pix = await createPixPaymentIntent({
-        valorCentavos: Math.round(valorReais * 100),
-        descricao: String(input.descricao ?? "Sinal"),
+      const valor = Math.round(Number(input.valor_reais) * 100) / 100;
+      if (!(valor > 0 && valor <= 100000)) return { resultado: JSON.stringify({ erro: "valor_invalido" }), handoff: false };
+      const descricao = String(input.descricao ?? "Pagamento").slice(0, 120);
+      const modo = input.forma === "link" ? "link" : "pix";
+      const conta = await lerContaAsaas(ctx.tenantId);
+      if (!conta) return indisponivel;
+
+      let asaasId: string;
+      let url: string | null = null;
+      let copiaECola: string | null = null;
+      if (modo === "pix") {
+        const r = await criarPixEstatico(conta, valor, descricao);
+        asaasId = r.id;
+        copiaECola = r.copiaECola;
+      } else {
+        const r = await criarLinkPagamento(conta, valor, "Pagamento", descricao);
+        asaasId = r.id;
+        url = r.url;
+      }
+      const { error } = await supabase.rpc("cobranca_criar", {
+        p_secret: secret,
+        p_tenant: ctx.tenantId,
+        p_contact: ctx.contactId,
+        p_professional: null,
+        p_appointment: null,
+        p_conversation: ctx.conversationId,
+        p_itens: [{ product_id: null, nome: descricao, qtd: 1, preco_unit: valor }],
+        p_desconto: 0,
+        p_valor: valor,
+        p_forma: modo,
+        p_origem: "robo",
+        p_asaas_id: asaasId,
+        p_url: url,
+        p_pix: copiaECola,
       });
+      if (error) {
+        console.error("[ia] cobranca_criar falhou", error.message);
+        return indisponivel;
+      }
       return {
         resultado: JSON.stringify({
           ok: true,
-          pix_copia_e_cola: pix.pixCopiaECola,
-          aviso_para_voce: "Manda esse código pro cliente exatamente como veio, dizendo pra colar no Pix Copia e Cola do banco dele.",
+          ...(copiaECola ? { pix_copia_e_cola: copiaECola } : { link_de_pagamento: url }),
+          aviso_para_voce: copiaECola
+            ? "Mande o código do Pix sozinho numa mensagem, exatamente como veio, e diga para colar no Pix Copia e Cola do banco. Avise que a confirmação é automática."
+            : "Mande o link ao cliente e diga que lá ele escolhe Pix ou cartão. Avise que a confirmação é automática.",
         }),
         handoff: false,
       };
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Falha ao gerar Pix";
-      return {
-        resultado: JSON.stringify({
-          erro: "pix_indisponivel",
-          detalhe: msg,
-          aviso_para_voce: "Pix ainda não está habilitado pro negócio. Explique ao cliente que o pagamento online não está disponível ainda e ofereça alternativa (pagar no local, ou chamar um humano).",
-        }),
-        handoff: false,
-      };
+      console.error("[ia] pagamento falhou", err);
+      return indisponivel;
     }
   }
 

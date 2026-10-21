@@ -6,6 +6,7 @@ import QRCode from "qrcode";
 import { Copy, MessageCircle, Plus, Search, Trash2, QrCode } from "lucide-react";
 import { registrarPagamentoCarrinho, salvarPix, type RetornoCheckout } from "./actions";
 import { gerarPixCopiaECola } from "@/lib/pix";
+import CobrarAsaas from "./cobrar-asaas";
 import type { Termos } from "@/lib/termos";
 
 export type ContatoOpcao = { id: string; nome: string; telefone: string | null };
@@ -127,6 +128,7 @@ export default function CheckoutForm({
   pix: pixConfig,
   ehDono,
   termos,
+  asaasConectada,
 }: {
   contatos: ContatoOpcao[];
   profissionais: ProfissionalOpcao[];
@@ -136,6 +138,7 @@ export default function CheckoutForm({
   pix: PixConfig;
   ehDono: boolean;
   termos: Termos;
+  asaasConectada?: boolean;
 }) {
   const router = useRouter();
   const [pendente, iniciar] = useTransition();
@@ -403,6 +406,31 @@ export default function CheckoutForm({
             </div>
           )}
         </div>
+      )}
+      {asaasConectada && (
+        <CobrarAsaas
+          validar={() => {
+            if (!contactId && !(novoCliente && nomeNovo.trim() && telNovo.trim())) return `Escolha o ${termos.cliente.toLowerCase()} ou cadastre um novo (nome e WhatsApp).`;
+            if (linhas.length === 0) return "Adicione pelo menos um item.";
+            if (linhas.some((l) => !l.nome.trim())) return "Todo item precisa de um nome.";
+            if (total <= 0) return "O total precisa ser maior que zero.";
+            return null;
+          }}
+          montarDados={() => ({
+            contactId: contactId || null,
+            novoCliente: !contactId ? { nome: nomeNovo, telefone: telNovo } : null,
+            professionalId: profissional,
+            appointmentId: prefill.appointmentId ?? null,
+            itens: linhas.map((l) => ({ productId: l.productId, nome: l.nome.trim(), qtd: l.qtd, preco: Number(l.preco) || 0 })),
+            desconto: valorDesconto,
+          })}
+          telefone={telefoneWa}
+          aoPagar={() => {
+            limpar();
+            router.replace("/checkout");
+            router.refresh();
+          }}
+        />
       )}
       {pixConfig && <span className="sr-only">Pix {tipoDaChave(pixConfig.chave)}</span>}
     </div>
