@@ -6,7 +6,7 @@ import QRCode from "qrcode";
 import { Copy, MessageCircle, Plus, Search, Trash2, QrCode } from "lucide-react";
 import { registrarPagamentoCarrinho, salvarPix, type RetornoCheckout } from "./actions";
 import { gerarPixCopiaECola } from "@/lib/pix";
-import CobrarAsaas from "./cobrar-asaas";
+import Cobrar from "./cobrar";
 import type { Termos } from "@/lib/termos";
 
 export type ContatoOpcao = { id: string; nome: string; telefone: string | null };
@@ -129,6 +129,8 @@ export default function CheckoutForm({
   ehDono,
   termos,
   asaasConectada,
+  mpConectada,
+  mpMaquininha,
 }: {
   contatos: ContatoOpcao[];
   profissionais: ProfissionalOpcao[];
@@ -139,6 +141,8 @@ export default function CheckoutForm({
   ehDono: boolean;
   termos: Termos;
   asaasConectada?: boolean;
+  mpConectada?: boolean;
+  mpMaquininha?: boolean;
 }) {
   const router = useRouter();
   const [pendente, iniciar] = useTransition();
@@ -407,8 +411,11 @@ export default function CheckoutForm({
           )}
         </div>
       )}
-      {asaasConectada && (
-        <CobrarAsaas
+      {(asaasConectada || mpConectada) && (
+        <Cobrar
+          asaas={!!asaasConectada}
+          mercadopago={!!mpConectada}
+          maquininha={!!mpMaquininha}
           validar={() => {
             if (!contactId && !(novoCliente && nomeNovo.trim() && telNovo.trim())) return `Escolha o ${termos.cliente.toLowerCase()} ou cadastre um novo (nome e WhatsApp).`;
             if (linhas.length === 0) return "Adicione pelo menos um item.";

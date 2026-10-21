@@ -1,25 +1,35 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { Copy, Link2, MessageCircle, QrCode } from "lucide-react";
+import { CreditCard, Copy, Link2, MessageCircle, QrCode } from "lucide-react";
 import { criarCobrancaAsaas, statusCobranca, type CobrancaCriada } from "./asaas-actions";
+import { criarCobrancaMercadoPago } from "./mp-actions";
 import type { DadosPagamento } from "./actions";
 
 const dinheiro = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+type Provedor = "asaas" | "mercadopago";
+const NOME: Record<Provedor, string> = { asaas: "Asaas", mercadopago: "Mercado Pago" };
 
-/** Cobrança pelo Asaas: gera Pix QR Code ou link (Pix/cartão), acompanha o pagamento e, quando o Asaas avisa, a venda já está registrada. */
-export default function CobrarAsaas({
+/** Cobrança pelo provedor conectado (Asaas ou Mercado Pago): Pix, link (Pix/cartão) ou maquininha. Quando o provedor avisa o pagamento, a venda já está registrada. */
+export default function Cobrar({
+  asaas,
+  mercadopago,
+  maquininha,
   montarDados,
   validar,
   telefone,
   aoPagar,
 }: {
+  asaas: boolean;
+  mercadopago: boolean;
+  maquininha: boolean;
   montarDados: () => Omit<DadosPagamento, "forma">;
   validar: () => string | null;
   telefone: string;
   aoPagar: () => void;
 }) {
   const [pendente, iniciar] = useTransition();
+  const [provedor, setProvedor] = useState<Provedor>(mercadopago && !asaas ? "mercadopago" : "asaas");
   const [cobranca, setCobranca] = useState<CobrancaCriada | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [situacao, setSituacao] = useState<"aguardando" | "paga" | "sem_registro">("aguardando");
@@ -38,12 +48,12 @@ export default function CobrarAsaas({
     return () => clearInterval(t);
   }, [cobranca, situacao, aoPagar]);
 
-  const gerar = (modo: "pix" | "link") => {
+  const gerar = (modo: "pix" | "link" | "maquininha") => {
     const e = validar();
     if (e) return setErro(e);
     setErro(null);
     iniciar(async () => {
-      const r = await criarCobrancaAsaas(montarDados(), modo);
+      const r = provedor === "asaas" ? await criarCobrancaAsaas(montarDados(), modo as "pix" | "link") : await criarCobrancaMercadoPago(montarDados(), modo);
       if (r.erro || !r.cobranca) return setErro(r.erro ?? "Não consegui gerar a cobrança.");
       setSituacao("aguardando");
       setCobranca(r.cobranca);
@@ -57,11 +67,22 @@ export default function CobrarAsaas({
       : `Olá! Segue o link para pagar ${dinheiro.format(cobranca.valor)} por Pix ou cartão: ${cobranca.url}`
     : "";
   const copiavel = cobranca?.copiaECola ?? cobranca?.url ?? "";
+  const naMaquininha = cobranca?.modo === "maquininha";
 
   return (
     <div className="rounded-[14px] border border-border px-4 py-4">
-      <p className="text-[13.5px] font-bold">Cobrar pelo Asaas</p>
-      <p className="mt-0.5 text-[12px] text-ink-soft">Cai na sua conta Asaas e a venda é registrada sozinha quando o pagamento for confirmado (estoque, comissão e relatórios).</p>
+      <p className="text-[13.5px] font-bold">Cobrar pelo {NOME[provedor]}</p>
+      <p className="mt-0.5 text-[12px] text-ink-soft">Cai na sua conta {NOME[provedor]} e a venda é registrada sozinha quando o pagamento for confirmado (estoque, comissão e relatórios).</p>
+
+      {!cobranca && asaas && mercadopago && (
+        <div className="mt-3 flex gap-4 text-[13px]" role="radiogroup" aria-label="Cobrar por">
+          {(["asaas", "mercadopago"] as Provedor[]).map((p) => (
+            <label key={p} className="flex items-center gap-1.5">
+              <input type="radio" name="provedor" checked={provedor === p} onChange={() => setProvedor(p)} /> {NOME[p]}
+            </label>
+          ))}
+        </div>
+      )}
 
       {!cobranca && (
         <div className="mt-3 flex flex-wrap gap-2">
@@ -71,6 +92,11 @@ export default function CobrarAsaas({
           <button type="button" disabled={pendente} onClick={() => gerar("link")} className="btn btn-secondary btn-md disabled:opacity-60">
             <Link2 size={16} /> Link (Pix ou cartão)
           </button>
+          {provedor === "mercadopago" && maquininha && (
+            <button type="button" disabled={pendente} onClick={() => gerar("maquininha")} className="btn btn-secondary btn-md disabled:opacity-60">
+              <CreditCard size={16} /> Cobrar na maquininha
+            </button>
+          )}
         </div>
       )}
       {erro && <p role="alert" className="mt-2 text-[13px] font-semibold text-coral">{erro}</p>}
@@ -86,8 +112,13 @@ export default function CobrarAsaas({
               <p role="status" className="rounded-[12px] bg-teal/10 px-4 py-3 text-[14px] font-bold text-teal">Pagamento de {dinheiro.format(cobranca.valor)} confirmado e registrado.</p>
             ) : situacao === "sem_registro" ? (
               <p role="alert" className="rounded-[12px] bg-coral/10 px-4 py-3 text-[13px] font-semibold text-coral">
-                O pagamento de {dinheiro.format(cobranca.valor)} foi confirmado no Asaas, mas a baixa automática falhou (provavelmente falta de estoque). Registre a venda manualmente no Checkout.
+                O pagamento de {dinheiro.format(cobranca.valor)} foi confirmado, mas a baixa automática falhou (provavelmente falta de estoque). Registre a venda manualmente no Checkout.
               </p>
+            ) : naMaquininha ? (
+              <>
+                <p className="text-[13.5px] font-bold">Cobrança de {dinheiro.format(cobranca.valor)} enviada para a maquininha…</p>
+                <p className="mt-0.5 text-[12px] text-ink-soft">Peça para o cliente passar ou aproximar o cartão. Quando aprovar, a venda é registrada aqui sozinha.</p>
+              </>
             ) : (
               <>
                 <p className="text-[13.5px] font-bold">Aguardando o pagamento de {dinheiro.format(cobranca.valor)}…</p>

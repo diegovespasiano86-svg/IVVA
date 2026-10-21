@@ -35,6 +35,10 @@ export default async function CheckoutPage(props: {
   const temComissao = temRecurso(tenant?.plano, "comissao_automatica");
   const { data: asaasData } = await supabase.rpc("asaas_conta_estado");
   const asaasConectada = !!(asaasData as { conectada?: boolean } | null)?.conectada;
+  const { data: mpData } = await supabase.rpc("mp_conta_estado");
+  const mpEstado = mpData as { conectada?: boolean; terminal_id?: string | null } | null;
+  const mpConectada = !!mpEstado?.conectada;
+  const mpMaquininha = mpConectada && !!mpEstado?.terminal_id;
   const pix: PixConfig = tenant?.pix_chave && tenant.pix_beneficiario && tenant.pix_cidade
     ? { chave: tenant.pix_chave, beneficiario: tenant.pix_beneficiario, cidade: tenant.pix_cidade }
     : null;
@@ -155,6 +159,8 @@ export default async function CheckoutPage(props: {
         pix={pix}
         ehDono={ehDono}
         asaasConectada={asaasConectada}
+        mpConectada={mpConectada}
+        mpMaquininha={mpMaquininha}
       />
 
       {!pagamentos || pagamentos.length === 0 ? (
