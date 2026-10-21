@@ -6,6 +6,7 @@ import { temRecurso } from "@/lib/planos";
 import { carregarTermos } from "@/lib/termos-servidor";
 import CheckoutForm, { type ItemCatalogoCheckout, type PixConfig } from "./checkout-form";
 import EstornarBotao from "./estornar-botao";
+import FechamentoDoDia from "./fechamento-do-dia";
 
 const FORMA: Record<string, string> = { pix: "Pix", credito: "Crédito", debito: "Débito", dinheiro: "Dinheiro" };
 
@@ -162,6 +163,8 @@ export default async function CheckoutPage(props: {
         mpConectada={mpConectada}
         mpMaquininha={mpMaquininha}
       />
+
+      <FechamentoDoDia />
 
       {!pagamentos || pagamentos.length === 0 ? (
         <div className="card">

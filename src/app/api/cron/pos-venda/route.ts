@@ -271,8 +271,18 @@ export async function GET(request: NextRequest) {
     console.error("[cron pos-venda] falha nas indicações", err);
   }
 
+  // Cobranças (Asaas/Mercado Pago) que ninguém pagou viram "expirada".
+  let cobrancasExpiradas = 0;
+  try {
+    const { data: n } = await supabase.rpc("cobrancas_expirar", { p_secret: secret });
+    cobrancasExpiradas = Number(n ?? 0);
+  } catch (err) {
+    console.error("[cron pos-venda] falha ao expirar cobranças", err);
+  }
+
   return NextResponse.json({
     ok: true,
+    cobrancasExpiradas,
     resumoSemanal,
     indicacoes,
     campanhasEnviadas: campanhas.enviados,
