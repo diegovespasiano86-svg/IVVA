@@ -134,10 +134,9 @@ export async function importarContatos(linhas: LinhaImportacao[], autorizado: bo
   }
 
   // Trilha de auditoria (LGPD): quem importou, quantos e se declarou autorização para enviar mensagens.
-  await ctx.supabase.from("eventos").insert({
-    tenant_id: ctx.tenantId,
-    tipo: "importacao_clientes",
-    detalhe: { user_id: ctx.userId, inseridos, ja_existiam: jaExistiam, invalidos, autorizado_envio: autorizado === true, em: new Date().toISOString() },
+  await ctx.supabase.rpc("evento_auditoria", {
+    p_tipo: "importacao_clientes",
+    p_detalhe: { user_id: ctx.userId, inseridos, ja_existiam: jaExistiam, invalidos, autorizado_envio: autorizado === true, em: new Date().toISOString() },
   });
 
   revalidatePath("/clientes");

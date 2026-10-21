@@ -139,10 +139,9 @@ export async function importarVendas(linhas: VendaBruta[], formaPadrao: string |
   r.inseridas = registros.length;
 
   // Trilha de auditoria: quem importou e quantas vendas.
-  await ctx.supabase.from("eventos").insert({
-    tenant_id: ctx.tenantId,
-    tipo: "importacao_vendas",
-    detalhe: { user_id: ctx.userId, importacao_id: importacaoId, inseridas: r.inseridas, ja_existiam: r.jaExistiam, clientes_novos: r.clientesNovos, em: new Date().toISOString() },
+  await ctx.supabase.rpc("evento_auditoria", {
+    p_tipo: "importacao_vendas",
+    p_detalhe: { user_id: ctx.userId, importacao_id: importacaoId, inseridas: r.inseridas, ja_existiam: r.jaExistiam, clientes_novos: r.clientesNovos, em: new Date().toISOString() },
   });
 
   for (const p of ["/relatorios", "/dashboard", "/clientes", "/checkout"]) revalidatePath(p);
@@ -157,10 +156,9 @@ export async function desfazerImportacaoVendas(importacaoId: string): Promise<{ 
   if (ctx.role !== "dono") return { ok: false, apagadas: 0, erro: "Só o dono desfaz uma importação." };
   const { data, error } = await ctx.supabase.from("payments").delete().eq("importacao_id", importacaoId).eq("origem", "importado").select("id");
   if (error) return { ok: false, apagadas: 0, erro: "Não consegui desfazer agora. Tente de novo." };
-  await ctx.supabase.from("eventos").insert({
-    tenant_id: ctx.tenantId,
-    tipo: "importacao_vendas_desfeita",
-    detalhe: { user_id: ctx.userId, importacao_id: importacaoId, apagadas: data?.length ?? 0, em: new Date().toISOString() },
+  await ctx.supabase.rpc("evento_auditoria", {
+    p_tipo: "importacao_vendas_desfeita",
+    p_detalhe: { user_id: ctx.userId, importacao_id: importacaoId, apagadas: data?.length ?? 0, em: new Date().toISOString() },
   });
   for (const p of ["/relatorios", "/dashboard", "/clientes", "/checkout"]) revalidatePath(p);
   return { ok: true, apagadas: data?.length ?? 0 };
