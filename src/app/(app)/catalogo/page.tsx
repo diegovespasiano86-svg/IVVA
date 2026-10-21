@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Package } from "lucide-react";
+import { Package, Upload } from "lucide-react";
 import PageHeader from "@/components/page-header";
 import EmptyState from "@/components/empty-state";
 import { createClient } from "@/lib/supabase/server";
@@ -129,6 +129,13 @@ export default async function CatalogoPage(props: { searchParams: Promise<{ tipo
         )
       ) : (
         <>
+          {ehDono && (
+            <div className="mb-3 flex justify-end">
+              <Link href="/catalogo/importar" className="btn btn-secondary btn-md">
+                <Upload size={15} /> Importar de planilha
+              </Link>
+            </div>
+          )}
           {ehDono && <NovoItem estoqueLiberado={estoqueLiberado} termos={termos} />}
 
           <div className="mb-3 flex flex-wrap gap-2">

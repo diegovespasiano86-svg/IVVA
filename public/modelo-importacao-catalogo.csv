@@ -1,0 +1,5 @@
+﻿Nome;Tipo (servico, produto ou insumo);Categoria;Preco de venda;Custo;Estoque atual;Estoque minimo;Duracao (minutos)
+Corte feminino;servico;Cabelo;120,00;;;;60
+Shampoo profissional 300ml;produto;Cosmeticos;89,90;42,00;12;3;
+Oleo capilar 60ml;produto;Cosmeticos;64,00;28,50;8;2;
+Coloracao 60g;insumo;Quimica;;18,00;30;10;
