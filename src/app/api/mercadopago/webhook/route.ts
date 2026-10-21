@@ -20,7 +20,8 @@ export async function POST(req: NextRequest) {
     /* alguns avisos antigos vêm só na query */
   }
   const dataId = String(req.nextUrl.searchParams.get("data.id") ?? corpo.data?.id ?? "");
-  const tipo = corpo.type ?? req.nextUrl.searchParams.get("type") ?? corpo.topic ?? "";
+  const tipoBruto = corpo.type ?? req.nextUrl.searchParams.get("type") ?? corpo.topic ?? "";
+  const tipo = tipoBruto.startsWith("order") ? "order" : tipoBruto; // o tópico de maquininha/Orders chega como "orders" ou "order"
   if (!dataId) return NextResponse.json({ ok: true });
 
   if (!assinaturaValida({ signature: req.headers.get("x-signature"), requestId: req.headers.get("x-request-id") }, dataId)) {
@@ -30,7 +31,10 @@ export async function POST(req: NextRequest) {
 
   const supabase = createClient(url, anon);
   const usuarioMP = Number(corpo.user_id);
-  if (!usuarioMP) return NextResponse.json({ ok: true });
+  if (!usuarioMP) {
+    console.error("[mercadopago-webhook] aviso sem user_id, ignorado", tipo, dataId);
+    return NextResponse.json({ ok: true });
+  }
   const { data: tenantId } = await supabase.rpc("mp_conta_por_usuario", { p_secret: secret, p_user: usuarioMP });
   if (!tenantId) return NextResponse.json({ ok: true }); // negócio que não é da ivva
 
