@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { LineAreaChart, HBarList, VBarChart, StatusTile, CardVazio } from "@/components/charts";
 import { FeatureLock } from "@/components/feature-lock";
 import { temRecurso, nomePlano } from "@/lib/planos";
-import PrimeirosPassos from "@/components/primeiros-passos";
+import PrimeirosPassos, { BoasVindasGuiado } from "@/components/primeiros-passos";
 import BoasVindasVideo from "@/components/ajuda/boas-vindas-video";
 import IvvaEmNumeros from "@/components/ivva-em-numeros";
 import ResultadoEmReais from "@/components/resultado-em-reais";
@@ -200,6 +200,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           </p>
         </div>
       </section>
+
+      {ehDono && <BoasVindasGuiado termos={termos} nome={primeiroNome} />}
 
       {ehDono && <BoasVindasVideo forcar={boasVindas} />}
 

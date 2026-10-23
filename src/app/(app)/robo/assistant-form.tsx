@@ -142,7 +142,7 @@ export default function AssistantForm({ identidade }: { identidade: Identidade }
       </div>
 
       <div>
-        <label className="!mb-1">Voz do assistente (áudio, em breve)</label>
+        <label className="!mb-1">Voz do assistente (nas respostas em áudio)</label>
         <div className="flex gap-2">
           {VOZES.map((v) => (
             <label
@@ -161,8 +161,9 @@ export default function AssistantForm({ identidade }: { identidade: Identidade }
           ))}
         </div>
         <p className="mt-1.5 text-[11px] text-ink-faint">
-          Define qual voz a ivva vai usar quando o envio de áudio pro
-          cliente estiver disponível — hoje ela só responde por texto.
+          Voz usada quando a ivva responde em áudio (opção “Resposta por áudio”,
+          nos planos Profissional e Completo). Sem essa opção ligada, ela
+          responde sempre por texto.
         </p>
       </div>
 

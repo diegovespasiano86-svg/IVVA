@@ -79,7 +79,7 @@ export const NAV_GROUPS: NavGroup[] = [
     icon: CalendarDays,
     items: [
       { href: "/calendario", label: "Calendário", roles: AMBOS },
-      { href: "/tarefas", label: "Tarefas", roles: DONO },
+      { href: "/tarefas", label: "Oportunidades", roles: DONO },
     ],
   },
   {

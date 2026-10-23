@@ -96,7 +96,7 @@ export default async function BaseConhecimentoPage() {
 
       {/* ---- texto corrido ---- */}
       {longos.map((l) => (
-        <DividirTexto key={l.id} id={l.id} tamanho={l.conteudo.length} />
+        <DividirTexto key={l.id} id={l.id} tamanho={l.conteudo.length} previa={l.conteudo.replace(/\s+/g, " ").trim().slice(0, 70)} />
       ))}
 
       {/* ---- sugestões vindas do SAC ---- */}

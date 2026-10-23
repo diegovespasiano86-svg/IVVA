@@ -42,7 +42,7 @@ export default async function TarefasPage() {
 
   return (
     <div>
-      <PageHeader icon={ListChecks} title="Tarefas — upsell e cross-sell" subtitle={<>{pendentes.length} pendentes de {tarefas?.length ?? 0} no total.</>} actions={<><form
+      <PageHeader icon={ListChecks} title="Oportunidades de venda" subtitle={<>{pendentes.length} pendentes de {tarefas?.length ?? 0} no total.</>} actions={<><form
           action={criarTarefa}
           className="card flex flex-wrap items-end gap-2 px-3.5 py-3"
         >

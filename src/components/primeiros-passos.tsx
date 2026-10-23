@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight, BookOpen, Bot, CalendarCheck, Check, MessageCircle, PlayCircle, Users } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import type { Termos } from "@/lib/termos";
+import BoasVindasModal from "@/components/ajuda/boas-vindas-modal";
 
 type Passo = {
   titulo: string;
@@ -69,6 +70,12 @@ export async function carregarPassos(termos: Termos): Promise<Passo[]> {
     },
   ];
   return passos;
+}
+
+/** Popup de orientação do primeiro acesso (some quando dispensado ou quando tudo está pronto). */
+export async function BoasVindasGuiado({ termos, nome }: { termos: Termos; nome?: string }) {
+  const passos = await carregarPassos(termos);
+  return <BoasVindasModal nome={nome} passos={passos.map(({ titulo, texto, href, feito }) => ({ titulo, texto, href, feito }))} />;
 }
 
 /** Checklist de ativação do negócio. Some sozinho quando tudo está pronto. */

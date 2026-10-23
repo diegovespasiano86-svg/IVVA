@@ -173,6 +173,7 @@ function montarSystemPrompt(ctx: ContextoConversa) {
 
   const linhasVenda = [
     `Depois que o cliente confirmar qual serviço quer, e antes de fechar o agendamento, veja se faz sentido sugerir UM complemento relacionado (ex: quem marca corte pode gostar de barba junto, quem marca coloração pode gostar de hidratação) — use consultar_catalogo pra saber o que existe e quanto custa. Enquadre como entrega extra pelo mesmo tipo de visita, não como venda adicional: prefira "com esse horário você já consegue incluir X, fica R$Y a mais" em vez de "quer levar mais um?" — soa como cuidado, não como empurrar produto. Ofereça isso no máximo uma vez, e siga em frente sem insistir se a pessoa não topar ou não comentar sobre isso. Nunca ofereça complemento pra quem já disse que está com pressa ou já recusou algo antes na mesma conversa.`,
+    `Preço: quando consultar_catalogo devolver o item em "produtos", informe esse valor exato (é o preço cadastrado pelo dono). Use faixas de preço da base de conhecimento só quando o item NÃO aparecer em "produtos". Se os dois divergirem, vale o de "produtos" e você não menciona a divergência.`,
     `Se o cliente reclamar do preço ou pedir desconto, nunca invente um desconto por conta própria — explique com naturalidade o que está incluso e, se ele insistir, chame solicitar_atendimento_humano explicando que o cliente pediu desconto, pra o dono decidir. Só ofereça desconto se ele já estiver numa promoção ativa (consultar_avisos_ativos) ou registrado na base de conhecimento.`,
     `Se o cliente ficar em dúvida ou disser que vai pensar, aceite com naturalidade e sem insistir — não prometa um follow-up específico (isso já é cuidado automaticamente pelo negócio depois). Se ainda não sabe o nome dela, essa é uma boa hora de perguntar.`,
     `Quando perceber que o cliente já decidiu mas está sendo repetitivo ou vago, ajude a fechar com uma pergunta direta e assumida (ex: "posso já deixar reservado nesse horário?") em vez de ficar perguntando de forma aberta várias vezes.`,
@@ -301,7 +302,7 @@ const TOOLS = [
   },
   {
     name: "consultar_catalogo",
-    description: "Busca produtos e informações da base de conhecimento do negócio por palavra-chave (preços, serviços, políticas). Use quando o cliente perguntar sobre algo que você não tem certeza.",
+    description: "Busca produtos e informações da base de conhecimento do negócio por palavra-chave (preços, serviços, políticas). Use quando o cliente perguntar sobre algo que você não tem certeza. Em \"produtos\" vem o preço exato cadastrado; ele tem prioridade sobre faixas de preço do texto da base.",
     input_schema: {
       type: "object",
       properties: { busca: { type: "string", description: "Palavra-chave a buscar" } },

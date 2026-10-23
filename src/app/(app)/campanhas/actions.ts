@@ -40,6 +40,13 @@ export async function criarCampanha(formData: FormData) {
 
   const modelo = modeloPorId(String(formData.get("modelo") ?? ""));
   const nome = (modelo ? modelo.titulo : "Nova campanha").slice(0, 120);
+
+  // Evita pilha de rascunhos iguais: se já existe um rascunho do mesmo modelo, ainda sem alterações, abre ele.
+  let existente = ctx.supabase.from("campaigns").select("id").eq("status", "rascunho").eq("nome", nome);
+  existente = modelo?.corpo ? existente.eq("mensagem_previa", modelo.corpo) : existente.is("mensagem_previa", null);
+  const { data: igual } = await existente.order("created_at", { ascending: false }).limit(1).maybeSingle();
+  if (igual) redirect(`/campanhas/${igual.id}`);
+
   const { data, error } = await ctx.supabase
     .from("campaigns")
     .insert({
@@ -54,6 +61,16 @@ export async function criarCampanha(formData: FormData) {
   if (error || !data) redirect("/campanhas?e=criar");
   revalidatePath("/campanhas");
   redirect(`/campanhas/${data.id}`);
+}
+
+export async function excluirRascunho(formData: FormData) {
+  const ctx = await donoDaSessao();
+  if ("erro" in ctx) redirect("/campanhas?e=permissao");
+  const id = String(formData.get("id") ?? "");
+  if (!ehUuid(id)) redirect("/campanhas");
+  await ctx.supabase.from("campaigns").delete().eq("id", id).eq("status", "rascunho");
+  revalidatePath("/campanhas");
+  redirect("/campanhas");
 }
 
 export type DadosRascunho = {

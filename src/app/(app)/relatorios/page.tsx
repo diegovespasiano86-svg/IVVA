@@ -97,7 +97,7 @@ export default async function RelatoriosPage({ searchParams }: { searchParams: P
       {aba === "ia" && <ResultadoIA supabase={supabase} desde={desde} periodo={periodo} />}
       {aba === "retorno" && <RetornoAba supabase={supabase} desde={desde} periodo={periodo} plano={plano} custoExtra={sp.custo} valorHora={sp.hora} />}
       {aba === "atendimento" && <Atendimento supabase={supabase} desde={desde} />}
-      {aba === "financeiro" && <Financeiro supabase={supabase} desde={desde} periodo={periodo} />}
+      {aba === "financeiro" && <Financeiro supabase={supabase} desde={desde} periodo={periodo} comissoes={temRecurso(plano, "comissao_automatica")} />}
       {aba === "clientes" && <Clientes supabase={supabase} desde={desde} periodo={periodo} />}
       {aba === "avaliacoes" && (
         <FeatureLock liberado={temRecurso(plano, "sac_avaliacoes")} titulo="Avaliações dos clientes" planoNecessario="Profissional" variante="chart" className="px-4 py-4">
@@ -341,7 +341,7 @@ async function Atendimento({ supabase, desde }: { supabase: Sb; desde: string })
   );
 }
 
-async function Financeiro({ supabase, desde, periodo }: { supabase: Sb; desde: string; periodo: P }) {
+async function Financeiro({ supabase, desde, periodo, comissoes }: { supabase: Sb; desde: string; periodo: P; comissoes: boolean }) {
   const { data: pagamentos } = await supabase
     .from("payments")
     .select("created_at, valor_total, forma_pagamento, comissao_calculada, professionals(nome)")
@@ -359,22 +359,24 @@ async function Financeiro({ supabase, desde, periodo }: { supabase: Sb; desde: s
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-2 gap-3.5 lg:grid-cols-4">
+      <div className={`grid grid-cols-2 gap-3.5 ${comissoes ? "lg:grid-cols-4" : "lg:grid-cols-3"}`}>
         <KpiCard label="Faturamento" value={brl.format(fat)} icon={Wallet} accent />
-        <KpiCard label="Comissões" value={brl.format(com)} icon={Users} />
+        {comissoes && <KpiCard label="Comissões" value={brl.format(com)} icon={Users} />}
         <KpiCard label="Pagamentos" numero={lista.length} icon={Wallet} />
         <KpiCard label="Ticket médio" value={brl.format(lista.length ? fat / lista.length : 0)} icon={Wallet} />
       </div>
       <Bloco titulo="Faturamento por dia" subtitulo={periodo.label}>
         <LineAreaChart cor="#8B7FE8" pontos={serieDiaria(lista.map((p) => ({ data: p.created_at, valor: Number(p.valor_total ?? 0) })), periodo)} />
       </Bloco>
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className={`grid gap-4 ${comissoes ? "lg:grid-cols-2" : ""}`}>
         <Bloco titulo="Por forma de pagamento">
           <Barras itens={somar((p) => FORMA[p.forma_pagamento ?? ""] ?? (p.forma_pagamento || "Outra"))} formatar={(n) => brl.format(n)} />
         </Bloco>
-        <Bloco titulo="Por profissional">
-          <Barras itens={somar((p) => (p.professionals as unknown as { nome: string } | null)?.nome ?? "Sem profissional")} formatar={(n) => brl.format(n)} />
-        </Bloco>
+        {comissoes && (
+          <Bloco titulo="Por profissional">
+            <Barras itens={somar((p) => (p.professionals as unknown as { nome: string } | null)?.nome ?? "Sem profissional")} formatar={(n) => brl.format(n)} />
+          </Bloco>
+        )}
       </div>
     </div>
   );

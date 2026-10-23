@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import PageHeader from "@/components/page-header";
 import EmptyState from "@/components/empty-state";
 import { STATUS_CAMPANHA, type StatusCampanha } from "@/lib/campanhas";
+import { excluirRascunho } from "./actions";
 
 export default async function CampanhasPage({ searchParams }: { searchParams: Promise<{ e?: string }> }) {
   const sp = await searchParams;
@@ -77,6 +78,7 @@ export default async function CampanhasPage({ searchParams }: { searchParams: Pr
                   <th className="num">Público</th>
                   <th>Progresso</th>
                   <th>Criada em</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody>
@@ -113,6 +115,16 @@ export default async function CampanhasPage({ searchParams }: { searchParams: Pr
                         )}
                       </td>
                       <td className="text-[12.5px] text-ink-soft">{new Date(c.created_at).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}</td>
+                      <td className="text-right">
+                        {c.status === "rascunho" && (
+                          <form action={excluirRascunho}>
+                            <input type="hidden" name="id" value={c.id} />
+                            <button type="submit" className="text-[12px] font-semibold text-ink-faint hover:text-coral" title="Apagar este rascunho">
+                              Excluir
+                            </button>
+                          </form>
+                        )}
+                      </td>
                     </tr>
                   );
                 })}

@@ -83,7 +83,7 @@ export default async function ConversasDashboard({ desde }: { desde: string }) {
         </div>
         <div className="card border-coral/35 px-5 py-4.5">
           <p className="mb-2.5 text-[11.5px] font-bold uppercase tracking-wide text-ink-faint">
-            Escalado pro humano
+            Passaram para a equipe
           </p>
           <p className="font-display text-[26px] font-extrabold text-coral">
             {escaladoHumano}
