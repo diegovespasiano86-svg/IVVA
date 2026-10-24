@@ -58,7 +58,7 @@ export async function carregarPassos(termos: Termos): Promise<Passo[]> {
       href: "/robo",
       feito: !!botCfg,
       icon: Bot,
-      guia: "calibrar",
+      guia: "robo",
     },
     {
       titulo: `Receber ${termos.agendamento === "Agendamento" ? "o primeiro agendamento" : "a primeira " + termos.agendamento.toLowerCase()}`,

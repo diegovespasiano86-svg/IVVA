@@ -32,9 +32,15 @@ export function buscarGuias(q: string, lista: Guia[]): Guia[] {
     .map((r) => r.g);
 }
 
-/** Guia da tela atual: o href mais específico que casa com a rota. */
+/** Telas que não são o endereço de nenhuma guia usam o vídeo da guia mais próxima. */
+const ROTA_PARA_GUIA: Record<string, string> = { "/clientes": "clientes", "/assinatura": "conta" };
+
+/** Guia da tela atual: o href mais específico que casa com a rota (ou a guia indicada em ROTA_PARA_GUIA). */
 export function guiaDaRota(pathname: string, lista: Guia[]): Guia | undefined {
-  return lista
+  const exata = lista
     .filter((g) => pathname === g.href || pathname.startsWith(g.href + "/"))
     .sort((a, b) => b.href.length - a.href.length)[0];
+  if (exata) return exata;
+  const rota = Object.keys(ROTA_PARA_GUIA).find((r) => pathname === r || pathname.startsWith(r + "/"));
+  return rota ? lista.find((g) => g.id === ROTA_PARA_GUIA[rota]) : undefined;
 }
