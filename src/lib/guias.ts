@@ -176,7 +176,7 @@ export const GUIAS: Guia[] = [
     id: "robo",
     video: "/ajuda/robo.mp4",
     poster: "/ajuda/robo.jpg",
-    duracao: "0:39",
+    duracao: "0:40",
     palavras: ["ia","personalidade","regras","assistente","tom de voz"],
     titulo: "Robô (IA)",
     href: "/robo",
