@@ -10,6 +10,7 @@ import UsoIaAviso from "@/components/uso-ia-aviso";
 import { obterResumoUso, reconciliarCreditos, type ResumoUso } from "@/lib/uso-ia";
 import type { Role } from "@/lib/nav";
 import { termosDoNegocio } from "@/lib/termos";
+import { logout } from "./actions";
 
 export default async function AppLayout({
   children,
@@ -44,6 +45,12 @@ export default async function AppLayout({
             na ivva. Fale com quem está implantando o sistema para liberar
             seu acesso.
           </p>
+          <p className="mt-2 text-[12.5px] text-ink-faint">Conectado como {user.email}</p>
+          <form action={logout} className="mt-5">
+            <button type="submit" className="btn btn-primary btn-md">
+              Sair e entrar com outra conta
+            </button>
+          </form>
         </div>
       </main>
     );
