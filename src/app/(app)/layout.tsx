@@ -11,6 +11,9 @@ import { obterResumoUso, reconciliarCreditos, type ResumoUso } from "@/lib/uso-i
 import type { Role } from "@/lib/nav";
 import { termosDoNegocio } from "@/lib/termos";
 import { logout } from "./actions";
+import ContratoAceite from "./contrato-aceite";
+import ContratoTexto from "@/components/contrato-texto";
+import { CONTRATO_ATUALIZADO, CONTRATO_VERSAO } from "@/lib/contrato";
 
 export default async function AppLayout({
   children,
@@ -53,6 +56,21 @@ export default async function AppLayout({
           </form>
         </div>
       </main>
+    );
+  }
+
+  // Contrato: sem o aceite da versão atual, só aparece o popup de aceite (o sistema não abre).
+  const { data: aceite } = await supabase
+    .from("contrato_aceites")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("versao", CONTRATO_VERSAO)
+    .maybeSingle();
+  if (!aceite) {
+    return (
+      <ContratoAceite email={user.email ?? ""} atualizado={CONTRATO_ATUALIZADO}>
+        <ContratoTexto />
+      </ContratoAceite>
     );
   }
 
