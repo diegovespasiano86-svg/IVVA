@@ -93,6 +93,10 @@ export function nomePlano(plano: string | null | undefined): string {
   return PLANO_LABEL[normalizarPlano(plano)];
 }
 
+/** Regra de cancelamento (mesmo texto do site: ivva-site src/content/faq.ts e /termos). */
+export const POLITICA_CANCELAMENTO =
+  "Cancele quando quiser, sem multa. Não há reembolso proporcional (pro-rata): o acesso fica ativo até o fim do período contratado. No plano anual, você pode congelar a assinatura e voltar quando quiser, sem reembolso. Fica preservado o direito de arrependimento de 7 dias previsto em lei.";
+
 /** Mensalidade de tabela de cada plano, em reais. Usada só para estimar o retorno nos relatórios. */
 export const PRECO_MENSAL: Record<PlanoId, number> = { essencial: 297, profissional: 447, completo: 597 };
 

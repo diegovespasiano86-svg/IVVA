@@ -1,4 +1,4 @@
-import { getCheckoutSession } from "@/lib/stripe";
+import { lerPagamentoCadastro } from "@/lib/pagamento-cadastro";
 import SetupForm from "./setup-form";
 import { TrackEvent } from "@/components/tracking";
 
@@ -31,19 +31,35 @@ export default async function BemVindoPage(props: {
   let nomeNegocio = "seu negócio";
   let nomeInicial = "";
   let segmentoInicial: string | null = null;
+  let pix = false;
+  let pagamento: Awaited<ReturnType<typeof lerPagamentoCadastro>> | null = null;
   try {
-    const session = await getCheckoutSession(sessionId);
-    nomeNegocio = session.metadata?.nome_negocio ?? nomeNegocio;
-    nomeInicial = session.metadata?.nome ?? "";
-    segmentoInicial = session.metadata?.segmento ?? null;
-  } catch {
+    pagamento = await lerPagamentoCadastro(sessionId);
+  } catch {}
+  if (!pagamento) {
     return <Aviso titulo="Não encontramos esse pagamento">Volte pra {LinkPlanos} e tente de novo.</Aviso>;
   }
+  if (!pagamento.pago) {
+    return (
+      <Aviso titulo="Pagamento ainda não confirmado">
+        Assim que o pagamento for confirmado, esta página libera o seu acesso. Atualize em instantes.
+      </Aviso>
+    );
+  }
+  nomeNegocio = pagamento.nomeNegocio ?? nomeNegocio;
+  nomeInicial = pagamento.nome ?? "";
+  segmentoInicial = pagamento.segmento;
+  pix = pagamento.pix;
 
   return (
     <div className={CARTAO}>
       {/* Cadastro concluído (teste de 14 dias iniciado): evento de conversão, uma vez por sessão de pagamento. */}
-      <TrackEvent ga="sign_up" fb={["CompleteRegistration", "StartTrial"]} dedupeKey={sessionId} params={{ method: "stripe" }} />
+      <TrackEvent
+        ga="sign_up"
+        fb={pix ? ["CompleteRegistration", "Subscribe"] : ["CompleteRegistration", "StartTrial"]}
+        dedupeKey={sessionId}
+        params={{ method: pix ? "pix" : "stripe" }}
+      />
       <h1 className="text-[20px] font-extrabold">Pagamento confirmado 🎉</h1>
       <p className="mt-1 text-[13.5px] text-[#6b6577]">
         Falta pouco pra {nomeNegocio} começar a usar a ivva — só criar seu acesso.

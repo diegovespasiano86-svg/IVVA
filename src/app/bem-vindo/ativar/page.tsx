@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getCheckoutSession } from "@/lib/stripe";
+import { lerPagamentoCadastro } from "@/lib/pagamento-cadastro";
 import { getSegmento } from "@/lib/segmentos";
 
 function Painel({ titulo, texto, acao }: { titulo: string; texto: string; acao?: { href: string; rotulo: string } }) {
@@ -47,18 +47,18 @@ export default async function AtivarPage(props: { searchParams: Promise<{ sessio
     return <Painel titulo="Link incompleto" texto="Volte ao e-mail de confirmação e clique no botão de novo." />;
   }
 
-  let sessao;
+  let pagamento;
   try {
-    sessao = await getCheckoutSession(sessionId);
+    pagamento = await lerPagamentoCadastro(sessionId);
   } catch (err) {
-    console.error("[ativar] não leu o checkout", err instanceof Error ? err.message : err);
+    console.error("[ativar] não leu o pagamento", err instanceof Error ? err.message : err);
     return <Painel titulo="Não encontramos o pagamento" texto="Fale com a gente em contato@ivva.app.br e informe o código CAD-1." />;
   }
-  if (sessao.payment_status !== "paid" && sessao.payment_status !== "no_payment_required") {
+  if (!pagamento.pago) {
     return <Painel titulo="Pagamento ainda não confirmado" texto="Assim que ele for confirmado, clique de novo no botão do e-mail." />;
   }
 
-  const emailPagamento = (sessao.customer_details?.email ?? sessao.customer_email ?? "").trim().toLowerCase();
+  const emailPagamento = pagamento.email;
   if (!emailPagamento || emailPagamento !== (user.email ?? "").trim().toLowerCase()) {
     return (
       <Painel
@@ -74,16 +74,16 @@ export default async function AtivarPage(props: { searchParams: Promise<{ sessio
   }
 
   const meta = (user.user_metadata ?? {}) as { nome?: string; segmento?: string };
-  const segmentoId = getSegmento(meta.segmento ?? "") ? (meta.segmento as string) : (sessao.metadata?.segmento ?? "outro");
+  const segmentoId = getSegmento(meta.segmento ?? "") ? (meta.segmento as string) : (pagamento.segmento ?? "outro");
   const segmento = getSegmento(segmentoId);
 
-  const { error } = await supabase.rpc("provision_tenant", {
+  const { data: tenantId, error } = await supabase.rpc("provision_tenant", {
     p_secret: segredo,
-    p_nome: sessao.metadata?.nome_negocio ?? "Meu negócio",
-    p_plano: sessao.metadata?.plano ?? "essencial",
-    p_stripe_customer_id: sessao.customer ?? null,
+    p_nome: pagamento.nomeNegocio ?? "Meu negócio",
+    p_plano: pagamento.plano ?? "essencial",
+    p_stripe_customer_id: pagamento.stripeCustomerId,
     p_user_id: user.id,
-    p_user_nome: meta.nome ?? sessao.metadata?.nome ?? "Dono",
+    p_user_nome: meta.nome ?? pagamento.nome ?? "Dono",
     p_user_email: emailPagamento,
     p_segmento: segmentoId,
     p_conhecimento_inicial: segmento?.baseConhecimento ?? null,
@@ -98,6 +98,12 @@ export default async function AtivarPage(props: { searchParams: Promise<{ sessio
         acao={{ href: `/bem-vindo/ativar?session_id=${encodeURIComponent(sessionId)}`, rotulo: "Tentar de novo" }}
       />
     );
+  }
+
+  // Pix: liga a assinatura do Asaas ao negócio recém-criado (provision_tenant cria a assinatura como teste).
+  if (pagamento.pix) {
+    const { error: errPix } = await supabase.rpc("assinatura_pix_vincular", { p_secret: segredo, p_ref: sessionId, p_tenant: tenantId });
+    if (errPix) console.error("[ativar] assinatura_pix_vincular falhou", errPix.message);
   }
 
   redirect("/dashboard?boas-vindas=1");

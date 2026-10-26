@@ -2,8 +2,9 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 import { loadStripe, type StripeEmbeddedCheckout } from "@stripe/stripe-js";
-import { iniciarCadastro, type CadastroState } from "./actions";
+import { iniciarCadastro, iniciarCadastroPix, situacaoPix, type CadastroPixState, type CadastroState } from "./actions";
 import { SEGMENTOS } from "@/lib/segmentos";
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? "");
@@ -30,10 +31,13 @@ const brl = (n: number) => n.toLocaleString("pt-BR", { minimumFractionDigits: n 
 const totalAnual = (p: Plano) => p.preco * 10;
 
 const ESTADO_INICIAL: CadastroState = { erro: null, clientSecret: null };
+const ESTADO_INICIAL_PIX: CadastroPixState = { erro: null, ref: null, pix: null, valor: null };
+
+type PixPronto = { ref: string; copiaECola: string; imagem: string; valor: number };
 
 // Cartão do plano: só escolhe o plano. Os dados do cliente são pedidos na etapa seguinte (CadastroPanel),
 // ANTES do pagamento, para que quem desistir no meio fique registrado.
-function CardForm({ destaque, onEscolher }: { destaque?: boolean; onEscolher: () => void }) {
+function CardForm({ destaque, onEscolher, onEscolherPix }: { destaque?: boolean; onEscolher: () => void; onEscolherPix?: () => void }) {
   return (
     <div className="mt-6 flex flex-col gap-2">
       <button
@@ -50,6 +54,15 @@ function CardForm({ destaque, onEscolher }: { destaque?: boolean; onEscolher: ()
       <p className={`text-center text-[11.5px] ${destaque ? "text-[#a5a3b0]" : "text-[#8a8896]"}`}>
         14 dias grátis. Cancele quando quiser.
       </p>
+      {onEscolherPix && (
+        <button
+          type="button"
+          onClick={onEscolherPix}
+          className={`text-center text-[12.5px] font-semibold underline-offset-2 hover:underline ${destaque ? "text-[#2fbf9f]" : "text-[#1f9a7f]"}`}
+        >
+          Prefere Pix? Assine pagando no Pix
+        </button>
+      )}
     </div>
   );
 }
@@ -87,39 +100,56 @@ function CadastroPanel({
   plano,
   anual,
   refCodigo,
+  pix,
   onClientSecret,
+  onPix,
   onVoltar,
 }: {
   plano: Plano;
   anual: boolean;
   refCodigo: string;
+  pix: boolean;
   onClientSecret: (clientSecret: string) => void;
+  onPix: (p: PixPronto) => void;
   onVoltar: () => void;
 }) {
-  const [state, formAction, pending] = useActionState(iniciarCadastro, ESTADO_INICIAL);
+  const [stateCartao, formActionCartao, pendingCartao] = useActionState(iniciarCadastro, ESTADO_INICIAL);
+  const [statePix, formActionPix, pendingPix] = useActionState(iniciarCadastroPix, ESTADO_INICIAL_PIX);
+  const state = pix ? statePix : stateCartao;
+  const formAction = pix ? formActionPix : formActionCartao;
+  const pending = pix ? pendingPix : pendingCartao;
   const [origem] = useState(lerOrigem);
-  const [v, setV] = useState({ nome: "", email: "", telefone: "", nome_negocio: "", segmento: "", aceite: false });
+  const [v, setV] = useState({ nome: "", email: "", telefone: "", nome_negocio: "", segmento: "", cpf_cnpj: "", aceite: false });
   const set = (k: keyof typeof v) => (e: { target: { value: string; checked?: boolean; type?: string } }) =>
     setV((x) => ({ ...x, [k]: k === "aceite" ? Boolean(e.target.checked) : e.target.value }));
 
   useEffect(() => {
-    if (state.clientSecret) onClientSecret(state.clientSecret);
-  }, [state.clientSecret, onClientSecret]);
+    if (stateCartao.clientSecret) onClientSecret(stateCartao.clientSecret);
+  }, [stateCartao.clientSecret, onClientSecret]);
+  useEffect(() => {
+    if (statePix.ref && statePix.pix && statePix.valor)
+      onPix({ ref: statePix.ref, copiaECola: statePix.pix.copiaECola, imagem: statePix.pix.imagem, valor: statePix.valor });
+  }, [statePix, onPix]);
 
   return (
     <div className="mx-auto max-w-[560px]">
       <p className="mb-4 text-center text-[13px] text-[#a5a3b0]">
         Assinando <strong className="text-[#f7f6f2]">{plano.nome}</strong> ·{" "}
-        {anual ? `R$ ${fmt(totalAnual(plano))}/ano (2 meses grátis)` : `R$ ${plano.preco}/mês`} · 14 dias grátis
+        {anual ? `R$ ${fmt(totalAnual(plano))}/ano (2 meses grátis)` : `R$ ${plano.preco}/mês`} ·{" "}
+        {pix ? "pagamento no Pix, acesso na hora" : "14 dias grátis"}
       </p>
-      {refCodigo && !anual && (
+      {refCodigo && !anual && !pix && (
         <p className="-mt-2 mb-4 text-center text-[12.5px] font-semibold text-[#2fbf9f]">
           Link de indicação: se o código for válido, você ganha 10% na primeira mensalidade.
         </p>
       )}
       <div className="rounded-3xl bg-white p-7 shadow-[0_40px_90px_-30px_rgba(0,0,0,0.6)]">
         <h2 className="text-[20px] font-extrabold text-[#0e0e13]">Conte um pouco sobre você e o seu negócio</h2>
-        <p className="mt-1 text-[13px] text-[#6b6577]">Leva 1 minuto. Em seguida vem o pagamento, com 14 dias grátis.</p>
+        <p className="mt-1 text-[13px] text-[#6b6577]">
+          {pix
+            ? "Leva 1 minuto. Em seguida aparece o Pix do primeiro mês; pagou, o acesso é liberado na hora."
+            : "Leva 1 minuto. Em seguida vem o pagamento, com 14 dias grátis."}
+        </p>
 
         <form action={formAction} className="mt-5 flex flex-col gap-3.5">
           <input type="hidden" name="plano" value={plano.key} />
@@ -154,6 +184,13 @@ function CadastroPanel({
             </select>
             <p className="mt-1 text-[11.5px] text-[#8a8896]">Com isso já deixamos o robô com um modelo pronto para o seu nicho.</p>
           </div>
+          {pix && (
+            <div>
+              <label htmlFor="cad-doc" className={ROTULO}>CPF ou CNPJ</label>
+              <input id="cad-doc" name="cpf_cnpj" required inputMode="numeric" placeholder="Para emitir a cobrança do Pix" className={CAMPO} defaultValue={v.cpf_cnpj} onChange={set("cpf_cnpj")} />
+              <p className="mt-1 text-[11.5px] text-[#8a8896]">Exigido pelo Asaas, parceiro de pagamentos da ivva, para emitir as cobranças.</p>
+            </div>
+          )}
           <label className="flex cursor-pointer items-start gap-2.5 text-[12.5px] leading-snug text-[#6b6577]">
             <input type="checkbox" name="aceite" required className="mt-0.5 h-4 w-4 accent-[#2fbf9f]" defaultChecked={v.aceite} onChange={set("aceite")} />
             <span>
@@ -176,9 +213,78 @@ function CadastroPanel({
             disabled={pending}
             className="mt-1 rounded-full bg-[linear-gradient(100deg,#2fbf9f,#8b7fe8)] py-3 text-[14px] font-semibold text-white shadow-[0_10px_30px_-8px_rgba(139,127,232,0.65)] disabled:opacity-60"
           >
-            {pending ? "Preparando o pagamento…" : "Continuar para o pagamento"}
+            {pending ? (pix ? "Gerando o Pix…" : "Preparando o pagamento…") : pix ? "Gerar o Pix" : "Continuar para o pagamento"}
           </button>
         </form>
+      </div>
+      <button onClick={onVoltar} className="mx-auto mt-6 block text-[13px] text-[#a5a3b0] hover:text-[#f7f6f2]">
+        ← Voltar pros planos
+      </button>
+    </div>
+  );
+}
+
+function PixPanel({ pix, plano, anual, onVoltar }: { pix: PixPronto; plano: Plano; anual: boolean; onVoltar: () => void }) {
+  const router = useRouter();
+  const [copiado, setCopiado] = useState(false);
+  const [pago, setPago] = useState(false);
+
+  // Pergunta a cada 4 s se o pagamento chegou; ao confirmar, segue para criar o acesso (mesma tela do cartão).
+  useEffect(() => {
+    let ativo = true;
+    const id = setInterval(async () => {
+      try {
+        const s = await situacaoPix(pix.ref);
+        if (ativo && s === "pago") {
+          setPago(true);
+          clearInterval(id);
+          router.push(`/bem-vindo?session_id=${pix.ref}`);
+        }
+      } catch {}
+    }, 4000);
+    return () => {
+      ativo = false;
+      clearInterval(id);
+    };
+  }, [pix.ref, router]);
+
+  const copiar = async () => {
+    try {
+      await navigator.clipboard.writeText(pix.copiaECola);
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 2500);
+    } catch {}
+  };
+
+  return (
+    <div className="mx-auto max-w-[480px]">
+      <p className="mb-4 text-center text-[13px] text-[#a5a3b0]">
+        Assinando <strong className="text-[#f7f6f2]">{plano.nome}</strong> · {anual ? "plano anual" : "plano mensal"} · pagamento no Pix
+      </p>
+      <div className="rounded-3xl bg-white p-7 text-center text-[#0e0e13] shadow-[0_40px_90px_-30px_rgba(0,0,0,0.6)]">
+        <h2 className="text-[20px] font-extrabold">Pague com o Pix</h2>
+        <p className="mt-1 text-[13px] text-[#6b6577]">
+          {pix.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} · abra o app do seu banco e escaneie o código
+        </p>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={`data:image/png;base64,${pix.imagem}`} alt="QR Code do Pix" className="mx-auto mt-5 h-56 w-56" />
+        <button
+          type="button"
+          onClick={copiar}
+          className="mt-4 w-full rounded-full bg-[linear-gradient(100deg,#2fbf9f,#8b7fe8)] py-3 text-[14px] font-semibold text-white"
+        >
+          {copiado ? "Código copiado ✓" : "Copiar código Pix (copia e cola)"}
+        </button>
+        <p className="mt-4 flex items-center justify-center gap-2 text-[12.5px] font-semibold text-[#6b6577]" aria-live="polite">
+          <span className={`inline-block h-2 w-2 rounded-full ${pago ? "bg-[#2fbf9f]" : "animate-pulse bg-[#8b7fe8]"}`} />
+          {pago ? "Pagamento confirmado! Abrindo o seu acesso…" : "Aguardando o pagamento. Esta tela atualiza sozinha."}
+        </p>
+        <p className="mt-4 text-[11.5px] leading-relaxed text-[#8a8896]">
+          {anual
+            ? "A renovação anual chega por e-mail antes do vencimento."
+            : "Nos próximos meses, a cobrança do Pix chega por e-mail alguns dias antes do vencimento."}{" "}
+          Se a página fechar, o código também foi enviado para o seu e-mail.
+        </p>
       </div>
       <button onClick={onVoltar} className="mx-auto mt-6 block text-[13px] text-[#a5a3b0] hover:text-[#f7f6f2]">
         ← Voltar pros planos
@@ -214,9 +320,11 @@ function EmbeddedPanel({ clientSecret }: { clientSecret: string }) {
   return <div ref={containerRef} />;
 }
 
-export default function PlanosClient({ planos }: { planos: Plano[] }) {
+export default function PlanosClient({ planos, pixDisponivel = false }: { planos: Plano[]; pixDisponivel?: boolean }) {
   const [checkout, setCheckout] = useState<{ clientSecret: string; plano: Plano } | null>(null);
   const [escolhido, setEscolhido] = useState<Plano | null>(null);
+  const [comPix, setComPix] = useState(false);
+  const [pixPronto, setPixPronto] = useState<{ pix: PixPronto; plano: Plano } | null>(null);
   const [volume, setVolume] = useState<number | null>(null);
   const [anual, setAnual] = useState(false);
   const [refCodigo, setRefCodigo] = useState("");
@@ -258,13 +366,29 @@ export default function PlanosClient({ planos }: { planos: Plano[] }) {
     );
   }
 
+  if (pixPronto) {
+    return (
+      <PixPanel
+        pix={pixPronto.pix}
+        plano={pixPronto.plano}
+        anual={anual}
+        onVoltar={() => {
+          setPixPronto(null);
+          setEscolhido(null);
+        }}
+      />
+    );
+  }
+
   if (escolhido) {
     return (
       <CadastroPanel
         plano={escolhido}
         anual={anual}
         refCodigo={refCodigo}
+        pix={comPix}
         onClientSecret={(clientSecret) => setCheckout({ clientSecret, plano: escolhido })}
+        onPix={(pix) => setPixPronto({ pix, plano: escolhido })}
         onVoltar={() => setEscolhido(null)}
       />
     );
@@ -391,7 +515,21 @@ export default function PlanosClient({ planos }: { planos: Plano[] }) {
               ))}
             </ul>
 
-            <CardForm destaque={p.destaque} onEscolher={() => setEscolhido(p)} />
+            <CardForm
+              destaque={p.destaque}
+              onEscolher={() => {
+                setComPix(false);
+                setEscolhido(p);
+              }}
+              onEscolherPix={
+                pixDisponivel
+                  ? () => {
+                      setComPix(true);
+                      setEscolhido(p);
+                    }
+                  : undefined
+              }
+            />
           </div>
         </motion.div>
       ))}

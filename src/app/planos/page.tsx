@@ -2,6 +2,8 @@ import { GlowBackdrop } from "./brand-fx";
 import IvvaLogo from "./logo";
 import PlanosClient from "./planos-client";
 import DemoViva from "./demo-viva";
+import { pixAssinaturaConfigurada, pixAssinaturaLiberada } from "@/lib/asaas-ivva";
+import { POLITICA_CANCELAMENTO } from "@/lib/planos";
 import {
   CONVERSAS_POR_PLANO,
   PACOTE_AVULSO,
@@ -61,7 +63,11 @@ const PLANOS = [
   },
 ];
 
-export default function PlanosPage() {
+export default async function PlanosPage(props: { searchParams: Promise<{ pix?: string }> }) {
+  const { pix } = await props.searchParams;
+  // Assinar no Pix: aparece para todos com ASAAS_IVVA_LIBERADO=1; antes disso, só em /planos?pix=teste.
+  const pixVisivel = pixAssinaturaLiberada() || (pixAssinaturaConfigurada() && pix === "teste");
+
   return (
     <main className="relative isolate min-h-screen overflow-hidden px-4 py-10">
       <GlowBackdrop />
@@ -89,14 +95,14 @@ export default function PlanosPage() {
             do seu negócio
           </h1>
           <p className="mt-3 text-[15px] text-[#a5a3b0]">
-            Preço público, sem &ldquo;fale com vendas&rdquo;. 14 dias grátis, cancela
-            quando quiser.
+            Preço público, sem &ldquo;fale com vendas&rdquo;. 14 dias grátis no cartão
+            {pixVisivel ? " ou assinatura direto no Pix" : ""}, cancela quando quiser.
           </p>
         </div>
 
         <DemoViva />
 
-        <PlanosClient planos={PLANOS} />
+        <PlanosClient planos={PLANOS} pixDisponivel={pixVisivel} />
 
         <p className="mx-auto mt-8 max-w-[720px] text-center text-[12.5px] leading-relaxed text-[#8a8896]">
           Conversa = todas as respostas da IA para um mesmo cliente seu em até 24 horas (em média{" "}
@@ -106,6 +112,10 @@ export default function PlanosPage() {
           atendendo na hora. Hoje: {formatarNumero(CONVERSAS_POR_PLANO.essencial)} /{" "}
           {formatarNumero(CONVERSAS_POR_PLANO.profissional)} / {formatarNumero(CONVERSAS_POR_PLANO.completo)}{" "}
           conversas por mês nos planos Essencial / Profissional / Completo.
+        </p>
+
+        <p className="mx-auto mt-4 max-w-[720px] text-center text-[12.5px] leading-relaxed text-[#8a8896]">
+          {POLITICA_CANCELAMENTO}
         </p>
 
         <p className="mt-10 text-center text-[13px] text-[#8a8896]">

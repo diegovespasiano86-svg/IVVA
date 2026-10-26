@@ -114,13 +114,14 @@ const par = (t: string) => `<p style="margin:0 0 16px;font-size:15px;line-height
 const nota = (t: string) => `<p style="margin:0 0 12px;font-size:12px;line-height:1.5;color:#8a8496">${t}</p>`;
 
 /** Pagamento confirmado: falta o cliente criar a senha e escolher o tipo do negócio. */
-export function emailFinalizarCadastro(params: { negocio: string; plano: string; link: string }) {
+export function emailFinalizarCadastro(params: { negocio: string; plano: string; link: string; pix?: boolean }) {
   const plano = NOMES_PLANO[params.plano] ?? params.plano;
+  const inicio = params.pix ? "O pagamento do Pix foi confirmado." : "Seus 14 dias de teste grátis já começaram.";
   const assunto = "Pagamento confirmado: falta só criar a sua senha";
   const texto = [
     `Olá!`,
     ``,
-    `Recebemos a assinatura do plano ${plano} para ${params.negocio}. Seus 14 dias de teste grátis já começaram.`,
+    `Recebemos a assinatura do plano ${plano} para ${params.negocio}. ${inicio}`,
     `Falta um passo: criar a sua senha e escolher o tipo do seu negócio. Leva 1 minuto:`,
     params.link,
     ``,
@@ -128,7 +129,7 @@ export function emailFinalizarCadastro(params: { negocio: string; plano: string;
   ].join("\n");
   const html = moldura(
     "Pagamento confirmado: falta só criar a sua senha",
-    par(`Recebemos a assinatura do plano <strong>${esc(plano)}</strong> para <strong>${esc(params.negocio)}</strong>. Seus 14 dias de teste grátis já começaram.`) +
+    par(`Recebemos a assinatura do plano <strong>${esc(plano)}</strong> para <strong>${esc(params.negocio)}</strong>. ${inicio}`) +
       par("Falta um passo: criar a sua senha e escolher o tipo do seu negócio. Em seguida você recebe um e-mail para confirmar o seu e-mail e ativar o acesso.") +
       botao(params.link, "Finalizar meu cadastro") +
       nota(`Se o botão não abrir, copie este endereço no navegador:<br><span style="word-break:break-all">${esc(params.link)}</span>`) +

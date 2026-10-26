@@ -280,9 +280,19 @@ export async function GET(request: NextRequest) {
     console.error("[cron pos-venda] falha ao expirar cobranças", err);
   }
 
+  // Assinaturas no Pix: bloqueia quem venceu há mais de 5 dias ou cancelou e passou do período pago.
+  let pixBloqueados = 0;
+  try {
+    const { data: n } = await supabase.rpc("assinatura_pix_bloquear", { p_secret: secret });
+    pixBloqueados = Number(n ?? 0);
+  } catch (err) {
+    console.error("[cron pos-venda] falha ao bloquear assinaturas Pix vencidas", err);
+  }
+
   return NextResponse.json({
     ok: true,
     cobrancasExpiradas,
+    pixBloqueados,
     resumoSemanal,
     indicacoes,
     campanhasEnviadas: campanhas.enviados,

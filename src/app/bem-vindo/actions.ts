@@ -3,7 +3,7 @@
 import { origemDoApp } from "@/lib/origem";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getCheckoutSession } from "@/lib/stripe";
+import { lerPagamentoCadastro } from "@/lib/pagamento-cadastro";
 import { getSegmento } from "@/lib/segmentos";
 
 export type EstadoCadastro = { erro: string | null; confirmar: string | null };
@@ -37,18 +37,18 @@ export async function finalizarCadastro(_prevState: EstadoCadastro | undefined, 
     return ESTADO_ERRO("Escolha o tipo do seu negócio antes de continuar.");
   }
 
-  let session;
+  let pagamento;
   try {
-    session = await getCheckoutSession(sessionId);
+    pagamento = await lerPagamentoCadastro(sessionId);
   } catch (err) {
-    console.error("[cadastro] não leu o checkout", err instanceof Error ? err.message : err);
+    console.error("[cadastro] não leu o pagamento", err instanceof Error ? err.message : err);
     return ESTADO_ERRO("Não encontramos esse pagamento. Fale com a gente e informe o código CAD-1.");
   }
-  if (session.payment_status !== "paid" && session.payment_status !== "no_payment_required") {
+  if (!pagamento.pago) {
     return ESTADO_ERRO("Pagamento ainda não confirmado.");
   }
 
-  const email = (session.customer_details?.email ?? session.customer_email ?? "").trim().toLowerCase();
+  const email = pagamento.email;
   if (!email) return ESTADO_ERRO("Não conseguimos ler o e-mail do pagamento.");
 
   const segredo = process.env.WHATSAPP_WEBHOOK_INTERNAL_SECRET;
