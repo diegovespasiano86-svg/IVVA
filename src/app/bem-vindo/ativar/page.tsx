@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
+import { CONTRATO_VERSAO } from "@/lib/contrato";
 import { createClient } from "@/lib/supabase/server";
 import { lerPagamentoCadastro } from "@/lib/pagamento-cadastro";
 import { getSegmento } from "@/lib/segmentos";
@@ -99,6 +101,17 @@ export default async function AtivarPage(props: { searchParams: Promise<{ sessio
       />
     );
   }
+
+  // Contrato aceito no cadastro (caixa obrigatória em /planos): fica registrado com a versão, o IP e o navegador.
+  const h = await headers();
+  const { error: errAceite } = await supabase.from("contrato_aceites").insert({
+    user_id: user.id,
+    tenant_id: tenantId,
+    versao: CONTRATO_VERSAO,
+    ip: (h.get("x-forwarded-for") ?? "").split(",")[0].trim() || null,
+    user_agent: h.get("user-agent")?.slice(0, 400) ?? null,
+  });
+  if (errAceite && errAceite.code !== "23505") console.error("[ativar] falha ao registrar o aceite do contrato", errAceite.message);
 
   // Pix: liga a assinatura do Asaas ao negócio recém-criado (provision_tenant cria a assinatura como teste).
   if (pagamento.pix) {

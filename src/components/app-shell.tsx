@@ -334,6 +334,18 @@ export default function AppShell({
                       Conta e assinatura
                     </Link>
                   )}
+                  <Link
+                    href="/perguntas-frequentes"
+                    className="mt-1 block rounded-lg px-3 py-2 text-[13px] font-semibold text-ink-soft hover:bg-surface-soft hover:text-ink"
+                  >
+                    Perguntas frequentes
+                  </Link>
+                  <Link
+                    href="/politicas"
+                    className="block rounded-lg px-3 py-2 text-[13px] font-semibold text-ink-soft hover:bg-surface-soft hover:text-ink"
+                  >
+                    Políticas e privacidade
+                  </Link>
                   <Aparencia />
                   <form action={logout}>
                     <button

@@ -194,7 +194,9 @@ function CadastroPanel({
           <label className="flex cursor-pointer items-start gap-2.5 text-[12.5px] leading-snug text-[#6b6577]">
             <input type="checkbox" name="aceite" required className="mt-0.5 h-4 w-4 accent-[#2fbf9f]" defaultChecked={v.aceite} onChange={set("aceite")} />
             <span>
-              Li e aceito os{" "}
+              Li e aceito o{" "}
+              <a href="/contrato" target="_blank" rel="noreferrer" className="font-semibold text-[#6d5be0] underline">Contrato de Prestação de Serviços</a>
+              , os{" "}
               <a href="https://ivva.app.br/termos" target="_blank" rel="noreferrer" className="font-semibold text-[#6d5be0] underline">Termos de Uso</a>{" "}
               e a{" "}
               <a href="https://ivva.app.br/privacidade" target="_blank" rel="noreferrer" className="font-semibold text-[#6d5be0] underline">Política de Privacidade</a>

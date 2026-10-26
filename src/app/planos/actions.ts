@@ -54,7 +54,7 @@ export async function iniciarCadastro(_prev: CadastroState, formData: FormData):
   if (telefone.replace(/\D/g, "").length < 10) return { erro: "Informe o WhatsApp com DDD, por exemplo (11) 99999-9999.", clientSecret: null };
   if (!nomeNegocio) return { erro: "Informe o nome do seu negócio.", clientSecret: null };
   if (!getSegmento(segmento)) return { erro: "Escolha o tipo do seu negócio.", clientSecret: null };
-  if (!aceite) return { erro: "Para continuar, aceite os Termos e a Política de Privacidade.", clientSecret: null };
+  if (!aceite) return { erro: "Para continuar, aceite o Contrato, os Termos e a Política de Privacidade.", clientSecret: null };
 
   const priceId = (anual ? PRICE_ENV_ANUAL : PRICE_ENV)[plano];
   if (!priceId) {
@@ -165,7 +165,7 @@ export async function iniciarCadastroPix(_prev: CadastroPixState, formData: Form
   if (!nomeNegocio) return falha("Informe o nome do seu negócio.");
   if (!getSegmento(segmento)) return falha("Escolha o tipo do seu negócio.");
   if (!cpfCnpj) return falha("Confira o CPF ou CNPJ: os números não conferem.");
-  if (!aceite) return falha("Para continuar, aceite os Termos e a Política de Privacidade.");
+  if (!aceite) return falha("Para continuar, aceite o Contrato, os Termos e a Política de Privacidade.");
 
   const secret = process.env.WHATSAPP_WEBHOOK_INTERNAL_SECRET;
   if (!secret) return falha("Cadastro indisponível no momento. Tente de novo em instantes.");

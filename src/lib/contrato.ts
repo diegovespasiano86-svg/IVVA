@@ -77,7 +77,7 @@ export const CONTRATO: Clausula[] = [
   {
     titulo: "7. Atendimento e suporte",
     paragrafos: [
-      `O suporte é feito pela Central de Ajuda dentro do sistema (botão "Precisa de ajuda?") e pelo e-mail ${EMAIL}, em dias úteis, das 9h às 18h (horário de Brasília). O prazo de primeira resposta é de até 48 horas úteis, conforme a necessidade:`,
+      `O suporte é feito pelo e-mail ${EMAIL} e pelos pedidos de ajuda abertos dentro do sistema, em dias úteis, das 9h às 18h (horário de Brasília). O prazo de primeira resposta é de até 48 horas úteis, conforme a necessidade:`,
     ],
     itens: [
       "Crítica (sistema fora do ar ou robô parado para todos os clientes): primeira resposta em até 8 horas úteis.",
