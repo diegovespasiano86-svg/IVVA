@@ -174,3 +174,61 @@ export function emailAlertaCadastros(itens: { email: string; nome_negocio: strin
   );
   return { assunto, html, texto };
 }
+
+/**
+ * Recuperação de cadastro abandonado (cron diário): etapa 1 no dia seguinte, etapa 2 três dias depois.
+ * Quem já tem login na ivva não recebe (filtro no banco, leads_para_recuperar).
+ */
+export function emailRecuperarCadastro(params: { nome: string | null; negocio: string | null; plano: string | null; etapa: number }) {
+  const link = "https://app.ivva.app.br/planos";
+  const primeiroNome = (params.nome ?? "").trim().split(/\s+/)[0] || "";
+  const ola = primeiroNome ? `Olá, ${primeiroNome}!` : "Olá!";
+  const plano = params.plano ? NOMES_PLANO[params.plano] ?? params.plano : null;
+  const para = [plano ? `o plano ${plano}` : "a ivva", params.negocio ? `para ${params.negocio}` : ""].filter(Boolean).join(" ");
+  const sair = "Não quer mais receber estes lembretes? Responda este e-mail com a palavra PARAR.";
+  const ajuda = "Dúvidas? Fale com a gente no WhatsApp (11) 92740-9320 ou responda este e-mail.";
+
+  if (params.etapa <= 1) {
+    const assunto = "Seu cadastro na ivva ficou pela metade";
+    const texto = [
+      ola,
+      ``,
+      `Você começou a assinar ${para} e parou antes do pagamento.`,
+      `Termina em 2 minutos: no cartão, os 14 primeiros dias são grátis e você cancela quando quiser, sem multa.`,
+      link,
+      ``,
+      ajuda,
+      sair,
+    ].join("\n");
+    const html = moldura(
+      "Seu cadastro ficou pela metade",
+      par(`${esc(ola)} Você começou a assinar <strong>${esc(para)}</strong> e parou antes do pagamento.`) +
+        par("Termina em 2 minutos. No cartão, os <strong>14 primeiros dias são grátis</strong> e você cancela quando quiser, sem multa.") +
+        botao(link, "Concluir meu cadastro") +
+        nota(esc(ajuda)) +
+        nota(esc(sair)),
+    );
+    return { assunto, html, texto };
+  }
+
+  const assunto = "Travou em alguma parte? A gente ajuda";
+  const texto = [
+    ola,
+    ``,
+    `Faz alguns dias que você começou a assinar ${para} e não concluiu.`,
+    `Se ficou alguma dúvida sobre plano, pagamento ou como o robô responde, chame a gente no WhatsApp (11) 92740-9320: a gente te mostra funcionando com os dados do seu negócio.`,
+    `Se preferir testar sozinho, a página de planos tem uma demonstração ao vivo:`,
+    link,
+    ``,
+    sair,
+  ].join("\n");
+  const html = moldura(
+    "Travou em alguma parte?",
+    par(`${esc(ola)} Faz alguns dias que você começou a assinar <strong>${esc(para)}</strong> e não concluiu.`) +
+      par("Se ficou alguma dúvida sobre plano, pagamento ou como o robô responde, chame a gente no WhatsApp <strong>(11) 92740-9320</strong>: a gente te mostra funcionando com os dados do seu negócio.") +
+      par("Se preferir testar sozinho, a página de planos tem uma demonstração ao vivo.") +
+      botao(link, "Ver a demonstração e concluir") +
+      nota(esc(sair)),
+  );
+  return { assunto, html, texto };
+}
