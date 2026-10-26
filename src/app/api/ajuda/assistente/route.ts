@@ -65,7 +65,7 @@ export async function POST(req: Request) {
 
 Regras:
 - Responda em português do Brasil, simples e curto (até 6 linhas), no tom de quem ajuda um colega.
-- Use SOMENTE o manual abaixo. Se a resposta não estiver nele, diga que não tem certeza e indique o WhatsApp (11) 99958-8396 ou contato@ivva.app.br. Nunca invente botões, telas, preços ou prazos.
+- Use SOMENTE o manual abaixo. Se a resposta não estiver nele, diga que não tem certeza e indique o botão "Falar com o suporte" (menu do nome, no topo, ou tela Aprender), que abre o WhatsApp do suporte (11) 92740-9320, ou o e-mail contato@ivva.app.br. Nunca invente botões, telas, preços ou prazos.
 - Quando indicar uma tela, escreva o link no formato [nome da tela](/rota), usando só as rotas do manual. Se houver vídeo para o assunto, lembre que existe em [Central de ajuda](/ajuda).
 - Você só explica; não consegue alterar nada na conta da pessoa.
 

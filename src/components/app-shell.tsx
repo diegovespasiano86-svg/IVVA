@@ -8,6 +8,7 @@ import {
   ChevronDown,
   CircleHelp,
   LogOut,
+  MessageCircle,
   MoreHorizontal,
   PanelLeftClose,
   PanelLeftOpen,
@@ -19,6 +20,7 @@ import { Logo } from "@/components/logo";
 import MotionEffects from "@/components/motion-effects";
 import Aparencia from "@/components/aparencia";
 import AjudaFlutuante from "@/components/ajuda/flutuante";
+import { SuporteModal } from "@/components/suporte/falar-com-suporte";
 import { guiasDoPerfil, norm } from "@/lib/ajuda-busca";
 import { navGroupsForRole, type NavGroup, type Role } from "@/lib/nav";
 import type { Termos } from "@/lib/termos";
@@ -58,6 +60,7 @@ export default function AppShell({
   alertHrefs,
   roboStatus,
   termos,
+  suporte,
   children,
 }: {
   role: Role;
@@ -69,9 +72,12 @@ export default function AppShell({
   roboStatus: "ativo" | "pausado" | "sem-whatsapp" | null;
   /** vocabulário do nicho (paciente, aluno, corretor...) */
   termos?: Termos;
+  /** dados que vão junto na mensagem de suporte */
+  suporte?: { plano?: string; email?: string };
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const [suporteAberto, setSuporteAberto] = useState(false);
   const router = useRouter();
   const groups = useMemo(() => navGroupsForRole(role, termos), [role, termos]);
 
@@ -334,6 +340,16 @@ export default function AppShell({
                       Conta e assinatura
                     </Link>
                   )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUserMenu(false);
+                      setSuporteAberto(true);
+                    }}
+                    className="mt-1 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-[13px] font-semibold text-ink-soft hover:bg-surface-soft hover:text-ink"
+                  >
+                    <MessageCircle size={15} /> Falar com o suporte
+                  </button>
                   <Link
                     href="/perguntas-frequentes"
                     className="mt-1 block rounded-lg px-3 py-2 text-[13px] font-semibold text-ink-soft hover:bg-surface-soft hover:text-ink"
@@ -362,6 +378,7 @@ export default function AppShell({
         </div>
         <div className="h-[2px] w-full bg-gradient-to-r from-[#2fbf9f] via-[#8b7fe8] to-[#ff6b5b]" />
       </header>
+      {suporteAberto && <SuporteModal contexto={{ negocio, ...suporte }} onFechar={() => setSuporteAberto(false)} />}
 
       <div className="flex flex-1">
         {/* ---------- menu lateral (desktop) ---------- */}

@@ -7,6 +7,7 @@ export const CONTRATO_ATUALIZADO = "26/10/2026";
 
 const EMPRESA = "69.262.496 DIEGO VESPASIANO DOS SANTOS, CNPJ 69.262.496/0001-78";
 const EMAIL = "contato@ivva.app.br";
+const WHATSAPP_SUPORTE = "(11) 92740-9320";
 
 export type Clausula = { titulo: string; paragrafos?: string[]; itens?: string[] };
 
@@ -77,7 +78,7 @@ export const CONTRATO: Clausula[] = [
   {
     titulo: "7. Atendimento e suporte",
     paragrafos: [
-      `O suporte é feito pelo e-mail ${EMAIL} e pelos pedidos de ajuda abertos dentro do sistema, em dias úteis, das 9h às 18h (horário de Brasília). O prazo de primeira resposta é de até 48 horas úteis, conforme a necessidade:`,
+      `O suporte é feito pelo WhatsApp ${WHATSAPP_SUPORTE}, aberto pelo botão "Falar com o suporte" dentro do sistema, e pelo e-mail ${EMAIL}, em dias úteis, das 9h às 18h (horário de Brasília). O prazo de primeira resposta depende da urgência informada:`,
     ],
     itens: [
       "Crítica (sistema fora do ar ou robô parado para todos os clientes): primeira resposta em até 8 horas úteis.",

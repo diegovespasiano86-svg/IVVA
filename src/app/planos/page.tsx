@@ -24,7 +24,7 @@ const PLANOS = [
       "CRM com funil de vendas",
       "Dashboard com KPIs básicos",
       "Base de conhecimento pronta pro seu nicho",
-      "Suporte padrão",
+      "Suporte pelo WhatsApp",
     ],
   },
   {
@@ -44,7 +44,7 @@ const PLANOS = [
       "Controle de estoque",
       "Resposta por áudio",
       "Cancelamento pelo próprio chat",
-      "Suporte prioritário",
+      "Suporte prioritário pelo WhatsApp",
     ],
   },
   {
@@ -58,7 +58,7 @@ const PLANOS = [
       "Admin do negócio pelo WhatsApp",
       "Sinal antecipado (anti no-show)",
       "Recibo automático por WhatsApp",
-      "Suporte prioritário",
+      "Suporte prioritário pelo WhatsApp",
     ],
   },
 ];

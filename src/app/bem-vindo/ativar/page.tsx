@@ -54,7 +54,7 @@ export default async function AtivarPage(props: { searchParams: Promise<{ sessio
     pagamento = await lerPagamentoCadastro(sessionId);
   } catch (err) {
     console.error("[ativar] não leu o pagamento", err instanceof Error ? err.message : err);
-    return <Painel titulo="Não encontramos o pagamento" texto="Fale com a gente em contato@ivva.app.br e informe o código CAD-1." />;
+    return <Painel titulo="Não encontramos o pagamento" texto="Fale com a gente no WhatsApp (11) 92740-9320 ou em contato@ivva.app.br e informe o código CAD-1." />;
   }
   if (!pagamento.pago) {
     return <Painel titulo="Pagamento ainda não confirmado" texto="Assim que ele for confirmado, clique de novo no botão do e-mail." />;

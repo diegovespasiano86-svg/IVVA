@@ -1,4 +1,5 @@
 import ProximoPasso from "@/components/proximo-passo";
+import { PLANO_LABEL, type PlanoId } from "@/lib/planos";
 import { getFimDoTeste } from "@/lib/stripe";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -29,7 +30,7 @@ export default async function AppLayout({
 
   const { data: perfil } = await supabase
     .from("users")
-    .select("nome, role, tenant_id, tenants(nome, segmento, termos)")
+    .select("nome, role, tenant_id, tenants(nome, segmento, termos, plano)")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -170,6 +171,10 @@ export default async function AppLayout({
       alertHrefs={alertHrefs}
       roboStatus={roboStatus}
       termos={termos}
+      suporte={{
+        plano: PLANO_LABEL[(perfil.tenants as unknown as { plano?: PlanoId } | null)?.plano ?? "essencial"],
+        email: user.email ?? undefined,
+      }}
     >
         {diasDeTeste !== null && (
           <Alert tone="info" icon={Clock} action={{ href: "/assinatura", label: "Minha assinatura" }}>

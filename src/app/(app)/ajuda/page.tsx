@@ -1,10 +1,11 @@
-import { CircleHelp, MessageCircle } from "lucide-react";
+import { CircleHelp } from "lucide-react";
 import PageHeader from "@/components/page-header";
 import CentralAjuda from "@/components/ajuda/central";
 import { createClient } from "@/lib/supabase/server";
 import { guiasDoPerfil } from "@/lib/ajuda-busca";
-
-const WHATSAPP = "https://wa.me/5511999588396?text=Oi!%20Preciso%20de%20ajuda%20na%20ivva.";
+import FalarComSuporte from "@/components/suporte/falar-com-suporte";
+import { SUPORTE_HORARIO, SUPORTE_WHATSAPP_LABEL } from "@/lib/suporte";
+import { PLANO_LABEL, type PlanoId } from "@/lib/planos";
 
 export default async function AjudaPage({ searchParams }: { searchParams: Promise<{ q?: string; abrir?: string }> }) {
   const { q, abrir } = await searchParams;
@@ -12,7 +13,8 @@ export default async function AjudaPage({ searchParams }: { searchParams: Promis
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const { data: perfil } = await supabase.from("users").select("role").eq("id", user?.id ?? "").maybeSingle();
+  const { data: perfil } = await supabase.from("users").select("role, tenants(nome, plano)").eq("id", user?.id ?? "").maybeSingle();
+  const tenant = perfil?.tenants as unknown as { nome: string; plano: PlanoId | null } | null;
   const guias = guiasDoPerfil(perfil?.role === "dono");
 
   return (
@@ -29,12 +31,12 @@ export default async function AjudaPage({ searchParams }: { searchParams: Promis
         <div>
           <p className="text-[14px] font-extrabold">Não achou o que precisava?</p>
           <p className="text-[12.5px] text-ink-soft">
-            Pergunte ao assistente no botão Aprender, no canto da tela, ou fale com a gente pelo WhatsApp: (11) 99958-8396. Se preferir, escreva para contato@ivva.app.br.
+            Pergunte ao assistente no botão Aprender, no canto da tela, ou fale com o suporte pelo WhatsApp {SUPORTE_WHATSAPP_LABEL}, em {SUPORTE_HORARIO}. Se preferir, escreva para contato@ivva.app.br.
           </p>
         </div>
-        <a href={WHATSAPP} target="_blank" rel="noreferrer" className="btn btn-primary btn-md">
-          <MessageCircle size={16} /> Chamar no WhatsApp
-        </a>
+        <FalarComSuporte
+          contexto={{ negocio: tenant?.nome, plano: PLANO_LABEL[tenant?.plano ?? "essencial"], email: user?.email ?? undefined }}
+        />
       </div>
     </div>
   );

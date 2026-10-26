@@ -22,7 +22,7 @@ export default function Erro({ error, reset }: { error: Error & { digest?: strin
       <p className="text-[13px] font-bold uppercase tracking-[0.18em] text-[#ff6b5b]">Algo saiu do previsto</p>
       <h1 className="mt-3 text-[30px] font-extrabold tracking-[-0.02em] sm:text-[38px]">Não conseguimos abrir esta tela</h1>
       <p className="mt-3 max-w-[460px] text-[15px] text-[#a5a3b0]">
-        Já registramos o problema. Tente de novo; se continuar, fale com a gente e informe o código abaixo.
+        Já registramos o problema. Tente de novo; se continuar, fale com a gente no WhatsApp (11) 92740-9320 e informe o código abaixo.
       </p>
       {error.digest && <p className="mt-3 rounded-full bg-white/5 px-3 py-1 text-[12px] text-[#8a8896]">Código: {error.digest}</p>}
       <div className="mt-8 flex flex-wrap items-center justify-center gap-3">

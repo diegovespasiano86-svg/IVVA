@@ -69,7 +69,7 @@ const PLANOS = [
       "Admin do negócio pelo WhatsApp",
       "Sinal antecipado (anti no-show)",
       "Recibo automático por WhatsApp",
-      "Suporte prioritário",
+      "Suporte prioritário pelo WhatsApp",
     ],
   },
 ] as const;

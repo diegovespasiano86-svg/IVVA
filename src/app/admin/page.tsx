@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { sinalConcorrente, type SinalConcorrente } from "@/lib/concorrentes";
 import { createClient } from "@/lib/supabase/server";
 import { resolverChamado } from "./actions";
 import { limiteConversas } from "@/lib/planos";
@@ -47,7 +48,7 @@ export default async function AdminPage() {
     redirect("/dashboard");
   }
 
-  const [{ data }, { data: chamadosData }, { data: usoData }, { data: pendentesData }, { data: leadsData }, { data: origensData }] = await Promise.all([
+  const [{ data }, { data: chamadosData }, { data: usoData }, { data: pendentesData }, { data: leadsData }, { data: origensData }, { data: leadsTodosData }, { data: pixData }] = await Promise.all([
     supabase.rpc("admin_tenants_overview"),
     supabase.rpc("admin_chamados_recentes"),
     supabase.rpc("admin_ia_uso_overview"),
@@ -70,10 +71,20 @@ export default async function AdminPage() {
       .select("origem, status")
       .gte("created_at", new Date(Date.now() - 30 * 86400000).toISOString())
       .limit(2000),
+    // Base do alerta de possível concorrente (contrato, cláusula 5).
+    supabase
+      .from("leads_cadastro")
+      .select("nome, email, nome_negocio, status, created_at")
+      .gte("created_at", new Date(Date.now() - 120 * 86400000).toISOString())
+      .order("created_at", { ascending: false })
+      .limit(1000),
+    supabase.from("assinaturas_pix").select("email, nome_negocio, cpf_cnpj, status, created_at").order("created_at", { ascending: false }).limit(1000),
   ]);
   const canais = new Map<string, { cadastros: number; pagos: number }>();
   for (const o of (origensData ?? []) as { origem: Record<string, string> | null; status: string }[]) {
-    const nome = o.origem?.utm_source ? `` : o.origem?.referrer ?? "direto ou sem informação";
+    const nome = o.origem?.utm_source
+      ? `${o.origem.utm_source}${o.origem.utm_medium ? ` / ${o.origem.utm_medium}` : ""}`
+      : o.origem?.referrer ?? "direto ou sem informação";
     const c = canais.get(nome) ?? { cadastros: 0, pagos: 0 };
     c.cadastros++;
     if (o.status === "pago" || o.status === "conta_criada") c.pagos++;
@@ -83,6 +94,23 @@ export default async function AdminPage() {
   const leads = (leadsData ?? []) as { nome: string; email: string; telefone: string | null; nome_negocio: string | null; segmento: string | null; plano: string | null; status: string; updated_at: string }[];
   const pendentes = (pendentesData ?? []) as { email: string; nome_negocio: string | null; plano: string | null; status: string; created_at: string }[];
   const tenants = (data ?? []) as AdminTenantRow[];
+  // Possíveis concorrentes: cadastros, assinaturas no Pix (têm CNPJ) e negócios ativos.
+  type Alerta = { origem: string; quem: string; email: string; quando: string; sinal: SinalConcorrente };
+  const alertas: Alerta[] = [];
+  const vistos = new Set<string>();
+  const avaliar = (origem: string, quem: string, email: string | null, quando: string, cpfCnpj?: string | null) => {
+    const sinal = sinalConcorrente({ email, nomeNegocio: quem, cpfCnpj });
+    const chave = (email ?? quem).toLowerCase();
+    if (!sinal || vistos.has(chave)) return;
+    vistos.add(chave);
+    alertas.push({ origem, quem, email: email ?? "", quando, sinal });
+  };
+  for (const pix of (pixData ?? []) as { email: string; nome_negocio: string | null; cpf_cnpj: string | null; created_at: string }[])
+    avaliar("Assinatura no Pix", pix.nome_negocio ?? "Sem nome", pix.email, pix.created_at, pix.cpf_cnpj);
+  for (const t of tenants) avaliar("Negócio na ivva", t.nome, t.dono_email, t.criado_em);
+  for (const l of (leadsTodosData ?? []) as { nome: string; email: string; nome_negocio: string | null; status: string; created_at: string }[])
+    avaliar(l.status === "conta_criada" || l.status === "pago" ? "Cadastro pago" : "Cadastro não finalizado", l.nome_negocio ?? l.nome, l.email, l.created_at);
+  alertas.sort((a, b) => Number(b.sinal.nivel === "alto") - Number(a.sinal.nivel === "alto") || b.quando.localeCompare(a.quando));
   // Uso de conversas da IA no mês, por negócio (limite = valor negociado ou o do plano).
   const usoPorTenant = new Map(
     (
@@ -169,6 +197,32 @@ export default async function AdminPage() {
                 <div key={nome} className="flex items-center justify-between gap-3 px-4 py-2.5 text-[13px]">
                   <span className="min-w-0 truncate font-semibold">{nome}</span>
                   <span className="shrink-0 text-ink-soft">{c.cadastros} cadastro{c.cadastros === 1 ? "" : "s"} · {c.pagos} pago{c.pagos === 1 ? "" : "s"}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {alertas.length > 0 && (
+          <div className="mb-6">
+            <p className="mb-1 text-[14px] font-bold">
+              Possíveis concorrentes <span className="font-normal text-ink-faint">({alertas.length})</span>
+            </p>
+            <p className="mb-3 text-[12px] text-ink-faint">
+              Pelo contrato (cláusula 5), quem desenvolve, revende ou presta consultoria em atendimento automatizado, chatbot ou CRM só usa a ivva com autorização. Confira antes de liberar; o alerta não bloqueia ninguém sozinho. Para marcar um CNPJ ou uma marca, inclua em src/lib/concorrentes.ts.
+            </p>
+            <div className="flex flex-col gap-2">
+              {alertas.slice(0, 30).map((a) => (
+                <div key={a.origem + a.email + a.quem} className={`card flex flex-wrap items-center justify-between gap-3 px-4 py-3 ${a.sinal.nivel === "alto" ? "border-coral/50" : "border-amber/40"}`}>
+                  <div className="min-w-0">
+                    <p className="text-[13.5px] font-bold">{a.quem}{a.email ? ` · ${a.email}` : ""}</p>
+                    <p className="text-[12px] text-ink-faint">
+                      {a.origem} · {new Date(a.quando).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })} · {a.sinal.motivo}
+                    </p>
+                  </div>
+                  <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${a.sinal.nivel === "alto" ? "bg-coral/10 text-coral" : "bg-amber/15 text-[#7a4a00]"}`}>
+                    {a.sinal.nivel === "alto" ? "Provável concorrente" : "Conferir"}
+                  </span>
                 </div>
               ))}
             </div>

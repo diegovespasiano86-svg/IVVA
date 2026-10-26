@@ -71,7 +71,7 @@ const GRUPOS: { titulo: string; perguntas: Pergunta[] }[] = [
     perguntas: [
       {
         q: "Em quanto tempo o suporte responde?",
-        a: "Em dias úteis, das 9h às 18h. Primeira resposta em até 8 horas úteis quando o sistema ou o robô está parado, até 24 horas úteis quando um recurso importante falha e até 48 horas úteis para dúvidas e ajustes.",
+        a: "Use o botão Falar com o suporte, no menu do seu nome ou na tela Aprender: a conversa abre no nosso WhatsApp, (11) 92740-9320, já com os dados do seu negócio. Atendemos em dias úteis, das 9h às 18h. Primeira resposta em até 8 horas úteis quando o sistema ou o robô está parado, até 24 horas úteis quando um recurso importante falha e até 48 horas úteis para dúvidas e ajustes.",
       },
       {
         q: "Onde está o contrato que aceitei?",

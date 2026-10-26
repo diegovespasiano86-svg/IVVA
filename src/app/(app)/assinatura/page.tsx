@@ -21,7 +21,7 @@ const STATUS: Record<string, { rotulo: string; tom: string }> = {
 
 const AVISOS: Record<string, string> = {
   dono: "Só o dono do negócio pode gerenciar a assinatura.",
-  "sem-assinatura": "Ainda não encontramos a sua cobrança. Fale com a gente em contato@ivva.app.br.",
+  "sem-assinatura": "Ainda não encontramos a sua cobrança. Fale com o suporte no WhatsApp (11) 92740-9320 ou em contato@ivva.app.br.",
   portal: "Não conseguimos abrir o portal agora. Tente de novo em instantes.",
 };
 
@@ -188,7 +188,7 @@ function AssinaturaPix({
         <Repeat size={22} className="text-purple" />
         <span>
           <span className="block text-[13.5px] font-bold">Trocar de plano, passar para o cartão ou cancelar</span>
-          <span className="block text-[12px] text-ink-soft">Fale com a gente em contato@ivva.app.br que ajustamos a sua assinatura.</span>
+          <span className="block text-[12px] text-ink-soft">Fale com o suporte no WhatsApp (11) 92740-9320 ou em contato@ivva.app.br que ajustamos a sua assinatura.</span>
         </span>
       </a>
       <p className="mt-4 text-[12px] text-ink-faint">
