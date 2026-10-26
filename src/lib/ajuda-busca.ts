@@ -34,9 +34,13 @@ export function buscarGuias(q: string, lista: Guia[]): Guia[] {
 
 /** Telas que não são o endereço de nenhuma guia usam o vídeo da guia mais próxima. */
 const ROTA_PARA_GUIA: Record<string, string> = { "/clientes": "clientes", "/assinatura": "conta" };
+/** Telas que usam a guia de outra rota, mesmo havendo um href mais curto que casa (ex.: /clientes). */
+const ROTA_FIXA: Record<string, string> = { "/clientes/listas": "etiquetas-listas" };
 
 /** Guia da tela atual: o href mais específico que casa com a rota (ou a guia indicada em ROTA_PARA_GUIA). */
 export function guiaDaRota(pathname: string, lista: Guia[]): Guia | undefined {
+  const fixa = Object.keys(ROTA_FIXA).find((r) => pathname === r || pathname.startsWith(r + "/"));
+  if (fixa) return lista.find((g) => g.id === ROTA_FIXA[fixa]);
   const exata = lista
     .filter((g) => pathname === g.href || pathname.startsWith(g.href + "/"))
     .sort((a, b) => b.href.length - a.href.length)[0];
