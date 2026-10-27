@@ -233,6 +233,45 @@ export function emailRecuperarCadastro(params: { nome: string | null; negocio: s
   return { assunto, html, texto };
 }
 
+/** Black Friday: acesso antecipado (20/11) para quem entrou na lista VIP. */
+export function emailAcessoAntecipadoVip(params: { nome: string | null }) {
+  const link = "https://app.ivva.app.br/planos";
+  const primeiroNome = (params.nome ?? "").trim().split(/\s+/)[0] || "";
+  const ola = primeiroNome ? `Olá, ${primeiroNome}!` : "Olá!";
+  const assunto = "Seu acesso antecipado à Black Friday da ivva abriu";
+  const itens = [
+    "30 dias grátis no cartão: cancelando antes do fim, nada é cobrado",
+    "Plano anual com 40% de desconto",
+    "Garantia de 7 dias: se não gostar, devolvemos 100% do valor pago",
+    "Indique e ganhe: até 6 meses grátis",
+  ];
+  const sair = "Não quer mais receber nossos e-mails? Responda este e-mail com a palavra PARAR.";
+  const ajuda = "Dúvidas? Fale com a gente no WhatsApp (11) 92740-9320 ou responda este e-mail.";
+  const prazo = "Condições válidas para novas assinaturas até 30/11/2026. A abertura para todo mundo é só em 27/11.";
+  const texto = [
+    ola,
+    ``,
+    `Você está na lista VIP da Black Friday da ivva, então entra antes de todo mundo. Já está aberto:`,
+    ...itens.map((i) => `- ${i}`),
+    ``,
+    link,
+    ``,
+    prazo,
+    ajuda,
+    sair,
+  ].join("\n");
+  const html = moldura(
+    "Seu acesso antecipado abriu",
+    par(`${esc(ola)} Você está na lista VIP da Black Friday da ivva, então entra <strong>antes de todo mundo</strong>. Já está aberto:`) +
+      par(itens.map((i) => `• ${esc(i)}`).join("<br>")) +
+      botao(link, "Garantir meu acesso VIP") +
+      nota(esc(prazo)) +
+      nota(esc(ajuda)) +
+      nota(esc(sair)),
+  );
+  return { assunto, html, texto };
+}
+
 /**
  * Rescue: negócio que entrou e não preencheu nada. Etapa 1 = dia 5, 2 = dia 10, 3+ = a cada 5 dias até o dia 30.
  * A estimativa vem pronta de quem chama (lib/rescue.ts) e aparece sempre com a conta à mostra.

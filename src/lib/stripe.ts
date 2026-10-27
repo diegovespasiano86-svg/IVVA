@@ -328,6 +328,18 @@ export async function garantirCupomSaida(): Promise<string> {
   return CUPOM_SAIDA;
 }
 
+// Black Friday 2026: 40% no plano anual contratado durante a campanha (uma cobrança por ano, então "once").
+export const CUPOM_BF_ANUAL = "BF40ANUAL";
+export async function garantirCupomBfAnual(): Promise<string> {
+  const body = new URLSearchParams({ id: CUPOM_BF_ANUAL, percent_off: "40", duration: "once", name: "Black Friday ivva: 40% no plano anual" });
+  const res = await fetch(`${STRIPE_API}/coupons`, { method: "POST", headers: stripeHeaders(), body });
+  if (!res.ok) {
+    const data = await res.json().catch(() => null);
+    if (data?.error?.code !== "resource_already_exists") throw new Error(data?.error?.message ?? "Falha ao criar cupom");
+  }
+  return CUPOM_BF_ANUAL;
+}
+
 export async function garantirCupomIndicado(): Promise<string> {
   const body = new URLSearchParams({ id: CUPOM_INDICADO, percent_off: "10", duration: "once", name: "Indicado ivva: 10% na primeira mensalidade" });
   const res = await fetch(`${STRIPE_API}/coupons`, { method: "POST", headers: stripeHeaders(), body });

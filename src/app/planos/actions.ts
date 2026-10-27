@@ -3,9 +3,9 @@
 import { origemDoApp } from "@/lib/origem";
 
 import { createClient } from "@supabase/supabase-js";
-import { createCheckoutSession, garantirCupomIndicado, garantirCupomSaida } from "@/lib/stripe";
+import { createCheckoutSession, garantirCupomBfAnual, garantirCupomIndicado, garantirCupomSaida } from "@/lib/stripe";
 import { getSegmento } from "@/lib/segmentos";
-import { PRECO_MENSAL, type PlanoId } from "@/lib/planos";
+import { emBlackFriday, PRECO_MENSAL, type PlanoId } from "@/lib/planos";
 import {
   cobrancaPaga,
   cpfCnpjValido,
@@ -127,6 +127,15 @@ export async function iniciarCadastro(_prev: CadastroState, formData: FormData):
       cupom = await garantirCupomSaida();
     } catch (e) {
       console.error("[cadastro] cupom do presente falhou", e);
+    }
+  }
+
+  // Black Friday: plano anual no cartão ganha 40% durante a campanha.
+  if (anual && !cupom && emBlackFriday()) {
+    try {
+      cupom = await garantirCupomBfAnual();
+    } catch (e) {
+      console.error("[cadastro] cupom BF anual falhou", e);
     }
   }
 

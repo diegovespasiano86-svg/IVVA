@@ -5,7 +5,7 @@ import { processarResumosPendentes } from "@/lib/resumo-conversas";
 import { podeEnviarAutomatico } from "@/lib/automacao";
 import { processarResumosHistoricoPendentes } from "@/lib/whatsapp-historico";
 import { processarLotes } from "@/lib/campanhas-envio";
-import { emailAlertaCadastros, emailRecuperarCadastro, enviarEmail } from "@/lib/email";
+import { emailAcessoAntecipadoVip, emailAlertaCadastros, emailRecuperarCadastro, enviarEmail } from "@/lib/email";
 import { enviarResumosSemanais } from "@/lib/resumo-semanal";
 import { processarIndicacoes } from "@/lib/indicacao";
 import { processarRescue } from "@/lib/rescue";
@@ -269,6 +269,23 @@ export async function GET(request: NextRequest) {
     console.error("[cron pos-venda] falha na recuperação de cadastros", err);
   }
 
+  // Black Friday: a partir de 20/11 (Brasília) manda o acesso antecipado para a lista VIP, uma vez por pessoa.
+  let vipEnviados = 0;
+  try {
+    const hoje = new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+    if (hoje >= "2026-11-20" && hoje <= "2026-11-30") {
+      const { data: vips } = await supabase.rpc("lista_vip_para_enviar", { p_secret: secret, p_campanha: "black-friday-2026" });
+      for (const v of (vips ?? []) as { email: string; nome: string | null }[]) {
+        const envio = await enviarEmail({ para: v.email, ...emailAcessoAntecipadoVip({ nome: v.nome }) });
+        if (!envio.ok) continue;
+        await supabase.rpc("lista_vip_marcar_enviado", { p_secret: secret, p_campanha: "black-friday-2026", p_email: v.email });
+        vipEnviados++;
+      }
+    }
+  } catch (err) {
+    console.error("[cron pos-venda] falha no envio da lista VIP", err);
+  }
+
   // Rescue: acompanhamento de quem não preencheu nada (a cada 5 dias) e o plano bônus do presente.
   const rescue = await processarRescue();
 
@@ -312,6 +329,7 @@ export async function GET(request: NextRequest) {
     cobrancasExpiradas,
     pixBloqueados,
     recuperacoes,
+    vipEnviados,
     rescue,
     resumoSemanal,
     indicacoes,
