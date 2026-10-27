@@ -233,12 +233,12 @@ export function emailRecuperarCadastro(params: { nome: string | null; negocio: s
   return { assunto, html, texto };
 }
 
-/** Black Friday: acesso antecipado (20/11) para quem entrou na lista VIP. */
+/** Black Friday: aviso de abertura (20/11) para quem entrou na lista VIP. */
 export function emailAcessoAntecipadoVip(params: { nome: string | null }) {
   const link = "https://app.ivva.app.br/planos";
   const primeiroNome = (params.nome ?? "").trim().split(/\s+/)[0] || "";
   const ola = primeiroNome ? `Olá, ${primeiroNome}!` : "Olá!";
-  const assunto = "Seu acesso antecipado à Black Friday da ivva abriu";
+  const assunto = "A Black Friday da ivva abriu: seu aviso VIP";
   const itens = [
     "30 dias grátis no cartão: cancelando antes do fim, nada é cobrado",
     "Plano anual com 40% de desconto",
@@ -247,11 +247,11 @@ export function emailAcessoAntecipadoVip(params: { nome: string | null }) {
   ];
   const sair = "Não quer mais receber nossos e-mails? Responda este e-mail com a palavra PARAR.";
   const ajuda = "Dúvidas? Fale com a gente no WhatsApp (11) 92740-9320 ou responda este e-mail.";
-  const prazo = "Condições válidas para novas assinaturas até 30/11/2026. A abertura para todo mundo é só em 27/11.";
+  const prazo = "Condições válidas para novas assinaturas de 20/11 até 30/11/2026.";
   const texto = [
     ola,
     ``,
-    `Você está na lista VIP da Black Friday da ivva, então entra antes de todo mundo. Já está aberto:`,
+    `Você está na lista VIP da Black Friday da ivva, então o aviso chega a você primeiro: a campanha abriu hoje.`,
     ...itens.map((i) => `- ${i}`),
     ``,
     link,
@@ -261,8 +261,8 @@ export function emailAcessoAntecipadoVip(params: { nome: string | null }) {
     sair,
   ].join("\n");
   const html = moldura(
-    "Seu acesso antecipado abriu",
-    par(`${esc(ola)} Você está na lista VIP da Black Friday da ivva, então entra <strong>antes de todo mundo</strong>. Já está aberto:`) +
+    "A Black Friday abriu",
+    par(`${esc(ola)} Você está na lista VIP da Black Friday da ivva, então o aviso chega a <strong>você primeiro</strong>: a campanha abriu hoje.`) +
       par(itens.map((i) => `• ${esc(i)}`).join("<br>")) +
       botao(link, "Garantir meu acesso VIP") +
       nota(esc(prazo)) +
