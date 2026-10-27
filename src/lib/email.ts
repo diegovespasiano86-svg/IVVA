@@ -233,43 +233,106 @@ export function emailRecuperarCadastro(params: { nome: string | null; negocio: s
   return { assunto, html, texto };
 }
 
-/** Black Friday: aviso de abertura (20/11) para quem entrou na lista VIP. */
-export function emailAcessoAntecipadoVip(params: { nome: string | null }) {
-  const link = "https://app.ivva.app.br/planos";
-  const primeiroNome = (params.nome ?? "").trim().split(/\s+/)[0] || "";
-  const ola = primeiroNome ? `Olá, ${primeiroNome}!` : "Olá!";
-  const assunto = "A Black Friday da ivva abriu: seu aviso VIP";
-  const itens = [
-    "30 dias grátis no cartão: cancelando antes do fim, nada é cobrado",
-    "Plano anual com 40% de desconto",
-    "Garantia de 7 dias: se não gostar, devolvemos 100% do valor pago",
-    "Indique e ganhe: até 6 meses grátis",
-  ];
+// ---- Campanhas (Black Friday): e-mail largo com banner, mensagem, benefícios, botão e links ---------------------
+// Os banners são PNGs em public/email/ (o e-mail precisa de um endereço público, não aceita SVG).
+const URL_APP = "https://app.ivva.app.br";
+const URL_SITE = "https://ivva.app.br";
+const WHATSAPP_VENDAS = { rotulo: "(11) 99958-8396", link: "https://wa.me/5511999588396" };
+
+export type CampanhaEmail = {
+  assunto: string;
+  /** Texto de pré-visualização que aparece ao lado do assunto na caixa de entrada. */
+  previa: string;
+  /** Arquivo do banner em public/email/ (1200 de largura, mostrado a 600). */
+  banner: string;
+  bannerAlt: string;
+  titulo: string;
+  ola: string;
+  paragrafos: string[];
+  itens: string[];
+  botao: { rotulo: string; link: string };
+  prazo: string;
+};
+
+function emailCampanha(c: CampanhaEmail, bannerBase = URL_APP) {
   const sair = "Não quer mais receber nossos e-mails? Responda este e-mail com a palavra PARAR.";
-  const ajuda = "Dúvidas? Fale com a gente no WhatsApp (11) 92740-9320 ou responda este e-mail.";
-  const prazo = "Condições válidas para novas assinaturas de 20/11 até 30/11/2026.";
+  const rodape = "ivva · 69.262.496 Diego Vespasiano dos Santos · CNPJ 69.262.496/0001-78 · São Paulo/SP";
+  const links = [
+    { rotulo: "Ver todos os planos", link: `${URL_SITE}/precos` },
+    { rotulo: "Regras da campanha", link: `${URL_SITE}/black-friday` },
+    { rotulo: "Falar no WhatsApp", link: WHATSAPP_VENDAS.link },
+  ];
   const texto = [
-    ola,
+    c.ola,
     ``,
-    `Você está na lista VIP da Black Friday da ivva, então o aviso chega a você primeiro: a campanha abriu hoje.`,
-    ...itens.map((i) => `- ${i}`),
+    ...c.paragrafos,
     ``,
-    link,
+    ...c.itens.map((i) => `- ${i}`),
     ``,
-    prazo,
-    ajuda,
+    `${c.botao.rotulo}: ${c.botao.link}`,
+    ``,
+    c.prazo,
+    ...links.map((l) => `${l.rotulo}: ${l.link}`),
+    `WhatsApp: ${WHATSAPP_VENDAS.rotulo}`,
     sair,
   ].join("\n");
-  const html = moldura(
-    "A Black Friday abriu",
-    par(`${esc(ola)} Você está na lista VIP da Black Friday da ivva, então o aviso chega a <strong>você primeiro</strong>: a campanha abriu hoje.`) +
-      par(itens.map((i) => `• ${esc(i)}`).join("<br>")) +
-      botao(link, "Garantir meu acesso VIP") +
-      nota(esc(prazo)) +
-      nota(esc(ajuda)) +
-      nota(esc(sair)),
+
+  const itensHtml = c.itens
+    .map(
+      (i) =>
+        `<tr><td valign="top" style="padding:0 12px 12px 0;font-size:16px;line-height:1.4;color:#2fbf9f;font-weight:700">&#10003;</td><td style="padding:0 0 12px;font-size:15px;line-height:1.45;color:#241f2e">${esc(i)}</td></tr>`,
+    )
+    .join("");
+  const linksHtml = links
+    .map((l) => `<a href="${esc(l.link)}" style="color:#6d5be0;text-decoration:underline">${esc(l.rotulo)}</a>`)
+    .join(" &nbsp;·&nbsp; ");
+
+  const html = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(c.titulo)}</title></head>
+<body style="margin:0;background:#f6f3ec;font-family:Arial,Helvetica,sans-serif;color:#241f2e">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent">${esc(c.previa)}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:24px 12px"><tr><td align="center">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:18px;overflow:hidden">
+<tr><td style="padding:0"><a href="${esc(c.botao.link)}" style="display:block"><img src="${esc(`${bannerBase}/email/${c.banner}`)}" width="600" alt="${esc(c.bannerAlt)}" style="display:block;width:100%;max-width:600px;height:auto;border:0"></a></td></tr>
+<tr><td style="padding:32px 36px 8px">
+<h1 style="margin:0 0 14px;font-size:24px;line-height:1.25;color:#0e0e13">${esc(c.titulo)}</h1>
+<p style="margin:0 0 14px;font-size:15px;line-height:1.55">${esc(c.ola)}</p>
+${c.paragrafos.map((p) => `<p style="margin:0 0 14px;font-size:15px;line-height:1.55">${p}</p>`).join("")}
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:18px 0 8px">${itensHtml}</table>
+<p style="margin:22px 0 10px;text-align:center"><a href="${esc(c.botao.link)}" style="display:inline-block;background:#6d5be0;color:#ffffff;text-decoration:none;font-weight:700;font-size:17px;padding:16px 34px;border-radius:12px">${esc(c.botao.rotulo)}</a></p>
+<p style="margin:0 0 6px;text-align:center;font-size:12px;color:#8a8496">${esc(c.prazo)}</p>
+</td></tr>
+<tr><td style="padding:18px 36px 28px"><div style="border-top:1px solid #ece8f4;padding-top:18px;text-align:center;font-size:13px;line-height:1.6">${linksHtml}<br><span style="color:#8a8496">Dúvidas? Chame no WhatsApp ${esc(WHATSAPP_VENDAS.rotulo)} ou responda este e-mail.</span></div></td></tr>
+<tr><td style="background:#faf8fd;padding:16px 36px;text-align:center;font-size:11px;line-height:1.6;color:#8a8496">${esc(rodape)}<br>${esc(sair)}</td></tr>
+</table></td></tr></table></body></html>`;
+  return { assunto: c.assunto, html, texto };
+}
+
+/** Black Friday: aviso de abertura (20/11) para quem entrou na lista VIP. `bannerBase` só serve para pré-visualizar. */
+export function emailAcessoAntecipadoVip(params: { nome: string | null; bannerBase?: string }) {
+  const primeiroNome = (params.nome ?? "").trim().split(/\s+/)[0] || "";
+  return emailCampanha(
+    {
+      assunto: "A Black Friday da ivva abriu: seu aviso VIP",
+      previa: "30 dias grátis e 40% de desconto no plano anual, só até 30/11.",
+      banner: "black-friday-abertura.png",
+      bannerAlt: "ivva Black Friday 2026: 30 dias grátis e 40% de desconto no plano anual",
+      titulo: "A Black Friday da ivva abriu",
+      ola: primeiroNome ? `Olá, ${primeiroNome}!` : "Olá!",
+      paragrafos: [
+        "Você está na lista VIP, então o aviso chega a <strong>você primeiro</strong>: a campanha abriu hoje.",
+        "É a melhor condição do ano para colocar uma atendente com IA no WhatsApp do seu negócio, que responde, agenda e vende de dia e de noite.",
+      ],
+      itens: [
+        "30 dias grátis no cartão: cancelando antes do fim, nada é cobrado",
+        "Plano anual com 40% de desconto",
+        "Garantia de 7 dias: se não gostar, devolvemos 100% do valor pago",
+        "Indique e ganhe: até 6 meses grátis",
+      ],
+      botao: { rotulo: "Quero aproveitar a Black Friday", link: `${URL_APP}/planos?utm_source=email&utm_medium=vip&utm_campaign=black-friday-2026` },
+      prazo: "Condições válidas para novas assinaturas de 20/11 até 30/11/2026.",
+    },
+    params.bannerBase,
   );
-  return { assunto, html, texto };
 }
 
 /**
