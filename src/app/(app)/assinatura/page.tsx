@@ -3,6 +3,7 @@ import { cobrancaEmAberto } from "@/lib/asaas-ivva";
 import type { Ambiente } from "@/lib/asaas";
 import { createClient } from "@/lib/supabase/server";
 import { sincronizarPlanoTenant } from "@/lib/sincronizar-plano";
+import { cancelamentoAgendado } from "@/lib/stripe";
 import { CONVERSAS_POR_PLANO, POLITICA_CANCELAMENTO, formatarNumero } from "@/lib/planos";
 
 const PLANOS: Record<string, { nome: string; preco: string }> = {
@@ -23,10 +24,16 @@ const AVISOS: Record<string, string> = {
   dono: "Só o dono do negócio pode gerenciar a assinatura.",
   "sem-assinatura": "Ainda não encontramos a sua cobrança. Fale com o suporte no WhatsApp (11) 92740-9320 ou em contato@ivva.app.br.",
   portal: "Não conseguimos abrir o portal agora. Tente de novo em instantes.",
+  ficar: "Não conseguimos manter a assinatura agora. Tente de novo ou fale com a gente no WhatsApp (11) 92740-9320.",
 };
 
-export default async function AssinaturaPage(props: { searchParams: Promise<{ erro?: string }> }) {
-  const { erro } = await props.searchParams;
+const CONFIRMACOES: Record<string, string> = {
+  ficou: "Pronto: o cancelamento foi desfeito e a sua assinatura continua normalmente.",
+  ficou30: "Pronto: o cancelamento foi desfeito e as 2 próximas mensalidades vêm com 30% de desconto.",
+};
+
+export default async function AssinaturaPage(props: { searchParams: Promise<{ erro?: string; ok?: string }> }) {
+  const { erro, ok } = await props.searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -44,6 +51,7 @@ export default async function AssinaturaPage(props: { searchParams: Promise<{ er
 
   let plano = (perfil?.tenants as unknown as { plano: string } | null)?.plano ?? "essencial";
   let status = "";
+  let agendado: Awaited<ReturnType<typeof cancelamentoAgendado>> = null;
   if (perfil?.tenant_id) {
     const { data: assinatura } = await supabase
       .from("subscriptions")
@@ -54,6 +62,14 @@ export default async function AssinaturaPage(props: { searchParams: Promise<{ er
     // Quem trocou de plano no portal volta para cá: atualiza o plano gravado.
     const novo = await sincronizarPlanoTenant(supabase, perfil.tenant_id, assinatura?.stripe_customer_id ?? null);
     if (novo) plano = novo;
+    // Rescue: cancelamento agendado no portal mostra a oferta para ficar (30% nas 2 próximas mensalidades).
+    if (assinatura?.stripe_customer_id) {
+      try {
+        agendado = await cancelamentoAgendado(assinatura.stripe_customer_id);
+      } catch (err) {
+        console.error("[assinatura] cancelamento agendado", err instanceof Error ? err.message : err);
+      }
+    }
   }
 
   const info = PLANOS[plano] ?? PLANOS.essencial;
@@ -88,6 +104,36 @@ export default async function AssinaturaPage(props: { searchParams: Promise<{ er
         <p role="alert" className="mb-4 rounded-xl bg-coral/10 px-4 py-3 text-[13px] font-semibold text-coral">
           {AVISOS[erro]}
         </p>
+      )}
+      {ok && CONFIRMACOES[ok] && (
+        <p role="status" className="mb-4 rounded-xl bg-teal/10 px-4 py-3 text-[13px] font-semibold text-teal">
+          {CONFIRMACOES[ok]}
+        </p>
+      )}
+
+      {agendado && (
+        <div className="card mb-4 border-purple/40 px-5 py-5">
+          <p className="text-[11px] font-extrabold uppercase tracking-wide text-purple">Antes de você ir</p>
+          <p className="mt-1 font-display text-[18px] font-extrabold">
+            Sua assinatura termina em {new Date(agendado.fim).toLocaleDateString("pt-BR")}
+          </p>
+          <p className="mt-1 text-[13px] text-ink-soft">
+            {agendado.jaTemDesconto
+              ? "Se mudar de ideia, é só desfazer o cancelamento. O robô, a base de conhecimento e o histórico continuam como estão."
+              : "Fique com 30% de desconto nas 2 próximas mensalidades. O robô, a base de conhecimento e o histórico continuam como estão."}
+          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <form action="/assinatura/ficar" method="post">
+              <button type="submit" className="btn-primary">
+                {agendado.jaTemDesconto ? "Desfazer o cancelamento" : "Quero ficar com 30% de desconto"}
+              </button>
+            </form>
+            <a href="https://wa.me/5511927409320" target="_blank" rel="noreferrer" className="text-[13px] font-bold text-purple hover:underline">
+              Falar com a equipe no WhatsApp
+            </a>
+          </div>
+          <p className="mt-2 text-[11.5px] text-ink-faint">Se não fizer nada, o cancelamento acontece na data acima, sem multa.</p>
+        </div>
       )}
 
       <div className="card mb-4 flex flex-wrap items-center justify-between gap-4 px-5 py-5">

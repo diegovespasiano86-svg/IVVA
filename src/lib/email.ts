@@ -320,3 +320,105 @@ export function emailOnboardingParado(params: {
   );
   return { assunto, html, texto };
 }
+
+/** Resumo do que a ivva fez nos últimos 30 dias, usado nos e-mails do Rescue ligados à assinatura. */
+type ResumoUso = { conversas_30d: number; agendamentos_30d: number; preenchido: boolean };
+function linhaResumo(r: ResumoUso): string | null {
+  if (r.conversas_30d <= 0 && r.agendamentos_30d <= 0) return null;
+  const partes = [`${r.conversas_30d} conversa${r.conversas_30d === 1 ? "" : "s"} atendida${r.conversas_30d === 1 ? "" : "s"}`];
+  if (r.agendamentos_30d > 0) partes.push(`${r.agendamentos_30d} agendamento${r.agendamentos_30d === 1 ? "" : "s"}`);
+  return `Nos últimos 30 dias, a ivva fez ${partes.join(" e ")} pelo seu negócio.`;
+}
+const primeiroNome = (nome: string | null) => (nome ?? "").trim().split(/\s+/)[0] || "";
+
+/** Rescue: o cliente agendou o cancelamento no portal. Mostra o que perde e a oferta de 30% por 2 meses. */
+export function emailCancelamentoAgendado(params: { nome: string | null; negocio: string | null; fim: string | null } & ResumoUso) {
+  const link = "https://app.ivva.app.br/assinatura";
+  const pn = primeiroNome(params.nome);
+  const ola = pn ? `Olá, ${pn}.` : "Olá.";
+  const negocio = params.negocio || "o seu negócio";
+  const quando = params.fim ? `em ${params.fim}` : "no fim do período pago";
+  const resumo = linhaResumo(params);
+  const assunto = "Antes de você ir: 30% nas 2 próximas mensalidades";
+  const texto = [
+    ola,
+    ``,
+    `Recebemos o cancelamento da assinatura de ${negocio}. Ela continua funcionando ${quando}.`,
+    ...(resumo ? [resumo] : []),
+    ``,
+    `Se quiser continuar, deixamos uma oferta: 30% de desconto nas 2 próximas mensalidades. É só abrir Minha assinatura e clicar em "Quero ficar":`,
+    link,
+    ``,
+    `Se algo não funcionou como esperava, responda este e-mail ou chame no WhatsApp (11) 92740-9320. A gente quer saber e resolver.`,
+  ].join("\n");
+  const html = moldura(
+    "Antes de você ir",
+    par(`${esc(ola)} Recebemos o cancelamento da assinatura de <strong>${esc(negocio)}</strong>. Ela continua funcionando ${esc(quando)}.`) +
+      (resumo ? par(esc(resumo)) : "") +
+      par("Se quiser continuar, deixamos uma oferta: <strong>30% de desconto nas 2 próximas mensalidades</strong>. O robô, a base de conhecimento e o histórico ficam como estão.") +
+      botao(link, "Quero ficar com 30%") +
+      nota("Se algo não funcionou como esperava, responda este e-mail ou chame no WhatsApp (11) 92740-9320. A gente quer saber e resolver.") +
+      nota("Se não fizer nada, o cancelamento acontece na data marcada, sem multa."),
+  );
+  return { assunto, html, texto };
+}
+
+/** Rescue: a cobrança no cartão falhou. Link direto para trocar o cartão (a Stripe tenta de novo sozinha). */
+export function emailPagamentoFalhou(params: { nome: string | null; negocio: string | null }) {
+  const link = "https://app.ivva.app.br/assinatura/gerenciar?acao=cartao";
+  const pn = primeiroNome(params.nome);
+  const ola = pn ? `Olá, ${pn}!` : "Olá!";
+  const negocio = params.negocio || "o seu negócio";
+  const assunto = "Não conseguimos cobrar a mensalidade da ivva";
+  const texto = [
+    ola,
+    ``,
+    `A cobrança da mensalidade de ${negocio} não passou no cartão. Acontece: cartão vencido, limite ou bloqueio do banco.`,
+    `Para o robô continuar atendendo sem interrupção, atualize o cartão (leva 1 minuto):`,
+    link,
+    ``,
+    `A gente tenta cobrar de novo nos próximos dias. Dúvidas? WhatsApp (11) 92740-9320.`,
+  ].join("\n");
+  const html = moldura(
+    "A mensalidade não passou no cartão",
+    par(`${esc(ola)} A cobrança da mensalidade de <strong>${esc(negocio)}</strong> não passou no cartão. Acontece: cartão vencido, limite ou bloqueio do banco.`) +
+      par("Para o robô continuar atendendo sem interrupção, atualize o cartão. Leva 1 minuto.") +
+      botao(link, "Atualizar o cartão") +
+      nota("A gente tenta cobrar de novo nos próximos dias. Dúvidas? WhatsApp (11) 92740-9320. A ivva nunca pede dados de cartão por e-mail ou WhatsApp."),
+  );
+  return { assunto, html, texto };
+}
+
+/** Rescue: o teste grátis acaba em 3 dias (aviso da Stripe). Mostra o resultado ou oferece ajuda para configurar. */
+export function emailTesteAcabando(params: { nome: string | null; negocio: string | null; fim: string | null; plano: string | null } & ResumoUso) {
+  const pn = primeiroNome(params.nome);
+  const ola = pn ? `Olá, ${pn}!` : "Olá!";
+  const negocio = params.negocio || "o seu negócio";
+  const quando = params.fim ?? "em 3 dias";
+  const plano = params.plano ? NOMES_PLANO[params.plano] ?? params.plano : "escolhido";
+  const resumo = linhaResumo(params);
+  const assunto = `O teste grátis de ${negocio} termina ${params.fim ? "em " + params.fim : "em 3 dias"}`;
+  const linkAssinatura = "https://app.ivva.app.br/assinatura";
+  const whats = "https://wa.me/5511927409320";
+
+  const meio = params.preenchido
+    ? resumo ?? "O robô já tem as informações do seu negócio e está pronto para atender."
+    : "O robô ainda não tem as informações do seu negócio. Ainda dá tempo: mande um áudio no WhatsApp com serviços, preços e horários e a nossa equipe preenche para você.";
+  const texto = [
+    ola,
+    ``,
+    `O teste grátis de ${negocio} termina ${params.fim ? "em " + quando : quando}. Depois disso, a primeira mensalidade do plano ${plano} é cobrada no cartão cadastrado.`,
+    meio,
+    ``,
+    `Trocar de plano ou cancelar, sem multa: ${linkAssinatura}`,
+    `Dúvidas? WhatsApp (11) 92740-9320.`,
+  ].join("\n");
+  const html = moldura(
+    "Seu teste grátis está acabando",
+    par(`${esc(ola)} O teste grátis de <strong>${esc(negocio)}</strong> termina ${esc(params.fim ? "em " + quando : quando)}. Depois disso, a primeira mensalidade do plano ${esc(plano)} é cobrada no cartão cadastrado.`) +
+      par(esc(meio)) +
+      (params.preenchido ? botao(linkAssinatura, "Ver minha assinatura") : botao(whats, "Preencher com a equipe ivva")) +
+      nota(`Trocar de plano ou cancelar, sem multa, em <a href="${linkAssinatura}" style="color:#6d5be0">Minha assinatura</a>. Dúvidas? WhatsApp (11) 92740-9320.`),
+  );
+  return { assunto, html, texto };
+}

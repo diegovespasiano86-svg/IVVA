@@ -1,5 +1,7 @@
 // Cliente Stripe minimalista via fetch — evita depender do SDK oficial
 // só pra criar uma Checkout Session e ler ela de volta.
+import { diasDeTeste } from "@/lib/planos";
+
 const STRIPE_API = "https://api.stripe.com/v1";
 
 function stripeHeaders() {
@@ -34,7 +36,7 @@ export async function createCheckoutSession(params: {
     "line_items[0][price]": params.priceId,
     "line_items[0][quantity]": "1",
     return_url: params.returnUrl,
-    "subscription_data[trial_period_days]": "14",
+    "subscription_data[trial_period_days]": String(diasDeTeste()),
     "metadata[nome_negocio]": params.nomeNegocio,
     "metadata[plano]": params.plano,
   });
@@ -334,4 +336,62 @@ export async function garantirCupomIndicado(): Promise<string> {
     if (data?.error?.code !== "resource_already_exists") throw new Error(data?.error?.message ?? "Falha ao criar cupom");
   }
   return CUPOM_INDICADO;
+}
+
+// Rescue: oferta para quem agendou o cancelamento. 30% nas 2 próximas mensalidades e a assinatura continua.
+export const CUPOM_FICA = "FICA30";
+async function garantirCupomFica(): Promise<string> {
+  const body = new URLSearchParams({
+    id: CUPOM_FICA,
+    percent_off: "30",
+    duration: "repeating",
+    duration_in_months: "2",
+    name: "ivva: 30% nas 2 próximas mensalidades",
+  });
+  const res = await fetch(`${STRIPE_API}/coupons`, { method: "POST", headers: stripeHeaders(), body });
+  if (!res.ok) {
+    const data = await res.json().catch(() => null);
+    if (data?.error?.code !== "resource_already_exists") throw new Error(data?.error?.message ?? "Falha ao criar cupom");
+  }
+  return CUPOM_FICA;
+}
+
+/** Assinatura do cliente que está marcada para cancelar (no fim do período ou numa data). */
+export async function cancelamentoAgendado(customerId: string): Promise<{ id: string; fim: number; porData: boolean; jaTemDesconto: boolean } | null> {
+  const params = new URLSearchParams({ customer: customerId, status: "all", limit: "5" });
+  const res = await fetch(`${STRIPE_API}/subscriptions?${params}`, { headers: stripeHeaders(), cache: "no-store" });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data?.error?.message ?? "Falha ao consultar assinatura");
+  const subs = (data?.data ?? []) as {
+    id: string;
+    status: string;
+    cancel_at_period_end?: boolean;
+    cancel_at?: number | null;
+    current_period_end?: number;
+    items?: { data?: { current_period_end?: number }[] };
+    discounts?: unknown[];
+    discount?: unknown;
+  }[];
+  const s = subs.find((x) => (x.status === "active" || x.status === "trialing") && (x.cancel_at_period_end || x.cancel_at));
+  if (!s) return null;
+  const fim = s.cancel_at ?? s.current_period_end ?? s.items?.data?.[0]?.current_period_end ?? 0;
+  return { id: s.id, fim: fim * 1000, porData: !s.cancel_at_period_end, jaTemDesconto: Boolean(s.discount) || (s.discounts?.length ?? 0) > 0 };
+}
+
+/**
+ * O cliente aceitou ficar: desfaz o cancelamento e aplica 30% nas 2 próximas mensalidades.
+ * A Stripe marca o cancelamento de dois jeitos (fim do período ou numa data); desfaz o que estiver marcado.
+ */
+export async function aceitarOfertaFicar(subscriptionId: string, porData: boolean, comDesconto: boolean): Promise<void> {
+  const body = new URLSearchParams(porData ? { cancel_at: "" } : { cancel_at_period_end: "false" });
+  if (comDesconto) body.set("discounts[0][coupon]", await garantirCupomFica());
+  const res = await fetch(`${STRIPE_API}/subscriptions/${subscriptionId}`, {
+    method: "POST",
+    headers: { ...stripeHeaders(), "Idempotency-Key": `ficar-${subscriptionId}-${new Date().toISOString().slice(0, 10)}` },
+    body,
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => null);
+    throw new Error(data?.error?.message ?? "Falha ao manter a assinatura");
+  }
 }

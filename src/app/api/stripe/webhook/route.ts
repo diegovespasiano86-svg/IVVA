@@ -1,7 +1,14 @@
 import { createHmac, timingSafeEqual } from "crypto";
 import { type NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { emailConfigurado, emailContaExistente, enviarEmail } from "@/lib/email";
+import {
+  emailCancelamentoAgendado,
+  emailConfigurado,
+  emailContaExistente,
+  emailPagamentoFalhou,
+  emailTesteAcabando,
+  enviarEmail,
+} from "@/lib/email";
 
 // A Stripe assina todo POST com HMAC-SHA256 do corpo bruto + timestamp,
 // usando o signing secret gerado ao registrar o endpoint no dashboard.
@@ -44,7 +51,15 @@ type StripeEvent = {
       customer_email?: string | null;
       customer_details?: { email?: string | null } | null;
       metadata?: { nome_negocio?: string; plano?: string; tipo?: string } | null;
+      cancel_at_period_end?: boolean;
+      cancel_at?: number | null;
+      current_period_end?: number;
+      trial_end?: number | null;
+      items?: { data?: { current_period_end?: number }[] };
+      attempt_count?: number;
+      subscription?: string | null;
     };
+    previous_attributes?: { cancel_at_period_end?: boolean; cancel_at?: number | null };
   };
 };
 
@@ -75,6 +90,14 @@ export async function POST(request: NextRequest) {
   // voltar à tela de boas-vindas (se fechar a aba ou cair em erro, ninguém fica pago e sem acesso).
   if (event.type === "checkout.session.completed") {
     return tratarCheckoutConcluido(event);
+  }
+
+  // Rescue: cancelamento agendado, cartão recusado e fim do teste viram e-mail (uma vez por evento).
+  // Nunca derruba o webhook: se falhar, só registra no log.
+  await tratarRescue(event).catch((err) => console.error("[stripe webhook] rescue", err instanceof Error ? err.message : err));
+
+  if (event.type === "invoice.payment_failed" || event.type === "customer.subscription.trial_will_end") {
+    return NextResponse.json({ received: true });
   }
 
   if (!EVENTOS_RELEVANTES.has(event.type)) {
@@ -164,4 +187,69 @@ async function tratarCheckoutConcluido(event: StripeEvent) {
   }
 
   return NextResponse.json({ received: true });
+}
+
+type DadosRescue = {
+  negocio: string | null;
+  plano: string | null;
+  dono_nome: string | null;
+  dono_email: string | null;
+  preenchido: boolean;
+  conversas_30d: number;
+  agendamentos_30d: number;
+};
+
+const dataCurta = (segundos: number | null | undefined) =>
+  segundos ? new Date(segundos * 1000).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" }) : null;
+
+async function tratarRescue(event: StripeEvent) {
+  const o = event.data.object;
+  const prev = event.data.previous_attributes;
+  let tipo: "cancelamento_agendado" | "pagamento_falhou" | "teste_acabando" | null = null;
+  let chave = "";
+  let fim: string | null = null;
+
+  if (event.type === "customer.subscription.updated" && (o.cancel_at_period_end || o.cancel_at)) {
+    // Só quando o cancelamento acabou de ser marcado (não a cada atualização da assinatura já marcada).
+    const acabouDeMarcar = (prev && "cancel_at_period_end" in prev && !prev.cancel_at_period_end) || (prev && "cancel_at" in prev && !prev.cancel_at);
+    if (!acabouDeMarcar) return;
+    tipo = "cancelamento_agendado";
+    const fimSeg = o.cancel_at ?? o.current_period_end ?? o.items?.data?.[0]?.current_period_end;
+    chave = `cancelamento:${o.id}:${fimSeg ?? ""}`;
+    fim = dataCurta(fimSeg);
+  } else if (event.type === "invoice.payment_failed") {
+    // Um e-mail por fatura, na primeira recusa; as novas tentativas da Stripe não repetem o aviso.
+    tipo = "pagamento_falhou";
+    chave = `falha:${o.id}`;
+  } else if (event.type === "customer.subscription.trial_will_end") {
+    tipo = "teste_acabando";
+    chave = `teste:${o.id}:${o.trial_end ?? ""}`;
+    fim = dataCurta(o.trial_end);
+  }
+  if (!tipo || !o.customer || !emailConfigurado()) return;
+
+  const internalSecret = process.env.STRIPE_WEBHOOK_INTERNAL_SECRET;
+  if (!internalSecret) return;
+  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
+  const { data, error } = await supabase.rpc("rescue_evento_stripe", {
+    p_secret: internalSecret,
+    p_customer: o.customer,
+    p_tipo: tipo,
+    p_chave: chave,
+    p_detalhe: { evento: event.type, fim },
+  });
+  if (error) throw new Error(error.message);
+  const d = data as DadosRescue | null;
+  // null = cliente desconhecido ou aviso repetido (já tratado).
+  if (!d?.dono_email) return;
+
+  const base = { nome: d.dono_nome, negocio: d.negocio };
+  const resumo = { preenchido: d.preenchido, conversas_30d: Number(d.conversas_30d) || 0, agendamentos_30d: Number(d.agendamentos_30d) || 0 };
+  const mensagem =
+    tipo === "cancelamento_agendado"
+      ? emailCancelamentoAgendado({ ...base, fim, ...resumo })
+      : tipo === "pagamento_falhou"
+        ? emailPagamentoFalhou(base)
+        : emailTesteAcabando({ ...base, fim, plano: d.plano, ...resumo });
+  await enviarEmail({ para: d.dono_email, ...mensagem });
 }

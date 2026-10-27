@@ -3,7 +3,7 @@ import IvvaLogo from "./logo";
 import PlanosClient from "./planos-client";
 import DemoViva from "./demo-viva";
 import { pixAssinaturaConfigurada, pixAssinaturaLiberada } from "@/lib/asaas-ivva";
-import { POLITICA_CANCELAMENTO } from "@/lib/planos";
+import { POLITICA_CANCELAMENTO, diasDeTeste } from "@/lib/planos";
 import {
   CONVERSAS_POR_PLANO,
   PACOTE_AVULSO,
@@ -95,7 +95,7 @@ export default async function PlanosPage(props: { searchParams: Promise<{ pix?: 
             do seu negócio
           </h1>
           <p className="mt-3 text-[15px] text-[#a5a3b0]">
-            Preço público, sem &ldquo;fale com vendas&rdquo;. 14 dias grátis no cartão
+            Preço público, sem &ldquo;fale com vendas&rdquo;. {diasDeTeste()} dias grátis no cartão
             {pixVisivel ? " ou assinatura direto no Pix" : ""}, cancela quando quiser.
           </p>
         </div>

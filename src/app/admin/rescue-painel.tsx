@@ -32,6 +32,9 @@ const ROTULO_EVENTO: Record<string, string> = {
   bonus_aplicado: "Presente: plano acima ligado",
   bonus_encerrado: "Presente: plano voltou ao contratado",
   presente: "Presente escolhido no site",
+  cancelamento_agendado: "Cancelamento agendado: oferta de 30% enviada",
+  pagamento_falhou: "Cartão recusado: pedido para atualizar",
+  teste_acabando: "Teste grátis acabando: aviso enviado",
 };
 
 /** Saúde de cada negócio: vermelho = não começou; amarelo = começou e ainda não atende; verde = atendendo. */
@@ -56,9 +59,10 @@ const SELO = {
 
 /** Painel do Rescue no /admin: quem precisa de atenção primeiro e o que o Rescue já fez. */
 export default async function RescuePainel({ supabase }: { supabase: SupabaseClient }) {
-  const [{ data, error }, { data: eventosData }] = await Promise.all([
+  const [{ data, error }, { data: eventosData }, { count: vip }] = await Promise.all([
     supabase.rpc("rescue_painel"),
     supabase.from("rescue_eventos").select("tipo, etapa, canal, email, created_at, detalhe").order("created_at", { ascending: false }).limit(15),
+    supabase.from("lista_vip").select("id", { count: "exact", head: true }),
   ]);
 
   if (error) {
@@ -86,6 +90,7 @@ export default async function RescuePainel({ supabase }: { supabase: SupabaseCli
         Rescue: sucesso dos clientes <span className="font-normal text-ink-faint">({linhas.length})</span>
       </p>
       <p className="mb-3 text-[12px] text-ink-faint">
+        {typeof vip === "number" && <strong className="text-purple">Lista VIP Black Friday: {vip} inscrito{vip === 1 ? "" : "s"}. </strong>}
         {contagem.vermelho} sem preencher nada · {contagem.amarelo} começaram e ainda não atendem · {contagem.verde} atendendo. Quem não preencheu nada recebe e-mail no dia 5, 10, 15, até o dia 30; o WhatsApp abaixo sai com a mensagem pronta (o envio automático depende da aprovação da Meta).
       </p>
       <div className="flex flex-col gap-2">

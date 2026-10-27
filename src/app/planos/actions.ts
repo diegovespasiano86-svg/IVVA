@@ -101,6 +101,8 @@ export async function iniciarCadastro(_prev: CadastroState, formData: FormData):
     for (const k of ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "referrer", "perda"]) {
       if (typeof bruto[k] === "string" && bruto[k]) origem[k] = (bruto[k] as string).slice(0, 80);
     }
+    // Autorização opcional para o Rescue falar pelo WhatsApp (LGPD: desmarcada por padrão).
+    origem.whatsapp = formData.get("aceita_whatsapp") ? "sim" : "nao";
     if (Object.keys(origem).length) await supabase.rpc("lead_origem", { p_secret: secret, p_email: email, p_origem: origem });
   } catch (e) {
     console.error("[cadastro] lead_origem falhou", e);
@@ -208,6 +210,7 @@ export async function iniciarCadastroPix(_prev: CadastroPixState, formData: Form
       if (typeof bruto[k] === "string" && bruto[k]) origem[k] = (bruto[k] as string).slice(0, 80);
     }
     origem.pagamento = "pix";
+    origem.whatsapp = formData.get("aceita_whatsapp") ? "sim" : "nao";
     await supabase.rpc("lead_origem", { p_secret: secret, p_email: email, p_origem: origem });
   } catch (e) {
     console.error("[cadastro-pix] lead_origem falhou", e);

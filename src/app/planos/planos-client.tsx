@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { loadStripe, type StripeEmbeddedCheckout } from "@stripe/stripe-js";
 import { iniciarCadastro, iniciarCadastroPix, situacaoPix, type CadastroPixState, type CadastroState } from "./actions";
 import { SEGMENTOS } from "@/lib/segmentos";
+import { diasDeTeste } from "@/lib/planos";
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? "");
 
@@ -52,7 +53,7 @@ function CardForm({ destaque, onEscolher, onEscolherPix }: { destaque?: boolean;
         Assinar
       </button>
       <p className={`text-center text-[11.5px] ${destaque ? "text-[#a5a3b0]" : "text-[#8a8896]"}`}>
-        14 dias grátis. Cancele quando quiser.
+        {diasDeTeste()} dias grátis. Cancele quando quiser.
       </p>
       {onEscolherPix && (
         <button
@@ -72,6 +73,15 @@ const CAMPO =
 const ROTULO = "mb-1 block text-[12.5px] font-bold text-[#0e0e13]";
 
 /** Presentes da janela de saída do site (Rescue). Chegam como ?presente=... e ficam guardados com a origem. */
+/** Presente escolhido na janela de saída do site, guardado na origem do cadastro ("" se nenhum). */
+function presenteDaOrigem(origem: string): string {
+  try {
+    return (JSON.parse(origem) as Record<string, string>).presente ?? "";
+  } catch {
+    return "";
+  }
+}
+
 export const PRESENTES: Record<string, string> = {
   desconto10: "Seu presente: 10% de desconto na primeira mensalidade (no cartão, plano mensal).",
   upgrade: "Seu presente: 30 dias do plano acima pelo preço do seu, liberados quando a sua conta for criada.",
@@ -139,9 +149,9 @@ function CadastroPanel({
   const formAction = pix ? formActionPix : formActionCartao;
   const pending = pix ? pendingPix : pendingCartao;
   const [origem] = useState(lerOrigem);
-  const [v, setV] = useState({ nome: "", email: "", telefone: "", nome_negocio: "", segmento: "", cpf_cnpj: "", aceite: false });
+  const [v, setV] = useState({ nome: "", email: "", telefone: "", nome_negocio: "", segmento: "", cpf_cnpj: "", aceite: false, whatsapp: false });
   const set = (k: keyof typeof v) => (e: { target: { value: string; checked?: boolean; type?: string } }) =>
-    setV((x) => ({ ...x, [k]: k === "aceite" ? Boolean(e.target.checked) : e.target.value }));
+    setV((x) => ({ ...x, [k]: k === "aceite" || k === "whatsapp" ? Boolean(e.target.checked) : e.target.value }));
 
   useEffect(() => {
     if (stateCartao.clientSecret) onClientSecret(stateCartao.clientSecret);
@@ -156,18 +166,11 @@ function CadastroPanel({
       <p className="mb-4 text-center text-[13px] text-[#a5a3b0]">
         Assinando <strong className="text-[#f7f6f2]">{plano.nome}</strong> ·{" "}
         {anual ? `R$ ${fmt(totalAnual(plano))}/ano (2 meses grátis)` : `R$ ${plano.preco}/mês`} ·{" "}
-        {pix ? "pagamento no Pix, acesso na hora" : "14 dias grátis"}
+        {pix ? "pagamento no Pix, acesso na hora" : `${diasDeTeste()} dias grátis`}
       </p>
-      {(() => {
-        try {
-          const presente = (JSON.parse(origem) as Record<string, string>).presente;
-          return PRESENTES[presente] ? (
-            <p className="-mt-2 mb-4 rounded-xl bg-[#2fbf9f]/10 px-3 py-2 text-center text-[12.5px] font-semibold text-[#2fbf9f]">🎁 {PRESENTES[presente]}</p>
-          ) : null;
-        } catch {
-          return null;
-        }
-      })()}
+      {PRESENTES[presenteDaOrigem(origem)] && (
+        <p className="-mt-2 mb-4 rounded-xl bg-[#2fbf9f]/10 px-3 py-2 text-center text-[12.5px] font-semibold text-[#2fbf9f]">🎁 {PRESENTES[presenteDaOrigem(origem)]}</p>
+      )}
       {refCodigo && !anual && !pix && (
         <p className="-mt-2 mb-4 text-center text-[12.5px] font-semibold text-[#2fbf9f]">
           Link de indicação: se o código for válido, você ganha 10% na primeira mensalidade.
@@ -178,7 +181,7 @@ function CadastroPanel({
         <p className="mt-1 text-[13px] text-[#6b6577]">
           {pix
             ? "Leva 1 minuto. Em seguida aparece o Pix do primeiro mês; pagou, o acesso é liberado na hora."
-            : "Leva 1 minuto. Em seguida vem o pagamento, com 14 dias grátis."}
+            : `Leva 1 minuto. Em seguida vem o pagamento, com ${diasDeTeste()} dias grátis.`}
         </p>
 
         <form action={formAction} className="mt-5 flex flex-col gap-3.5">
@@ -232,6 +235,10 @@ function CadastroPanel({
               <a href="https://ivva.app.br/privacidade" target="_blank" rel="noreferrer" className="font-semibold text-[#6d5be0] underline">Política de Privacidade</a>
               , e que a ivva pode entrar em contato sobre o meu cadastro.
             </span>
+          </label>
+          <label className="flex cursor-pointer items-start gap-2.5 text-[12.5px] leading-snug text-[#6b6577]">
+            <input type="checkbox" name="aceita_whatsapp" className="mt-0.5 h-4 w-4 accent-[#2fbf9f]" defaultChecked={v.whatsapp} onChange={set("whatsapp")} />
+            <span>Quero receber pelo WhatsApp dicas de configuração, avisos da assinatura e ofertas da ivva. Para parar, é só responder SAIR.</span>
           </label>
 
           {state.erro && (

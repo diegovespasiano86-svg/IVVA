@@ -23,7 +23,7 @@ export const CONTRATO: Clausula[] = [
     titulo: "2. Planos, pagamento e renovação",
     itens: [
       "Os valores e o que cada plano inclui são os publicados na página de preços no momento da contratação.",
-      "No cartão, o plano começa com 14 dias grátis e depois é cobrado automaticamente a cada período (mensal ou anual).",
+      "No cartão, o plano começa com o período grátis informado na contratação (14 dias, ou 30 dias em campanhas como a Black Friday) e depois é cobrado automaticamente a cada período (mensal ou anual).",
       "No Pix, não há teste grátis: o primeiro período é pago na contratação e as cobranças seguintes chegam por e-mail antes de cada vencimento.",
       "Sem pagamento, o acesso é suspenso 5 dias após o vencimento, sem apagar os dados, e volta assim que o pagamento é confirmado.",
       "As conversas com a IA incluídas no plano renovam todo mês e não acumulam. Créditos avulsos comprados não expiram.",
