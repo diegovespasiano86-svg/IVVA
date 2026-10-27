@@ -47,7 +47,7 @@ export default async function IndiquePage() {
 
   return (
     <div className="mx-auto max-w-[820px]">
-      <PageHeader icon={Gift} title="Indique e ganhe" subtitle="Ganhe R$ 150 de desconto na mensalidade para cada negócio que você indicar. Quem você indica ganha 10% na primeira mensalidade." />
+      <PageHeader icon={Gift} title="Indique e ganhe" subtitle="Ganhe 1 mês grátis do seu plano para cada negócio indicado que virar cliente pagante, até 6 meses. Quem você indica ganha 10% na primeira mensalidade." />
 
       <section className="card mb-4 px-5 py-5">
         <p className="text-[11px] font-extrabold uppercase tracking-wide text-ink-faint">Seu link de indicação</p>

@@ -314,6 +314,18 @@ export async function getFimDoTeste(customerId: string): Promise<number | null> 
 // Cupom do "Indique e ganhe" para quem foi indicado: 10% na primeira mensalidade (a primeira cobrança
 // vem depois do teste grátis). Criado sob demanda na primeira vez; se já existir, só reaproveita.
 export const CUPOM_INDICADO = "INDICADO10";
+// Presente "10% de desconto" da janela de saída do site (Rescue): 10% na primeira mensalidade.
+export const CUPOM_SAIDA = "SAIDA10";
+export async function garantirCupomSaida(): Promise<string> {
+  const body = new URLSearchParams({ id: CUPOM_SAIDA, percent_off: "10", duration: "once", name: "Presente ivva: 10% na primeira mensalidade" });
+  const res = await fetch(`${STRIPE_API}/coupons`, { method: "POST", headers: stripeHeaders(), body });
+  if (!res.ok) {
+    const data = await res.json().catch(() => null);
+    if (data?.error?.code !== "resource_already_exists") throw new Error(data?.error?.message ?? "Falha ao criar cupom");
+  }
+  return CUPOM_SAIDA;
+}
+
 export async function garantirCupomIndicado(): Promise<string> {
   const body = new URLSearchParams({ id: CUPOM_INDICADO, percent_off: "10", duration: "once", name: "Indicado ivva: 10% na primeira mensalidade" });
   const res = await fetch(`${STRIPE_API}/coupons`, { method: "POST", headers: stripeHeaders(), body });

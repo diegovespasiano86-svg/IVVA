@@ -232,3 +232,91 @@ export function emailRecuperarCadastro(params: { nome: string | null; negocio: s
   );
   return { assunto, html, texto };
 }
+
+/**
+ * Rescue: negócio que entrou e não preencheu nada. Etapa 1 = dia 5, 2 = dia 10, 3+ = a cada 5 dias até o dia 30.
+ * A estimativa vem pronta de quem chama (lib/rescue.ts) e aparece sempre com a conta à mostra.
+ */
+export function emailOnboardingParado(params: {
+  nome: string | null;
+  negocio: string | null;
+  etapa: number;
+  estimativa: { ticket: number; atendimentos: number; total: number };
+}) {
+  const link = "https://app.ivva.app.br/base-conhecimento";
+  const whats = "https://wa.me/5511927409320";
+  const primeiro = (params.nome ?? "").trim().split(/\s+/)[0] || "";
+  const ola = primeiro ? `Olá, ${primeiro}!` : "Olá!";
+  const negocio = params.negocio || "o seu negócio";
+  const real = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+  const { ticket, atendimentos, total } = params.estimativa;
+  const conta = `Estimativa: ${atendimentos} atendimentos por mês que hoje se perdem por demora ou fora do horário × ${real(ticket)} de ticket médio de negócios como o seu.`;
+
+  if (params.etapa <= 1) {
+    const assunto = `Que bom ter ${negocio} na ivva! Falta um passo para o robô começar`;
+    const texto = [
+      ola,
+      ``,
+      `Estamos muito felizes com ${negocio} na ivva.`,
+      `A ivva responde seus clientes em segundos, de dia e de noite, e pode trazer cerca de ${real(total)} a mais por mês.`,
+      conta,
+      ``,
+      `Para isso, o robô precisa conhecer o seu negócio: serviços, preços, horários e regras. Leva uns 15 minutos:`,
+      link,
+      ``,
+      `Prefere fazer junto com a gente? Chame no WhatsApp (11) 92740-9320 que a gente preenche com você.`,
+    ].join("\n");
+    const html = moldura(
+      `Que bom ter ${negocio} na ivva!`,
+      par(`${esc(ola)} Estamos muito felizes com <strong>${esc(negocio)}</strong> na ivva.`) +
+        par(`A ivva responde seus clientes em segundos, de dia e de noite, e pode trazer cerca de <strong>${esc(real(total))} a mais por mês</strong>.`) +
+        nota(esc(conta)) +
+        par("Para isso, o robô precisa conhecer o seu negócio: serviços, preços, horários e regras. Leva uns 15 minutos.") +
+        botao(link, "Ensinar o robô agora") +
+        par(`Prefere fazer junto com a gente? <a href="${whats}" style="color:#6d5be0;font-weight:700">Chame no WhatsApp (11) 92740-9320</a> que a gente preenche com você.`),
+    );
+    return { assunto, html, texto };
+  }
+
+  if (params.etapa === 2) {
+    const assunto = `O robô do ${negocio} ainda está esperando as suas informações`;
+    const texto = [
+      ola,
+      ``,
+      `O robô do ${negocio} ainda não tem as informações para atender os seus clientes.`,
+      `Um atalho: mande um áudio de 2 minutos no nosso WhatsApp (11) 92740-9320 com serviços, preços e horários, e a nossa equipe preenche tudo para você.`,
+      whats,
+      ``,
+      `Se preferir fazer sozinho: ${link}`,
+      ``,
+      `Cada mês sem o robô pode ser cerca de ${real(total)} que fica na mesa (${conta.replace("Estimativa: ", "")}).`,
+    ].join("\n");
+    const html = moldura(
+      "O seu robô ainda está esperando",
+      par(`${esc(ola)} O robô do <strong>${esc(negocio)}</strong> ainda não tem as informações para atender os seus clientes.`) +
+        par("Um atalho: <strong>mande um áudio de 2 minutos</strong> no nosso WhatsApp com serviços, preços e horários, e a nossa equipe preenche tudo para você.") +
+        botao(whats, "Mandar o áudio no WhatsApp") +
+        par(`Se preferir fazer sozinho, <a href="${link}" style="color:#6d5be0;font-weight:700">é por aqui</a>.`) +
+        nota(`Cada mês sem o robô pode ser cerca de ${esc(real(total))} que fica na mesa. ${esc(conta)}`),
+    );
+    return { assunto, html, texto };
+  }
+
+  const assunto = `${primeiro ? primeiro + ", s" : "S"}eus clientes já podem estar sendo atendidos pela ivva`;
+  const texto = [
+    ola,
+    ``,
+    `A sua assinatura da ivva está ativa, mas o robô do ${negocio} ainda não atende ninguém porque falta preencher as informações do negócio.`,
+    `A gente faz isso com você em 15 minutos, pelo WhatsApp (11) 92740-9320 ou por chamada. É só responder este e-mail com o melhor horário.`,
+    ``,
+    `Para começar sozinho: ${link}`,
+  ].join("\n");
+  const html = moldura(
+    "Vamos colocar o seu robô para trabalhar?",
+    par(`${esc(ola)} A sua assinatura da ivva está ativa, mas o robô do <strong>${esc(negocio)}</strong> ainda não atende ninguém porque falta preencher as informações do negócio.`) +
+      par("A gente faz isso com você em 15 minutos, pelo WhatsApp ou por chamada. É só responder este e-mail com o melhor horário.") +
+      botao(whats, "Preencher com a equipe ivva") +
+      nota(`Prefere começar sozinho? <a href="${link}" style="color:#6d5be0">Abra a Base de conhecimento</a>. Cerca de ${esc(real(total))} por mês podem estar ficando na mesa (${esc(conta.replace("Estimativa: ", "estimativa: "))}).`),
+  );
+  return { assunto, html, texto };
+}

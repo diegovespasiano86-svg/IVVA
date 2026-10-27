@@ -8,6 +8,7 @@ import { processarLotes } from "@/lib/campanhas-envio";
 import { emailAlertaCadastros, emailRecuperarCadastro, enviarEmail } from "@/lib/email";
 import { enviarResumosSemanais } from "@/lib/resumo-semanal";
 import { processarIndicacoes } from "@/lib/indicacao";
+import { processarRescue } from "@/lib/rescue";
 
 // Roda 1x por dia (limite do plano Hobby da Vercel — ver vercel.json).
 // Isso significa que os prazos "1h"/"2h" na prática viram "dentro do
@@ -268,6 +269,9 @@ export async function GET(request: NextRequest) {
     console.error("[cron pos-venda] falha na recuperação de cadastros", err);
   }
 
+  // Rescue: acompanhamento de quem não preencheu nada (a cada 5 dias) e o plano bônus do presente.
+  const rescue = await processarRescue();
+
   // Resumo semanal por e-mail: às segundas (horário de Brasília), pegando carona neste cron diário.
   let resumoSemanal: { enviados: number; pulados: number; falhas: number } | null = null;
   try {
@@ -307,6 +311,8 @@ export async function GET(request: NextRequest) {
     ok: true,
     cobrancasExpiradas,
     pixBloqueados,
+    recuperacoes,
+    rescue,
     resumoSemanal,
     indicacoes,
     campanhasEnviadas: campanhas.enviados,
