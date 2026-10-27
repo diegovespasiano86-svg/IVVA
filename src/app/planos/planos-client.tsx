@@ -71,13 +71,33 @@ const CAMPO =
   "w-full rounded-xl border border-[rgba(14,14,19,0.16)] bg-white px-4 py-2.5 text-[14px] text-[#0e0e13] outline-none placeholder:text-[#8a8896] focus:ring-2 focus:ring-[#2fbf9f]";
 const ROTULO = "mb-1 block text-[12.5px] font-bold text-[#0e0e13]";
 
+/** Presentes da janela de saída do site (Rescue). Chegam como ?presente=... e ficam guardados com a origem. */
+export const PRESENTES: Record<string, string> = {
+  desconto10: "Seu presente: 10% de desconto na primeira mensalidade (no cartão, plano mensal).",
+  upgrade: "Seu presente: 30 dias do plano acima pelo preço do seu, liberados quando a sua conta for criada.",
+  implantacao: "Seu presente: a equipe ivva configura o robô com você. Vamos te chamar no WhatsApp depois do cadastro.",
+};
+
 // De onde o visitante veio (utm_* da campanha e site de origem). Guarda a primeira origem da visita na sessão.
+// O presente da janela de saída (se houver) entra sempre, mesmo se a origem já estava guardada.
 function lerOrigem(): string {
   try {
-    const guardada = sessionStorage.getItem("ivva-origem");
-    if (guardada) return guardada;
     const p = new URLSearchParams(window.location.search);
+    const presente = p.get("presente") ?? "";
+    const perda = (p.get("perda") ?? "").replace(/\D/g, "").slice(0, 7);
+    const guardada = sessionStorage.getItem("ivva-origem");
+    if (guardada) {
+      if (!PRESENTES[presente]) return guardada;
+      const g = JSON.parse(guardada) as Record<string, string>;
+      g.presente = presente;
+      if (perda) g.perda = perda;
+      const json = JSON.stringify(g);
+      sessionStorage.setItem("ivva-origem", json);
+      return json;
+    }
     const o: Record<string, string> = {};
+    if (PRESENTES[presente]) o.presente = presente;
+    if (perda) o.perda = perda;
     for (const k of ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"]) {
       const val = (p.get(k) ?? "").trim().slice(0, 80);
       if (val) o[k] = val;
@@ -138,6 +158,16 @@ function CadastroPanel({
         {anual ? `R$ ${fmt(totalAnual(plano))}/ano (2 meses grátis)` : `R$ ${plano.preco}/mês`} ·{" "}
         {pix ? "pagamento no Pix, acesso na hora" : "14 dias grátis"}
       </p>
+      {(() => {
+        try {
+          const presente = (JSON.parse(origem) as Record<string, string>).presente;
+          return PRESENTES[presente] ? (
+            <p className="-mt-2 mb-4 rounded-xl bg-[#2fbf9f]/10 px-3 py-2 text-center text-[12.5px] font-semibold text-[#2fbf9f]">🎁 {PRESENTES[presente]}</p>
+          ) : null;
+        } catch {
+          return null;
+        }
+      })()}
       {refCodigo && !anual && !pix && (
         <p className="-mt-2 mb-4 text-center text-[12.5px] font-semibold text-[#2fbf9f]">
           Link de indicação: se o código for válido, você ganha 10% na primeira mensalidade.

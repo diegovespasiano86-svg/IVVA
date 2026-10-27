@@ -3,7 +3,7 @@
 import { origemDoApp } from "@/lib/origem";
 
 import { createClient } from "@supabase/supabase-js";
-import { createCheckoutSession, garantirCupomIndicado } from "@/lib/stripe";
+import { createCheckoutSession, garantirCupomIndicado, garantirCupomSaida } from "@/lib/stripe";
 import { getSegmento } from "@/lib/segmentos";
 import { PRECO_MENSAL, type PlanoId } from "@/lib/planos";
 import {
@@ -33,6 +33,7 @@ const PRICE_ENV_ANUAL: Record<string, string | undefined> = {
 export type CadastroState = { erro: string | null; clientSecret: string | null };
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+const PRESENTES_VALIDOS = new Set(["desconto10", "upgrade", "implantacao"]);
 
 /**
  * Etapa de cadastro ANTES do pagamento. Grava o lead (nome, e-mail, WhatsApp, negócio, tipo) para que quem
@@ -90,11 +91,14 @@ export async function iniciarCadastro(_prev: CadastroState, formData: FormData):
     };
   }
 
-  // Origem do cadastro (UTM/site de origem): só texto curto, guardado no lead. Falha aqui nunca impede o cadastro.
+  // Origem do cadastro (UTM/site de origem e presente da janela de saída): só texto curto, guardado no lead.
+  // Falha aqui nunca impede o cadastro.
+  let presente = "";
   try {
     const bruto = JSON.parse(String(formData.get("origem") ?? "{}")) as Record<string, unknown>;
     const origem: Record<string, string> = {};
-    for (const k of ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "referrer"]) {
+    if (typeof bruto.presente === "string" && PRESENTES_VALIDOS.has(bruto.presente)) presente = origem.presente = bruto.presente;
+    for (const k of ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "referrer", "perda"]) {
       if (typeof bruto[k] === "string" && bruto[k]) origem[k] = (bruto[k] as string).slice(0, 80);
     }
     if (Object.keys(origem).length) await supabase.rpc("lead_origem", { p_secret: secret, p_email: email, p_origem: origem });
@@ -112,6 +116,15 @@ export async function iniciarCadastro(_prev: CadastroState, formData: FormData):
       if ((ind as { ok?: boolean } | null)?.ok && !anual) cupom = await garantirCupomIndicado();
     } catch (e) {
       console.error("[cadastro] indicacao_registrar falhou", e);
+    }
+  }
+
+  // Presente "10% de desconto" (janela de saída): só no cartão mensal e sem acumular com o desconto de indicação.
+  if (presente === "desconto10" && !anual && !cupom) {
+    try {
+      cupom = await garantirCupomSaida();
+    } catch (e) {
+      console.error("[cadastro] cupom do presente falhou", e);
     }
   }
 

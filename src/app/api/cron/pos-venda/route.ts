@@ -5,9 +5,10 @@ import { processarResumosPendentes } from "@/lib/resumo-conversas";
 import { podeEnviarAutomatico } from "@/lib/automacao";
 import { processarResumosHistoricoPendentes } from "@/lib/whatsapp-historico";
 import { processarLotes } from "@/lib/campanhas-envio";
-import { emailAlertaCadastros, enviarEmail } from "@/lib/email";
+import { emailAlertaCadastros, emailRecuperarCadastro, enviarEmail } from "@/lib/email";
 import { enviarResumosSemanais } from "@/lib/resumo-semanal";
 import { processarIndicacoes } from "@/lib/indicacao";
+import { processarRescue } from "@/lib/rescue";
 
 // Roda 1x por dia (limite do plano Hobby da Vercel — ver vercel.json).
 // Isso significa que os prazos "1h"/"2h" na prática viram "dentro do
@@ -254,6 +255,23 @@ export async function GET(request: NextRequest) {
     console.error("[cron pos-venda] falha no alerta de cadastros pendentes", err);
   }
 
+  // Recuperação de cadastro abandonado: até 2 e-mails por pessoa (o banco decide quem e quando).
+  let recuperacoes = 0;
+  try {
+    const { data: abandonos } = await supabase.rpc("leads_para_recuperar", { p_secret: secret });
+    for (const l of (abandonos ?? []) as { email: string; nome: string | null; nome_negocio: string | null; plano: string | null; etapa: number }[]) {
+      const envio = await enviarEmail({ para: l.email, ...emailRecuperarCadastro({ nome: l.nome, negocio: l.nome_negocio, plano: l.plano, etapa: l.etapa }) });
+      if (!envio.ok) continue;
+      await supabase.rpc("lead_recuperacao_registrar", { p_secret: secret, p_email: l.email });
+      recuperacoes++;
+    }
+  } catch (err) {
+    console.error("[cron pos-venda] falha na recuperação de cadastros", err);
+  }
+
+  // Rescue: acompanhamento de quem não preencheu nada (a cada 5 dias) e o plano bônus do presente.
+  const rescue = await processarRescue();
+
   // Resumo semanal por e-mail: às segundas (horário de Brasília), pegando carona neste cron diário.
   let resumoSemanal: { enviados: number; pulados: number; falhas: number } | null = null;
   try {
@@ -293,6 +311,8 @@ export async function GET(request: NextRequest) {
     ok: true,
     cobrancasExpiradas,
     pixBloqueados,
+    recuperacoes,
+    rescue,
     resumoSemanal,
     indicacoes,
     campanhasEnviadas: campanhas.enviados,

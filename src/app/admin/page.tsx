@@ -3,6 +3,8 @@ import { sinalConcorrente, type SinalConcorrente } from "@/lib/concorrentes";
 import { createClient } from "@/lib/supabase/server";
 import { resolverChamado } from "./actions";
 import { limiteConversas } from "@/lib/planos";
+import { linkWhatsapp } from "@/lib/rescue";
+import RescuePainel from "./rescue-painel";
 
 const PLANO_LABEL: Record<string, string> = {
   essencial: "Essencial",
@@ -203,6 +205,8 @@ export default async function AdminPage() {
           </div>
         )}
 
+        <RescuePainel supabase={supabase} />
+
         {alertas.length > 0 && (
           <div className="mb-6">
             <p className="mb-1 text-[14px] font-bold">
@@ -250,9 +254,14 @@ export default async function AdminPage() {
                     <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${l.status === "pagamento_aberto" ? "bg-purple/10 text-purple" : "bg-surface-soft text-ink-soft"}`}>
                       {l.status === "pagamento_aberto" ? "Parou no pagamento" : "Parou no cadastro"}
                     </span>
-                    {l.telefone && (
-                      <a href={`https://wa.me/${l.telefone.startsWith("55") ? l.telefone : "55" + l.telefone}`} target="_blank" rel="noreferrer" className="text-[12px] font-bold text-teal hover:underline">
-                        WhatsApp
+                    {linkWhatsapp(l.telefone, "") && (
+                      <a
+                        href={linkWhatsapp(l.telefone, `Oi, ${l.nome.split(" ")[0]}! Aqui é o Diego, da ivva. Vi que você começou o cadastro do ${l.nome_negocio ?? "seu negócio"} e parou antes de concluir. Ficou alguma dúvida? Posso te mostrar a ivva funcionando com os dados do seu negócio.`)!}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[12px] font-bold text-teal hover:underline"
+                      >
+                        WhatsApp pronto
                       </a>
                     )}
                   </div>
