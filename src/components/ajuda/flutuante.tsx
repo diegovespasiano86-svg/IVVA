@@ -10,11 +10,11 @@ import VideoModal from "./video-modal";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
-const SUGESTOES = ["Como conecto o WhatsApp?", "Como ensino o robô sobre o meu negócio?", "Como convido alguém da equipe?"];
+const SUGESTOES = ["Como conecto o WhatsApp?", "Meu robô não está respondendo", "Como convido alguém da equipe?"];
 
 /** Texto da resposta com links internos [tela](/rota) clicáveis. */
 function Resposta({ texto, onNavegar }: { texto: string; onNavegar: () => void }) {
-  const partes = texto.split(/(\[[^\]]+\]\(\/[^)\s]*\))/g);
+  const partes = texto.replaceAll("**", "").split(/(\[[^\]]+\]\(\/[^)\s]*\))/g);
   return (
     <p className="whitespace-pre-wrap">
       {partes.map((p, i) => {
@@ -39,6 +39,7 @@ export default function AjudaFlutuante({ ehDono }: { ehDono: boolean }) {
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [texto, setTexto] = useState("");
   const [enviando, setEnviando] = useState(false);
+  const [nome, setNome] = useState<string | null>(null);
   const fimRef = useRef<HTMLDivElement>(null);
 
   const guias = useMemo(() => guiasDoPerfil(ehDono), [ehDono]);
@@ -51,6 +52,15 @@ export default function AjudaFlutuante({ ehDono }: { ehDono: boolean }) {
     window.addEventListener("keydown", aoTeclar);
     return () => window.removeEventListener("keydown", aoTeclar);
   }, [aberto, tocando]);
+
+  // Primeiro nome de quem está logado: a Vi abre a conversa chamando a pessoa pelo nome.
+  useEffect(() => {
+    if (!aberto || nome) return;
+    fetch("/api/ajuda/assistente")
+      .then((r) => r.json())
+      .then((d) => typeof d?.nome === "string" && setNome(d.nome))
+      .catch(() => {});
+  }, [aberto, nome]);
 
   useEffect(() => {
     fimRef.current?.scrollIntoView({ block: "end" });
@@ -80,24 +90,23 @@ export default function AjudaFlutuante({ ehDono }: { ehDono: boolean }) {
 
   return (
     <>
-      <div className="fixed bottom-24 left-4 z-40 md:bottom-6 md:left-[264px] print:hidden">
-        <button
-          type="button"
-          onClick={() => setAberto((v) => !v)}
-          aria-label={aberto ? "Fechar a conversa com a Vi" : "Abrir Pergunte a Ivva"}
-          aria-expanded={aberto}
-          className="group flex items-center gap-2.5 rounded-full bg-white py-1.5 pl-1.5 pr-4 shadow-[0_12px_30px_-8px_rgba(139,127,232,0.7)] ring-2 ring-purple/30 transition-transform hover:scale-105"
-        >
-          <Image src="/vi/vi-128.webp" alt="" width={44} height={44} className="h-11 w-11 rounded-full border-2 border-white object-cover" />
-          <span className="hidden text-[13px] font-extrabold text-ink sm:inline">Pergunte a Ivva</span>
-        </button>
-      </div>
+      {/* Fixo na barra do topo (header), em todas as telas */}
+      <button
+        type="button"
+        onClick={() => setAberto((v) => !v)}
+        aria-label={aberto ? "Fechar a conversa com a Vi" : "Abrir Pergunte a Ivva"}
+        aria-expanded={aberto}
+        className="flex h-10 shrink-0 items-center gap-2 rounded-full bg-white/10 py-1 pl-1 pr-1 text-[13px] font-extrabold text-white ring-1 ring-white/20 transition-colors hover:bg-white/20 md:pr-4"
+      >
+        <Image src="/vi/vi-128.webp" alt="" width={32} height={32} className="h-8 w-8 rounded-full border-2 border-white/80 object-cover" />
+        <span className="hidden md:inline">Pergunte a Ivva</span>
+      </button>
 
       {aberto && (
         <div
           role="dialog"
           aria-label="Pergunte a Ivva: conversa com a Vi, assistente virtual"
-          className="fixed bottom-40 left-4 z-[65] flex max-h-[min(36rem,calc(100dvh-9rem))] w-[min(23rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-3xl bg-[linear-gradient(145deg,#2fbf9f,#8b7fe8_55%,#ff6b5b)] p-[1.5px] shadow-[0_40px_80px_-30px_rgba(139,127,232,0.65)] md:bottom-24 md:left-[264px] print:hidden"
+          className="fixed right-2 top-16 z-[65] flex max-h-[min(36rem,calc(100dvh-5rem))] w-[min(23rem,calc(100vw-1rem))] flex-col overflow-hidden rounded-3xl bg-[linear-gradient(145deg,#2fbf9f,#8b7fe8_55%,#ff6b5b)] p-[1.5px] text-ink shadow-[0_40px_80px_-30px_rgba(139,127,232,0.65)] md:right-5 print:hidden"
         >
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[calc(1.5rem-1.5px)] bg-surface">
             <header className="flex items-center gap-3 border-b border-border px-4 py-3">
@@ -113,7 +122,9 @@ export default function AjudaFlutuante({ ehDono }: { ehDono: boolean }) {
 
             <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-4 text-[13.5px]" aria-live="polite">
               <div className="mr-8 rounded-2xl rounded-bl-sm bg-surface-soft px-3.5 py-2.5">
-                <p>Oi! Eu sou a Vi, da ivva. Pergunte como fazer qualquer coisa no sistema: eu explico e levo você até a tela certa.</p>
+                <p>
+                  Oi{nome ? `, ${nome}` : ""}! 👋 Eu sou a Vi, da ivva. Me conta o que você precisa: eu explico, mostro o vídeo e levo você até a tela certa 💜
+                </p>
               </div>
               {msgs.length === 0 && (
                 <div className="flex flex-wrap gap-2">

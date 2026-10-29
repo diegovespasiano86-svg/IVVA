@@ -6,7 +6,6 @@ import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "reac
 import {
   Bell,
   ChevronDown,
-  CircleHelp,
   LogOut,
   MessageCircle,
   MoreHorizontal,
@@ -284,14 +283,7 @@ export default function AppShell({
                 {roboStatus === "ativo" ? "Robô ativo" : roboStatus === "pausado" ? "Robô pausado" : "WhatsApp desconectado"}
               </Link>
             )}
-            <Link
-              href="/ajuda"
-              className="flex h-9 w-9 items-center justify-center rounded-lg text-white/80 hover:bg-white/10"
-              aria-label="Guias e vídeos"
-              title="Guias e vídeos"
-            >
-              <CircleHelp size={19} />
-            </Link>
+            <AjudaFlutuante ehDono={role === "dono"} />
             <Link
               href={firstAlert === "/crm" ? "/crm?view=tarefas" : (firstAlert ?? "/dashboard")}
               className="relative flex h-9 w-9 items-center justify-center rounded-lg text-white/80 hover:bg-white/10"
@@ -492,7 +484,6 @@ export default function AppShell({
       )}
 
       <MotionEffects />
-      <AjudaFlutuante ehDono={role === "dono"} />
       <TourDaTela />
       {paletteOpen && <Palette groups={groups} ehDono={role === "dono"} onClose={() => setPaletteOpen(false)} />}
     </div>
