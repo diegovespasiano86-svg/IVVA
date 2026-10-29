@@ -20,6 +20,7 @@ import { Logo } from "@/components/logo";
 import MotionEffects from "@/components/motion-effects";
 import Aparencia from "@/components/aparencia";
 import AjudaFlutuante from "@/components/ajuda/flutuante";
+import TourDaTela from "@/components/ajuda/tour-da-tela";
 import { SuporteModal } from "@/components/suporte/falar-com-suporte";
 import { guiasDoPerfil, norm } from "@/lib/ajuda-busca";
 import { navGroupsForRole, type NavGroup, type Role } from "@/lib/nav";
@@ -492,6 +493,7 @@ export default function AppShell({
 
       <MotionEffects />
       <AjudaFlutuante ehDono={role === "dono"} />
+      <TourDaTela />
       {paletteOpen && <Palette groups={groups} ehDono={role === "dono"} onClose={() => setPaletteOpen(false)} />}
     </div>
   );
