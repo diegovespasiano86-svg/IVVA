@@ -1,3 +1,4 @@
+import { sincronizarGoogleAgenda } from "@/lib/google-agenda";
 import { type NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { erroDeContaWhatsApp, sendWhatsAppText } from "@/lib/whatsapp";
@@ -270,6 +271,9 @@ export async function GET(request: NextRequest) {
   }
 
   // Black Friday: a partir de 20/11 (Brasília) manda o acesso antecipado para a lista VIP, uma vez por pessoa.
+  // Rede de segurança da Google Agenda: reenvia o que não subiu na hora (todos os negócios com agenda ligada).
+  const googleAgenda = await sincronizarGoogleAgenda(null);
+
   let vipEnviados = 0;
   try {
     const hoje = new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
@@ -330,6 +334,7 @@ export async function GET(request: NextRequest) {
     pixBloqueados,
     recuperacoes,
     vipEnviados,
+    googleAgenda,
     rescue,
     resumoSemanal,
     indicacoes,

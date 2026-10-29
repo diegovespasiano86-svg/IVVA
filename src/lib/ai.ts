@@ -5,6 +5,7 @@ import { criarLinkPagamento, criarPixEstatico, lerContaAsaas } from "@/lib/asaas
 import { sendWhatsAppText } from "@/lib/whatsapp";
 import { podeEnviarAutomatico } from "@/lib/automacao";
 import { temRecurso } from "@/lib/planos";
+import { linkAdicionarAgenda } from "@/lib/google-agenda";
 
 const ANTHROPIC_API = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_VERSION = "2023-06-01";
@@ -507,7 +508,20 @@ async function executarFerramenta(
     if (error) return { resultado: JSON.stringify({ erro: error.message }), handoff: false };
     const reservaFeita = Boolean((data as { ok?: boolean })?.ok);
     if (reservaFeita) await avancarFunil(ctx, "agendado", secret, supabaseUrl, anonKey);
-    return { resultado: JSON.stringify(data), handoff: false, reservaFeita };
+    // Cliente que quiser levar o horário para a própria agenda: o robô oferece este link (só envia se ele aceitar).
+    const comLink = reservaFeita
+      ? {
+          ...(data as object),
+          link_google_agenda_cliente: linkAdicionarAgenda({
+            titulo: `${String(input.servico ?? "Atendimento")} · ${ctx.tenantNome}`,
+            inicioIso: new Date(String(input.data_hora)).toISOString(),
+            duracaoMin: Number(input.duracao_minutos ?? 30),
+            detalhes: "Agendado pela ivva",
+          }),
+          aviso_para_voce: "Depois de confirmar o horário, pergunte em uma frase se o cliente quer colocar na agenda dele. Só se disser que sim, envie link_google_agenda_cliente. Não envie o link sem ele pedir.",
+        }
+      : data;
+    return { resultado: JSON.stringify(comLink), handoff: false, reservaFeita };
   }
 
   if (nome === "remarcar_ou_cancelar_agendamento") {

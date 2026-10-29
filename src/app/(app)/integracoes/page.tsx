@@ -3,6 +3,7 @@ import { Plug } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { origemDoApp } from "@/lib/origem";
 import NovaChave from "./nova-chave";
+import GoogleAgendaCard from "./google-agenda-card";
 import ConectarAsaas from "./conectar-asaas";
 import ConectarMercadoPago from "./conectar-mercadopago";
 import { mpDisponivel } from "@/lib/mercadopago";
@@ -19,8 +20,8 @@ const MENSAGEM_MP: Record<string, { ok: boolean; texto: string }> = {
   indisponivel: { ok: false, texto: "A conexão com o Mercado Pago ainda não está liberada nesta conta." },
 };
 
-export default async function IntegracoesPage({ searchParams }: { searchParams: Promise<{ mp?: string }> }) {
-  const { mp } = await searchParams;
+export default async function IntegracoesPage({ searchParams }: { searchParams: Promise<{ mp?: string; google?: string }> }) {
+  const { mp, google } = await searchParams;
   const supabase = await createClient();
   const { data } = await supabase.rpc("api_chave_listar");
   const chaves = (data ?? []) as Chave[];
@@ -37,6 +38,8 @@ export default async function IntegracoesPage({ searchParams }: { searchParams: 
   return (
     <div>
       <PageHeader icon={Plug} title="Integrações e API" subtitle="Mande contatos de formulários, anúncios e planilhas direto para o seu CRM, pelo Zapier, n8n ou outra ferramenta." />
+
+      <GoogleAgendaCard aviso={google} />
 
       <div className="mb-2 mt-1">
         <p className="text-[16px] font-bold">Conecte sua conta e receba pagamentos</p>

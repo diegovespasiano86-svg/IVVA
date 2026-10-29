@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { contatoNoEscopo, type Escopo } from "@/lib/escopo-profissional";
+import { sincronizarGoogleAgenda } from "@/lib/google-agenda";
 
 export async function criarAgendamento(formData: FormData) {
   const contactId = String(formData.get("contact_id") ?? "");
@@ -50,6 +51,7 @@ export async function criarAgendamento(formData: FormData) {
     origem: "manual",
     status: "agendado",
   });
+  await sincronizarGoogleAgenda(perfil.tenant_id);
 
   revalidatePath("/calendario");
   revalidatePath("/dashboard");
@@ -141,11 +143,13 @@ export async function atualizarAgendamento(
         aviso = "Horário cancelado. Já avisamos a próxima pessoa da lista de espera.";
       }
     }
+    await sincronizarGoogleAgenda(ag.tenant_id);
     revalidatePath("/calendario");
     revalidatePath("/dashboard");
     return { erro: null, aviso };
   }
 
+  await sincronizarGoogleAgenda(ag.tenant_id);
   revalidatePath("/calendario");
   revalidatePath("/dashboard");
   return { erro: null };

@@ -10,6 +10,7 @@ import {
   type WhatsAppCreds,
 } from "@/lib/whatsapp";
 import { buscarFontesDaResposta } from "@/lib/fontes-resposta";
+import { sincronizarGoogleAgenda } from "@/lib/google-agenda";
 import { gerarRespostaWhatsApp, type ContextoConversa, type ResultadoIA } from "@/lib/ai";
 import { gerarRespostaAdmin } from "@/lib/admin-ai";
 import { consumirConversaIA } from "@/lib/uso-ia";
@@ -949,4 +950,7 @@ async function processarMensagem(params: {
     viaAudio,
     fontes,
   });
+
+  // Agendou, remarcou ou cancelou nesta conversa? Leva para a Google Agenda do dono (sem efeito se ele não ligou).
+  await sincronizarGoogleAgenda(resultado.tenant_id);
 }
