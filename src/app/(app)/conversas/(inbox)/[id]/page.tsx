@@ -32,7 +32,7 @@ export default async function ConversaDetalhePage({
 
   const { data: mensagens } = await supabase
     .from("messages")
-    .select("id, remetente, conteudo, created_at")
+    .select("id, remetente, conteudo, created_at, fontes")
     .eq("conversation_id", id)
     .order("created_at", { ascending: true });
 
@@ -201,6 +201,16 @@ export default async function ConversaDetalhePage({
                   >
                     {m.conteudo}
                   </div>
+                  {robo && Array.isArray(m.fontes) && m.fontes.length > 0 && (
+                    <details className="mt-1 max-w-full px-1 text-[11px] text-ink-faint">
+                      <summary className="cursor-pointer select-none font-semibold">Fonte da resposta</summary>
+                      <ul className="mt-1 flex flex-col gap-1">
+                        {(m.fontes as string[]).map((f, i) => (
+                          <li key={i} className="rounded-md bg-surface-soft px-2 py-1 text-ink-soft">{f}</li>
+                        ))}
+                      </ul>
+                    </details>
+                  )}
                   <span className="mt-0.5 px-1 text-[10.5px] text-ink-faint">
                     {new Date(m.created_at).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" })}
                   </span>

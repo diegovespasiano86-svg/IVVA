@@ -9,6 +9,7 @@ import {
   erroDeContaWhatsApp,
   type WhatsAppCreds,
 } from "@/lib/whatsapp";
+import { buscarFontesDaResposta } from "@/lib/fontes-resposta";
 import { gerarRespostaWhatsApp, type ContextoConversa, type ResultadoIA } from "@/lib/ai";
 import { gerarRespostaAdmin } from "@/lib/admin-ai";
 import { consumirConversaIA } from "@/lib/uso-ia";
@@ -494,8 +495,9 @@ async function enviarRespostaEregistrar(params: {
   resultado: ResultadoInbound;
   opcoesHorario?: { professional_id: string; professional_nome: string; data_hora: string }[];
   viaAudio?: boolean;
+  fontes?: string[];
 }) {
-  const { supabase, internalSecret, creds, waId, resposta, resultado, opcoesHorario, viaAudio } = params;
+  const { supabase, internalSecret, creds, waId, resposta, resultado, opcoesHorario, viaAudio, fontes } = params;
 
   let envio: { messages?: { id?: string }[] } | undefined;
   let enviouPorAudio = false;
@@ -543,6 +545,7 @@ async function enviarRespostaEregistrar(params: {
     p_conversation_id: resultado.conversation_id,
     p_conteudo: resposta,
     p_wa_message_id: envio?.messages?.[0]?.id ?? null,
+    p_fontes: fontes && fontes.length > 0 ? fontes : null,
   });
 
   // Lista clicável com os horários — mandada como mensagem separada, logo
@@ -911,6 +914,12 @@ async function processarMensagem(params: {
     });
   }
 
+  // Fonte da resposta (itens da base ligados à pergunta). Só quando a IA respondeu de fato; falha não trava o envio.
+  const ultimaDoCliente = [...resultado.historico].reverse().find((m) => m.remetente === "contato")?.conteudo ?? "";
+  const fontes = resposta.startsWith("Peço desculpa, tive um probleminha")
+    ? []
+    : await buscarFontesDaResposta({ url: supabaseUrl, anon: anonKey, secret: internalSecret, tenantId: resultado.tenant_id, pergunta: ultimaDoCliente });
+
   // Decide se essa resposta sai em áudio — recurso do plano Profissional+,
   // opt-in do dono, e só depois de 2+ mensagens de voz seguidas do
   // cliente (evita trocar pra áudio por causa de um áudio avulso).
@@ -938,5 +947,6 @@ async function processarMensagem(params: {
     resultado,
     opcoesHorario,
     viaAudio,
+    fontes,
   });
 }
