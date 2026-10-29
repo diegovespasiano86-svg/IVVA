@@ -55,7 +55,7 @@ export default function Cobrar({
     if (e) return setErro(e);
     setErro(null);
     iniciar(async () => {
-      const r = provedor === "asaas" ? await criarCobrancaAsaas(montarDados(), modo as "pix" | "link") : await criarCobrancaMercadoPago(montarDados(), modo);
+      const r = provedor === "asaas" ? await criarCobrancaAsaas(montarDados()) : await criarCobrancaMercadoPago(montarDados(), modo);
       if (r.erro || !r.cobranca) return setErro(r.erro ?? "Não consegui gerar a cobrança.");
       setSituacao("aguardando");
       setCobranca(r.cobranca);
@@ -66,7 +66,7 @@ export default function Cobrar({
   const texto = cobranca
     ? cobranca.modo === "pix"
       ? `Olá! Segue o Pix de ${dinheiro.format(cobranca.valor)}. Copie e cole no app do seu banco:\n\n${cobranca.copiaECola}`
-      : `Olá! Segue o link para pagar ${dinheiro.format(cobranca.valor)} por Pix ou cartão: ${cobranca.url}`
+      : `Olá! Segue o link para pagar ${dinheiro.format(cobranca.valor)} ${provedor === "asaas" ? "no cartão de crédito" : "por Pix ou cartão"}: ${cobranca.url}`
     : "";
   const copiavel = cobranca?.copiaECola ?? cobranca?.url ?? "";
   const naMaquininha = cobranca?.modo === "maquininha";
@@ -88,11 +88,13 @@ export default function Cobrar({
 
       {!cobranca && (
         <div className="mt-3 flex flex-wrap gap-2">
-          <button type="button" disabled={pendente} onClick={() => gerar("pix")} className="btn btn-primary btn-md disabled:opacity-60">
-            <QrCode size={16} /> {pendente ? "Gerando…" : "Pix QR Code"}
-          </button>
-          <button type="button" disabled={pendente} onClick={() => gerar("link")} className="btn btn-secondary btn-md disabled:opacity-60">
-            <Link2 size={16} /> Link (Pix ou cartão)
+          {provedor === "mercadopago" && (
+            <button type="button" disabled={pendente} onClick={() => gerar("pix")} className="btn btn-primary btn-md disabled:opacity-60">
+              <QrCode size={16} /> {pendente ? "Gerando…" : "Pix QR Code"}
+            </button>
+          )}
+          <button type="button" disabled={pendente} onClick={() => gerar("link")} className={`btn btn-md disabled:opacity-60 ${provedor === "asaas" ? "btn-primary" : "btn-secondary"}`}>
+            <Link2 size={16} /> {provedor === "asaas" ? (pendente ? "Gerando…" : "Link de cartão de crédito") : "Link (Pix ou cartão)"}
           </button>
           {provedor === "mercadopago" && maquininha && (
             <button type="button" disabled={pendente} onClick={() => gerar("maquininha")} className="btn btn-secondary btn-md disabled:opacity-60">
@@ -131,7 +133,7 @@ export default function Cobrar({
             ) : (
               <>
                 <p className="text-[13.5px] font-bold">Aguardando o pagamento de {dinheiro.format(cobranca.valor)}…</p>
-                <p className="mt-0.5 text-[12px] text-ink-soft">{cobranca.modo === "pix" ? "Peça para o cliente escanear ou copiar o código." : "Envie o link ao cliente; ele escolhe Pix ou cartão."}</p>
+                <p className="mt-0.5 text-[12px] text-ink-soft">{cobranca.modo === "pix" ? "Peça para o cliente escanear ou copiar o código." : provedor === "asaas" ? "Envie o link ao cliente; ele paga no cartão de crédito." : "Envie o link ao cliente; ele escolhe Pix ou cartão."}</p>
                 <textarea readOnly value={copiavel} rows={3} className="textarea mt-2 text-[11.5px]" onFocus={(e) => e.currentTarget.select()} />
                 <div className="mt-2 flex flex-wrap gap-2">
                   <button type="button" onClick={async () => { try { await navigator.clipboard.writeText(copiavel); setCopiado(true); setTimeout(() => setCopiado(false), 1800); } catch { /* copia manualmente */ } }} className="btn btn-secondary btn-md">

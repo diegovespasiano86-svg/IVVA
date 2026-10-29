@@ -152,7 +152,7 @@ export const GUIAS: Guia[] = [
     passos: [
       "Escolha o cliente e o profissional, e adicione os itens do catálogo (ou um item avulso).",
       "Escolha Pix, crédito, débito ou dinheiro e clique em “Registrar pagamento”.",
-      "Para cobrar à distância, conecte o Asaas em Integrações e use “Cobrar pelo Asaas” (QR Code ou link): a venda é registrada sozinha quando o cliente paga.",
+      "Para cobrar à distância, conecte o Asaas em Integrações e use “Cobrar pelo Asaas” (link de cartão de crédito) ou o Mercado Pago (Pix QR Code ou link): a venda é registrada sozinha quando o cliente paga.",
     ],
     soDono: true,
   },

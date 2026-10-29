@@ -52,15 +52,13 @@ export default async function IntegracoesPage({ searchParams }: { searchParams: 
       )}
 
       <div className="card mb-4 px-5 py-5">
-        <p className="text-[14px] font-bold">1. Asaas <span className="font-normal text-ink-soft">· Pix e cartão por link ou QR Code</span> {asaasEstado?.conectada && <b className="ml-1 text-[12px] text-teal">Conectado</b>}</p>
+        <p className="text-[14px] font-bold">1. Asaas <span className="font-normal text-ink-soft">· cartão de crédito por link</span> {asaasEstado?.conectada && <b className="ml-1 text-[12px] text-teal">Conectado</b>}</p>
         <details className="my-2 text-[12.5px] text-ink-soft" open={!asaasEstado?.conectada}>
           <summary className="cursor-pointer font-bold text-purple">Como conectar, passo a passo</summary>
           <ol className="ml-5 mt-2 list-decimal space-y-1">
             <li>Não tem conta? <a href="https://www.asaas.com" target="_blank" rel="noreferrer" className="font-bold text-purple underline">Crie a sua grátis no Asaas</a> e envie os documentos pedidos (a análise leva de minutos a alguns dias).</li>
             <li>Com a conta aprovada, abra o Asaas e vá em <b>Integrações &gt; Chaves de API &gt; Gerar</b>. Copie a chave (começa com <code>$aact_</code>).</li>
-            <li>Cole a chave aqui embaixo e clique em <b>Conectar Asaas</b>. Pronto: o botão &ldquo;Cobrar pelo Asaas&rdquo; aparece no Checkout.</li>
-            <li>No Asaas, cadastre uma chave Pix em <b>Pix &gt; Minhas chaves</b> (necessário para cobrar por Pix).</li>
-          </ol>
+            <li>Cole a chave aqui embaixo e clique em <b>Conectar Asaas</b>. Pronto: o botão &ldquo;Cobrar pelo Asaas&rdquo; aparece no Checkout.</li>          </ol>
         </details>
         <ConectarAsaas conectada={!!asaasEstado?.conectada} ambiente={asaasEstado?.ambiente ?? null} />
       </div>

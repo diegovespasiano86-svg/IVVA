@@ -2,9 +2,9 @@ import { createClient } from "@supabase/supabase-js";
 
 // Cobrança pela conta Asaas do PRÓPRIO negócio (cada cliente da ivva conecta a sua). A ivva nunca segura o dinheiro:
 // o valor cai na conta Asaas do negócio e o webhook avisa a ivva para dar baixa no estoque e nos relatórios.
-// Duas formas, ambas sem cadastrar o pagador (o Asaas exige CPF para cliente cadastrado, o que atrapalharia o balcão):
-//  - Pix QR Code estático com valor (balcão e robô): o pagador só escaneia.
-//  - Link de Pagamento (Pix ou cartão): o pagador preenche os dados na página do Asaas.
+// Cobrança por Link de Pagamento, sem cadastrar o pagador (o Asaas exige CPF para cliente cadastrado, o que atrapalharia o balcão):
+// o pagador preenche os dados na página do Asaas. No Checkout o link é só de cartão de crédito; o robô manda o link em que o cliente escolhe Pix ou cartão.
+// O Pix QR Code estático foi retirado (não dava para comprovar a baixa automática); o Pix fica no Mercado Pago ou na chave Pix própria.
 
 export type Ambiente = "sandbox" | "producao";
 export type ContaAsaas = { chave: string; ambiente: Ambiente; webhook_token: string };
@@ -75,23 +75,11 @@ export async function criarWebhook(conta: { chave: string; ambiente: Ambiente },
   });
 }
 
-/** Pix QR Code estático com valor. `id` identifica a cobrança no aviso de pagamento (pixQrCodeId). */
-export async function criarPixEstatico(conta: { chave: string; ambiente: Ambiente }, valor: number, descricao: string) {
-  const chaves = await asaas<{ data?: { key: string; status: string }[] }>(conta, "/pix/addressKeys");
-  const chavePix = chaves.data?.find((k) => k.status === "ACTIVE")?.key;
-  if (!chavePix) throw new Error("Cadastre uma chave Pix na sua conta Asaas (menu Pix > Minhas chaves) para cobrar por Pix.");
-  const r = await asaas<{ id: string; payload: string; encodedImage?: string }>(conta, "/pix/qrCodes/static", {
-    method: "POST",
-    body: { addressKey: chavePix, description: descricao.slice(0, 140), value: valor, format: "ALL", expirationSeconds: 3600 },
-  });
-  return { id: r.id, copiaECola: r.payload, imagem: r.encodedImage ?? null };
-}
-
-/** Link de Pagamento (Pix ou cartão) de uso único: o pagador informa os próprios dados na página do Asaas. */
-export async function criarLinkPagamento(conta: { chave: string; ambiente: Ambiente }, valor: number, nome: string, descricao: string) {
+/** Link de Pagamento de uso único: o pagador informa os próprios dados na página do Asaas. `tipo`: só cartão de crédito ou o pagador escolhe (Pix ou cartão). */
+export async function criarLinkPagamento(conta: { chave: string; ambiente: Ambiente }, valor: number, nome: string, descricao: string, tipo: "CREDIT_CARD" | "UNDEFINED" = "UNDEFINED") {
   const r = await asaas<{ id: string; url: string }>(conta, "/paymentLinks", {
     method: "POST",
-    body: { name: nome.slice(0, 30), description: descricao.slice(0, 500), billingType: "UNDEFINED", chargeType: "DETACHED", value: valor, dueDateLimitDays: 3, notificationEnabled: false },
+    body: { name: nome.slice(0, 30), description: descricao.slice(0, 500), billingType: tipo, chargeType: "DETACHED", value: valor, dueDateLimitDays: 3, notificationEnabled: false },
   });
   return { id: r.id, url: r.url };
 }

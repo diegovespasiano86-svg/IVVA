@@ -1,7 +1,7 @@
 // Cliente da IA generativa (Claude) que responde pelo WhatsApp. Sem SDK —
 // fetch direto na Messages API, no mesmo espírito do lib/stripe.ts.
 
-import { criarLinkPagamento, criarPixEstatico, lerContaAsaas } from "@/lib/asaas";
+import { criarLinkPagamento, lerContaAsaas } from "@/lib/asaas";
 import { sendWhatsAppText } from "@/lib/whatsapp";
 import { podeEnviarAutomatico } from "@/lib/automacao";
 import { temRecurso } from "@/lib/planos";
@@ -324,13 +324,13 @@ const TOOLS = [
   },
   {
     name: "solicitar_pagamento_pix",
-    description: "Gera uma cobrança para o cliente pagar agora: Pix (código copia-e-cola) ou link para Pix/cartão. Serve para sinal ou para o valor do serviço. Só use depois que o cliente confirmou o que vai pagar e o valor, e concordou em pagar agora. Use SEMPRE valores do catálogo ou da base de conhecimento; nunca invente valor.",
+    description: "Gera um link de pagamento para o cliente pagar agora (na página do link ele escolhe Pix ou cartão). Serve para sinal ou para o valor do serviço. Só use depois que o cliente confirmou o que vai pagar e o valor, e concordou em pagar agora. Use SEMPRE valores do catálogo ou da base de conhecimento; nunca invente valor.",
     input_schema: {
       type: "object",
       properties: {
         valor_reais: { type: "number", description: "Valor a cobrar em reais (ex: 50 pra R$50,00)" },
         descricao: { type: "string", description: "O que é a cobrança (ex: 'Sinal - coloração')" },
-        forma: { type: "string", enum: ["pix", "link"], description: "'pix' = código copia-e-cola (padrão); 'link' = link onde o cliente escolhe Pix ou cartão. Use 'link' se o cliente quiser pagar no cartão." },
+        forma: { type: "string", enum: ["pix", "link"], description: "Opcional. Sempre devolve o link, onde o cliente escolhe Pix ou cartão." },
       },
       required: ["valor_reais", "descricao"],
     },
@@ -628,22 +628,15 @@ async function executarFerramenta(
       const valor = Math.round(Number(input.valor_reais) * 100) / 100;
       if (!(valor > 0 && valor <= 100000)) return { resultado: JSON.stringify({ erro: "valor_invalido" }), handoff: false };
       const descricao = String(input.descricao ?? "Pagamento").slice(0, 120);
-      const modo = input.forma === "link" ? "link" : "pix";
+      // O Pix QR Code do Asaas foi retirado: o robô sempre manda o link, onde o cliente escolhe Pix ou cartão.
+      const modo = "link";
       const conta = await lerContaAsaas(ctx.tenantId);
       if (!conta) return indisponivel;
 
-      let asaasId: string;
-      let url: string | null = null;
-      let copiaECola: string | null = null;
-      if (modo === "pix") {
-        const r = await criarPixEstatico(conta, valor, descricao);
-        asaasId = r.id;
-        copiaECola = r.copiaECola;
-      } else {
-        const r = await criarLinkPagamento(conta, valor, "Pagamento", descricao);
-        asaasId = r.id;
-        url = r.url;
-      }
+      const r = await criarLinkPagamento(conta, valor, "Pagamento", descricao);
+      const asaasId = r.id;
+      const url: string | null = r.url;
+      const copiaECola: string | null = null;
       const { error } = await supabase.rpc("cobranca_criar", {
         p_secret: secret,
         p_tenant: ctx.tenantId,
