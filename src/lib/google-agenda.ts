@@ -61,7 +61,7 @@ export function urlAutorizacao(state: string): string {
   return `${AUTH}?${p}`;
 }
 
-export async function trocarCodigo(code: string): Promise<{ refresh_token?: string; access_token: string }> {
+export async function trocarCodigo(code: string): Promise<{ refresh_token?: string; access_token: string; scope?: string }> {
   const r = await fetch(TOKEN, {
     method: "POST",
     headers: { "content-type": "application/x-www-form-urlencoded" },

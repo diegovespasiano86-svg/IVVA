@@ -24,6 +24,8 @@ export async function GET(req: Request) {
   try {
     const t = await trocarCodigo(code);
     if (!t.refresh_token) return volta("erro");
+    // O Google deixa a pessoa desmarcar a permissão da agenda: sem ela todo evento volta 403, então não conecta.
+    if (!t.scope?.includes("auth/calendar.events")) return volta("negado");
     const email = await emailDoGoogle(t.access_token);
     const { error } = await supabase.rpc("google_agenda_salvar", {
       p_secret: secret,
