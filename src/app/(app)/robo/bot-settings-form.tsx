@@ -21,6 +21,7 @@ type BotSettings = {
   upsell_template_nome: string | null;
   bot_pausado: boolean;
   lista_espera_ativo: boolean;
+  modo_sugerir?: boolean;
   recuperar_conversa_ativo: boolean;
   recuperar_conversa_primeiro_toque_min: number;
   indicacao_recompensa_ativo: boolean;
@@ -96,6 +97,17 @@ export default function BotSettingsForm({
               defaultValue={s?.recuperar_conversa_primeiro_toque_min ?? 45}
               className="input w-32"
             />
+          </div>
+
+          <div className="border-t border-teal/20 pt-4">
+            <label className="mb-2 flex items-center gap-2 text-[12.5px] font-semibold">
+              <input className="toggle" type="checkbox" name="modo_sugerir" defaultChecked={s?.modo_sugerir ?? false} />
+              Sugerir e aprovar antes de enviar
+            </label>
+            <p className="text-[11.5px] text-ink-faint">
+              O robô escreve a resposta, mas ela só vai para o cliente depois que você aprovar (ou editar) na conversa. Bom para os primeiros dias.
+              Atenção: marcar ou cancelar horário o robô continua fazendo na hora; o que espera aprovação é a mensagem.
+            </p>
           </div>
 
           <FeatureLock liberado={filaEsperaLiberada} titulo="Lista de espera automática" planoNecessario="Profissional" variante="list" className="px-4 py-4">

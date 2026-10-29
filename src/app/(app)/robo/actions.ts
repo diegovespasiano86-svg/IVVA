@@ -108,6 +108,7 @@ export async function atualizarBotSettings(
     admin_whatsapp_numero: adminWhatsappLiberado ? String(formData.get("admin_whatsapp_numero") ?? "").trim() || null : null,
     upsell_template_nome: String(formData.get("upsell_template_nome") ?? "").trim() || null,
     lista_espera_ativo: filaEsperaLiberada && formData.get("lista_espera_ativo") === "on",
+    modo_sugerir: formData.get("modo_sugerir") === "on",
     recuperar_conversa_ativo: formData.get("recuperar_conversa_ativo") === "on",
     recuperar_conversa_primeiro_toque_min:
       Number(formData.get("recuperar_conversa_primeiro_toque_min") ?? 45) || 45,

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import ReplyForm from "../reply-form";
+import RascunhoForm from "../rascunho-form";
 import { encerrarConversa, restaurarBot } from "../../actions";
 import { atribuirConversa } from "../../../clientes/segmentacao-actions";
 import { CATEGORIA_LABEL, SENTIMENTO_LABEL, type CategoriaResumo, type Sentimento } from "@/lib/resumo-conversas";
@@ -40,6 +41,15 @@ export default async function ConversaDetalhePage({
     .from("conversation_summaries")
     .select("resumo, categoria, desfecho, perguntas_principais, sentimento, interesse, motivo_perda")
     .eq("conversation_id", id)
+    .maybeSingle();
+
+  const { data: rascunho } = await supabase
+    .from("conversation_rascunhos")
+    .select("id, conteudo, fontes")
+    .eq("conversation_id", id)
+    .eq("status", "pendente")
+    .order("created_at", { ascending: false })
+    .limit(1)
     .maybeSingle();
 
   const contato = conversa.contacts as unknown as {
@@ -218,6 +228,10 @@ export default async function ConversaDetalhePage({
               );
             })}
           </div>
+        )}
+
+        {rascunho && conversa.status !== "encerrada" && (
+          <RascunhoForm rascunhoId={rascunho.id} texto={rascunho.conteudo} fontes={Array.isArray(rascunho.fontes) ? (rascunho.fontes as string[]) : []} />
         )}
 
         {conversa.status !== "encerrada" && contato && (

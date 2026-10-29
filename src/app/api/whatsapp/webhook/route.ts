@@ -885,10 +885,12 @@ async function processarMensagem(params: {
 
   let resposta: string;
   let opcoesHorario: ResultadoIA["opcoesHorario"];
+  let iaRespondeu = false;
   try {
     const resultadoIA = await gerarRespostaWhatsApp(ctx, internalSecret, supabaseUrl, anonKey, imagemAnexada);
     resposta = resultadoIA.resposta;
     opcoesHorario = resultadoIA.opcoesHorario;
+    iaRespondeu = true;
 
     // Ofereceu horário e o cliente ainda não confirmou — guarda pra
     // recuperação de conversa esfriada tentar retomar depois (ver cron
@@ -920,6 +922,25 @@ async function processarMensagem(params: {
   const fontes = resposta.startsWith("Peço desculpa, tive um probleminha")
     ? []
     : await buscarFontesDaResposta({ url: supabaseUrl, anon: anonKey, secret: internalSecret, tenantId: resultado.tenant_id, pergunta: ultimaDoCliente });
+
+  // Modo "sugerir e aprovar": o texto vira rascunho para o dono aprovar na conversa; nada sai para o cliente agora.
+  // (Agendar e cancelar o robô já fez acima; o que passa por aprovação é a mensagem.)
+  if (iaRespondeu) {
+    const { data: sugerir } = await supabase.rpc("bot_modo_sugerir", { p_secret: internalSecret, p_tenant_id: resultado.tenant_id });
+    if (sugerir === true) {
+      const { error } = await supabase.rpc("rascunho_registrar", {
+        p_secret: internalSecret,
+        p_conversation_id: resultado.conversation_id,
+        p_conteudo: resposta,
+        p_fontes: fontes.length > 0 ? fontes : null,
+      });
+      if (!error) {
+        await sincronizarGoogleAgenda(resultado.tenant_id);
+        return;
+      }
+      console.error("[whatsapp webhook] falha ao guardar rascunho — enviando direto", error);
+    }
+  }
 
   // Decide se essa resposta sai em áudio — recurso do plano Profissional+,
   // opt-in do dono, e só depois de 2+ mensagens de voz seguidas do

@@ -156,3 +156,66 @@ export async function restaurarBot(formData: FormData) {
   revalidatePath(`/conversas/${conversationId}`);
   revalidatePath("/sac");
 }
+
+// ---- Modo "sugerir e aprovar" ------------------------------------------------
+// O robô deixa a resposta como rascunho; ela só vai ao cliente quando o dono aprova (podendo editar).
+// A conversa continua com o robô (não vira atendimento humano), então o próximo rascunho vem sozinho.
+
+export async function aprovarRascunho(
+  _prev: { erro: string | null },
+  formData: FormData,
+): Promise<{ erro: string | null }> {
+  const rascunhoId = String(formData.get("rascunho_id") ?? "");
+  const conteudo = String(formData.get("conteudo") ?? "").trim().slice(0, 4000);
+  if (!/^[0-9a-f-]{36}$/i.test(rascunhoId) || !conteudo) return { erro: "Escreva a mensagem antes de enviar." };
+
+  const supabase = await createClient();
+  const { data: r } = await supabase
+    .from("conversation_rascunhos")
+    .select("id, status, fontes, conversation_id, conversations(status, contacts(telefone))")
+    .eq("id", rascunhoId)
+    .maybeSingle();
+  if (!r || r.status !== "pendente") return { erro: "Esse rascunho não está mais disponível." };
+  const conv = r.conversations as unknown as { status: string; contacts: { telefone: string } | null } | null;
+  const telefone = conv?.contacts?.telefone;
+  if (!telefone) return { erro: "Conversa não encontrada." };
+  if (conv?.status === "encerrada") return { erro: "Essa conversa já foi encerrada." };
+
+  const secret = process.env.WHATSAPP_WEBHOOK_INTERNAL_SECRET;
+  if (!secret) return { erro: "Configuração do servidor incompleta. Fale com a gente." };
+  const { data: contas } = await supabase.rpc("whatsapp_conta_atual_srv", { p_secret: secret });
+  const conta = contas?.[0];
+  if (!conta) return { erro: "WhatsApp ainda não conectado. Vá em Conta e assinatura." };
+
+  try {
+    await sendWhatsAppText({ phoneNumberId: conta.phone_number_id, token: conta.access_token }, telefone, conteudo);
+  } catch (err) {
+    return { erro: err instanceof Error ? err.message : "Falha ao enviar pelo WhatsApp." };
+  }
+
+  await supabase.from("messages").insert({
+    conversation_id: r.conversation_id,
+    remetente: "bot",
+    conteudo,
+    fontes: Array.isArray(r.fontes) && r.fontes.length > 0 ? r.fontes : null,
+  });
+  await supabase.from("conversation_rascunhos").update({ status: "enviado" }).eq("id", rascunhoId);
+
+  revalidatePath("/conversas");
+  revalidatePath(`/conversas/${r.conversation_id}`);
+  return { erro: null };
+}
+
+export async function descartarRascunho(formData: FormData) {
+  const rascunhoId = String(formData.get("rascunho_id") ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(rascunhoId)) return;
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("conversation_rascunhos")
+    .update({ status: "descartado" })
+    .eq("id", rascunhoId)
+    .eq("status", "pendente")
+    .select("conversation_id")
+    .maybeSingle();
+  if (data) revalidatePath(`/conversas/${data.conversation_id}`);
+}
