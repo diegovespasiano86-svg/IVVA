@@ -41,7 +41,7 @@ export async function POST(req: Request) {
   const chave = process.env.ANTHROPIC_API_KEY;
   if (!chave) return NextResponse.json({ erro: "O assistente está indisponível no momento." }, { status: 503 });
 
-  let corpo: { mensagens?: Msg[] };
+  let corpo: { mensagens?: Msg[]; tela?: string };
   try {
     corpo = await req.json();
   } catch {
@@ -61,11 +61,15 @@ export async function POST(req: Request) {
     .map((g) => `## ${g.titulo} (tela: ${g.href})\n${g.resumo}\n${g.passos.map((p, i) => `${i + 1}. ${p}`).join("\n")}`)
     .join("\n\n");
 
-  const system = `Você é o assistente de ajuda da ivva, um sistema que atende clientes pelo WhatsApp com um robô, agenda horários e organiza o negócio. Você conversa com o dono ou a equipe de um negócio local, gente que não é técnica.
+  // A tela em que a pessoa está (só rota interna, sem dados dela) ajuda a responder "como faço isto aqui?".
+  const tela = typeof corpo.tela === "string" && /^\/[a-z0-9\-/]{0,60}$/i.test(corpo.tela) ? corpo.tela : null;
+  const guiaAtual = tela ? guias.find((g) => tela === g.href || tela.startsWith(`${g.href}/`)) : null;
+
+  const system = `Você é a Vi, assistente virtual da ivva (botão "Pergunte a Ivva"). A ivva é um sistema que atende clientes pelo WhatsApp com um robô, agenda horários e organiza o negócio. Você conversa com o dono ou a equipe de um negócio local, gente que não é técnica, e ajuda a pessoa a se achar no sistema: diga em qual tela fazer o que ela quer e leve até lá.${guiaAtual ? `\nA pessoa está agora na tela "${guiaAtual.titulo}" (${guiaAtual.href}). Se a pergunta for vaga ("como faço isso aqui?"), responda sobre essa tela.` : ""}
 
 Regras:
 - Responda em português do Brasil, simples e curto (até 6 linhas), no tom de quem ajuda um colega.
-- Use SOMENTE o manual abaixo. Se a resposta não estiver nele, diga que não tem certeza e indique o botão "Falar com o suporte" (menu do nome, no topo, ou tela Aprender), que abre o WhatsApp do suporte (11) 92740-9320, ou o e-mail contato@ivva.app.br. Nunca invente botões, telas, preços ou prazos.
+- Use SOMENTE o manual abaixo. Se a resposta não estiver nele, diga que não tem certeza e indique o botão "Falar com o suporte" (menu do nome, no topo, ou o link "Falar com a equipe" no fim desta conversa), que abre o WhatsApp do suporte (11) 92740-9320, ou o e-mail contato@ivva.app.br. Nunca invente botões, telas, preços ou prazos.
 - Quando indicar uma tela, escreva o link no formato [nome da tela](/rota), usando só as rotas do manual. Se houver vídeo para o assunto, lembre que existe em [Central de ajuda](/ajuda).
 - Você só explica; não consegue alterar nada na conta da pessoa.
 

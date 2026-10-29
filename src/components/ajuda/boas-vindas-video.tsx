@@ -44,7 +44,7 @@ export default function BoasVindasVideo({ forcar }: { forcar?: boolean }) {
             Veja a ordem certa para configurar: negócio, equipe, personalidade e WhatsApp. Cada passo do checklist abaixo tem um vídeo curto.
           </p>
           <Link href="/ajuda" className="mt-1 text-[12.5px] font-bold text-purple hover:underline">
-            Ver todos os vídeos em Aprender
+            Ver todos os guias e vídeos
           </Link>
         </div>
       </div>

@@ -287,8 +287,8 @@ export default function AppShell({
             <Link
               href="/ajuda"
               className="flex h-9 w-9 items-center justify-center rounded-lg text-white/80 hover:bg-white/10"
-              aria-label="Aprender"
-              title="Aprender"
+              aria-label="Guias e vídeos"
+              title="Guias e vídeos"
             >
               <CircleHelp size={19} />
             </Link>
@@ -512,7 +512,7 @@ function Palette({ groups, ehDono, onClose }: { groups: NavGroup[]; ehDono: bool
   );
   // guias e vídeos da ajuda também aparecem na busca (por título e palavras-chave)
   const ajuda = useMemo(
-    () => guiasDoPerfil(ehDono).map((g) => ({ href: `/ajuda?abrir=${g.id}`, label: g.titulo, group: g.video ? "Aprender · vídeo" : "Aprender", extra: (g.palavras ?? []).join(" ") })),
+    () => guiasDoPerfil(ehDono).map((g) => ({ href: `/ajuda?abrir=${g.id}`, label: g.titulo, group: g.video ? "Guias · vídeo" : "Guias", extra: (g.palavras ?? []).join(" ") })),
     [ehDono],
   );
   const results = useMemo(() => {

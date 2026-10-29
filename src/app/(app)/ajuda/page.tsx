@@ -21,17 +21,17 @@ export default async function AjudaPage({ searchParams }: { searchParams: Promis
     <div className="mx-auto max-w-[960px]">
       <PageHeader
         icon={CircleHelp}
-        title="Aprender"
-        subtitle="Busque por uma palavra, assista aos vídeos passo a passo ou abra o guia de cada tela."
+        title="Guias e vídeos"
+        subtitle="Busque por uma palavra, assista aos vídeos passo a passo ou abra o guia de cada tela. Prefere perguntar? Use o botão Pergunte a Ivva."
       />
 
       <CentralAjuda guias={guias} busca={q} abrir={abrir} />
 
-      <div className="card mt-6 flex flex-wrap items-center justify-between gap-4 px-5 py-5">
+      <div id="suporte" className="card mt-6 flex flex-wrap items-center justify-between gap-4 px-5 py-5">
         <div>
           <p className="text-[14px] font-extrabold">Não achou o que precisava?</p>
           <p className="text-[12.5px] text-ink-soft">
-            Pergunte ao assistente no botão Aprender, no canto da tela, ou fale com o suporte pelo WhatsApp {SUPORTE_WHATSAPP_LABEL}, em {SUPORTE_HORARIO}. Se preferir, escreva para contato@ivva.app.br.
+            Pergunte à Vi no botão Pergunte a Ivva, no canto da tela, ou fale com o suporte pelo WhatsApp {SUPORTE_WHATSAPP_LABEL}, em {SUPORTE_HORARIO}. Se preferir, escreva para contato@ivva.app.br.
           </p>
         </div>
         <FalarComSuporte
