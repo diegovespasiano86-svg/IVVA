@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { conferirCobrancaMP } from "@/lib/conferir-mp";
 
 const FORMA: Record<string, string> = { pix: "Pix", credito: "Crédito", debito: "Débito", dinheiro: "Dinheiro" };
 const dinheiro = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
@@ -8,6 +9,10 @@ export default async function FechamentoDoDia() {
   const supabase = await createClient();
   const hoje = new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
   const inicio = `${hoje}T00:00:00-03:00`;
+
+  // Pendentes do Mercado Pago de hoje: confere lá antes de montar o fechamento (aviso que não chegou não deixa venda de fora).
+  const { data: abertas } = await supabase.from("cobrancas").select("id, tenant_id, valor").eq("status", "pendente").eq("provedor", "mercadopago").gte("criada_em", inicio).limit(10);
+  await Promise.all((abertas ?? []).map((c) => conferirCobrancaMP(c)));
 
   const [{ data: pags }, { data: cobr }] = await Promise.all([
     supabase.from("payments").select("valor_total, forma_pagamento, origem").gte("created_at", inicio).neq("origem", "importado"),

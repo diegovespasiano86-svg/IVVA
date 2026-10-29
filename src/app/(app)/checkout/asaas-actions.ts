@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { conferirCobrancaMP } from "@/lib/conferir-mp";
 import { criarLinkPagamento, criarPixEstatico, lerContaAsaas } from "@/lib/asaas";
 import type { DadosPagamento } from "./actions";
 import { gravarCobranca, prepararCobranca, type RetornoCobranca } from "./cobranca-comum";
@@ -39,9 +40,17 @@ export async function criarCobrancaAsaas(dados: Omit<DadosPagamento, "forma">, m
   return { erro: null, cobranca: { id: g.id, modo, valor: p.valor, url, copiaECola, imagem } };
 }
 
-/** Situação da cobrança (para a tela mostrar "pago" sozinha). Só lê cobranças do próprio negócio. */
+/**
+ * Situação da cobrança (para a tela mostrar "pago" sozinha). Só lê cobranças do próprio negócio.
+ * No Mercado Pago, se ainda estiver pendente, pergunta direto à conta do vendedor: o webhook continua valendo,
+ * mas a tela não depende dele para confirmar o pagamento (repetir a baixa é seguro: cobranca_paga_id ignora repetição).
+ */
 export async function statusCobranca(id: string): Promise<{ status: string; erro: string | null }> {
   const supabase = await createClient();
-  const { data } = await supabase.from("cobrancas").select("status, erro").eq("id", id).maybeSingle();
+  const ler = () => supabase.from("cobrancas").select("status, erro, provedor, tenant_id, valor").eq("id", id).maybeSingle();
+  let { data } = await ler();
+  if (data?.status === "pendente" && data.provedor === "mercadopago" && (await conferirCobrancaMP({ id, tenant_id: data.tenant_id, valor: data.valor }))) {
+    ({ data } = await ler());
+  }
   return { status: data?.status ?? "desconhecida", erro: data?.erro ?? null };
 }

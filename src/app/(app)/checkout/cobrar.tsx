@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { CreditCard, Copy, Link2, MessageCircle, QrCode } from "lucide-react";
+import { CheckCircle2, CreditCard, Copy, Link2, MessageCircle, QrCode } from "lucide-react";
 import { criarCobrancaAsaas, statusCobranca, type CobrancaCriada } from "./asaas-actions";
 import { criarCobrancaMercadoPago } from "./mp-actions";
 import type { DadosPagamento } from "./actions";
@@ -34,6 +34,7 @@ export default function Cobrar({
   const [erro, setErro] = useState<string | null>(null);
   const [situacao, setSituacao] = useState<"aguardando" | "paga" | "sem_registro">("aguardando");
   const [copiado, setCopiado] = useState(false);
+  const [pagoEm, setPagoEm] = useState(() => new Date());
 
   // Consulta a situação a cada 4 segundos enquanto a cobrança está aberta.
   useEffect(() => {
@@ -41,6 +42,7 @@ export default function Cobrar({
     const t = setInterval(async () => {
       const s = await statusCobranca(cobranca.id);
       if (s.status === "paga") {
+        setPagoEm(new Date());
         setSituacao("paga");
         aoPagar();
       } else if (s.status === "paga_sem_registro") setSituacao("sem_registro");
@@ -103,13 +105,20 @@ export default function Cobrar({
 
       {cobranca && (
         <div className="mt-3 flex flex-wrap items-start gap-5">
-          {cobranca.imagem && (
+          {cobranca.imagem && situacao !== "paga" && (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={`data:image/png;base64,${cobranca.imagem}`} alt="QR Code do Pix" width={170} height={170} className="rounded-[12px] border border-border" />
           )}
           <div className="min-w-[240px] flex-1">
             {situacao === "paga" ? (
-              <p role="status" className="rounded-[12px] bg-teal/10 px-4 py-3 text-[14px] font-bold text-teal">Pagamento de {dinheiro.format(cobranca.valor)} confirmado e registrado.</p>
+              <div role="status" className="rounded-[12px] bg-teal/10 px-4 py-3 text-teal">
+                <p className="flex items-center gap-1.5 text-[15px] font-extrabold"><CheckCircle2 size={18} /> Pagamento confirmado</p>
+                <p className="mt-1 text-[22px] font-extrabold">{dinheiro.format(cobranca.valor)}</p>
+                <p className="mt-1 text-[12.5px] font-semibold">
+                  {cobranca.modo === "pix" ? "Pix" : "Link de pagamento"} · {NOME[provedor]} · {pagoEm.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" })}
+                </p>
+                <p className="mt-1 text-[12px]">Venda registrada. Estoque, comissão, fechamento do dia e relatórios já foram atualizados.</p>
+              </div>
             ) : situacao === "sem_registro" ? (
               <p role="alert" className="rounded-[12px] bg-coral/10 px-4 py-3 text-[13px] font-semibold text-coral">
                 O pagamento de {dinheiro.format(cobranca.valor)} foi confirmado, mas a baixa automática falhou (provavelmente falta de estoque). Registre a venda manualmente no Checkout.
