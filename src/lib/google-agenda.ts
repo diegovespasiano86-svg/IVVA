@@ -147,12 +147,18 @@ export function linkAdicionarAgenda(p: { titulo: string; inicioIso: string; dura
  * Envia para o Google tudo que mudou desde a última vez, para as agendas ligadas do negócio.
  * Nunca lança erro: uma falha aqui não pode atrapalhar o agendamento nem a resposta ao cliente.
  */
-export async function sincronizarGoogleAgenda(tenantId: string | null): Promise<{ criados: number; atualizados: number; apagados: number }> {
-  const total = { criados: 0, atualizados: 0, apagados: 0 };
+export async function sincronizarGoogleAgenda(
+  tenantId: string | null,
+): Promise<{ criados: number; atualizados: number; apagados: number; falhas: number; erro?: string }> {
+  const total: { criados: number; atualizados: number; apagados: number; falhas: number; erro?: string } = { criados: 0, atualizados: 0, apagados: 0, falhas: 0 };
   const secret = process.env.WHATSAPP_WEBHOOK_INTERNAL_SECRET;
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!googleConfigurado() || !secret || !url || !anon) return total;
+  if (!googleConfigurado() || !secret || !url || !anon) {
+    total.erro = "Configuração do servidor incompleta (variáveis de ambiente).";
+    console.error("[google-agenda] variáveis ausentes", { google: googleConfigurado(), secret: Boolean(secret), url: Boolean(url), anon: Boolean(anon) });
+    return total;
+  }
   const sb = createClient(url, anon);
 
   try {
@@ -179,7 +185,15 @@ export async function sincronizarGoogleAgenda(tenantId: string | null): Promise<
             p.acao === "atualizar" && p.event_id
               ? await fetch(`${API}/${p.event_id}${sendUpdates}`, { method: "PATCH", headers: h, body: corpo })
               : await fetch(`${API}${sendUpdates}`, { method: "POST", headers: h, body: corpo });
-          if (!r.ok) continue;
+          if (!r.ok) {
+            // Antes isso era descartado em silêncio; agora vira aviso no card e linha no log.
+            const detalhe = ((await r.json().catch(() => ({}))) as { error?: { message?: string } }).error?.message ?? `HTTP ${r.status}`;
+            console.error("[google-agenda] Google recusou o evento", p.appointment_id, r.status, detalhe);
+            total.falhas++;
+            total.erro = `O Google recusou o evento (${r.status}): ${detalhe}`;
+            await sb.rpc("google_agenda_erro", { p_secret: secret, p_conexao_id: c.id, p_erro: total.erro, p_desativar: false });
+            continue;
+          }
           const ev = (await r.json()) as { id: string };
           await sb.rpc("google_agenda_marcar", { p_secret: secret, p_conexao_id: c.id, p_appointment_id: p.appointment_id, p_event_id: ev.id, p_versao: p.versao });
           if (p.acao === "criar") total.criados++;
@@ -188,6 +202,8 @@ export async function sincronizarGoogleAgenda(tenantId: string | null): Promise<
       } catch (e) {
         const err = e as Error & { revogado?: boolean };
         console.error("[google-agenda] falha ao sincronizar conexão", c.id, err.message);
+        total.falhas++;
+        total.erro = err.revogado ? "O acesso foi removido no Google. Conecte de novo." : err.message;
         await sb.rpc("google_agenda_erro", {
           p_secret: secret,
           p_conexao_id: c.id,

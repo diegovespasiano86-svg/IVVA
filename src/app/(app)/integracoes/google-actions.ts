@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { sincronizarGoogleAgenda } from "@/lib/google-agenda";
 
@@ -33,6 +34,9 @@ export async function alternarConvidarCliente(formData: FormData) {
 export async function sincronizarAgoraGoogle() {
   const u = await usuario();
   if (!u) return;
-  await sincronizarGoogleAgenda(u.tenantId);
+  const r = await sincronizarGoogleAgenda(u.tenantId);
   revalidatePath("/integracoes");
+  // O botão antes não respondia nada: agora volta com o resultado (enviados, nada novo ou erro).
+  const enviados = r.criados + r.atualizados + r.apagados;
+  redirect(`/integracoes?sync=${r.falhas > 0 ? "erro" : enviados > 0 ? `ok${enviados}` : "nada"}`);
 }

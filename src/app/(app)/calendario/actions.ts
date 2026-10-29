@@ -45,7 +45,8 @@ export async function criarAgendamento(formData: FormData) {
     tenant_id: perfil.tenant_id,
     contact_id: contactId,
     professional_id: professionalId,
-    data_hora: new Date(dataHora).toISOString(),
+    // O campo datetime-local vem sem fuso e o servidor roda em UTC: sem o -03:00 a hora gravaria 3h adiantada.
+    data_hora: new Date(/[zZ]|[+-]\d{2}:?\d{2}$/.test(dataHora) ? dataHora : `${dataHora}-03:00`).toISOString(),
     servico: servico || null,
     duracao_minutos: duracaoMinutos,
     origem: "manual",

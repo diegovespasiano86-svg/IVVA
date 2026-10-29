@@ -7,6 +7,8 @@ const AVISO: Record<string, { ok: boolean; texto: string }> = {
   negado: { ok: false, texto: "A permissão não foi concedida. Tente de novo e marque a opção de acesso à agenda." },
   erro: { ok: false, texto: "Não consegui conectar o Google Agenda. Tente de novo; se repetir, fale com o suporte." },
   indisponivel: { ok: false, texto: "A ligação com o Google Agenda ainda não está liberada nesta conta." },
+  nada: { ok: true, texto: "Tudo em dia: não há agendamentos novos para enviar ao Google." },
+  erro_sync: { ok: false, texto: "Não consegui enviar para o Google. O motivo aparece logo abaixo." },
 };
 
 /** Liga a agenda do Google de quem está logado: o que o robô (ou a equipe) agendar na ivva aparece lá sozinho. */
@@ -19,7 +21,12 @@ export default async function GoogleAgendaCard({ aviso }: { aviso?: string }) {
     ? await supabase.from("google_agenda_conexoes").select("email, convidar_cliente, ativo, erro").eq("user_id", user.id).maybeSingle()
     : { data: null };
   const disponivel = googleConfigurado();
-  const msg = aviso ? AVISO[aviso] : null;
+  const enviados = aviso?.startsWith("ok") && aviso.length > 2 ? Number(aviso.slice(2)) : 0;
+  const msg = enviados
+    ? { ok: true, texto: `Pronto: ${enviados} ${enviados === 1 ? "agendamento enviado" : "agendamentos enviados"} para o Google Agenda.` }
+    : aviso
+      ? AVISO[aviso]
+      : null;
 
   return (
     <div className="card mb-4 px-5 py-5">
