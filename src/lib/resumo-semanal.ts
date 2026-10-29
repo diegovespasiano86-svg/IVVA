@@ -76,7 +76,8 @@ export async function enviarResumosSemanais(): Promise<{ enviados: number; pulad
         faturamento: Number(l.faturamento),
       }),
     });
-    r.ok ? enviados++ : falhas++;
+    if (r.ok) enviados++;
+    else falhas++;
   }
   return { enviados, pulados, falhas };
 }

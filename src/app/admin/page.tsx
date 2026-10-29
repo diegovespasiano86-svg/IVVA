@@ -71,12 +71,14 @@ export default async function AdminPage() {
     supabase
       .from("leads_cadastro")
       .select("origem, status")
+      // eslint-disable-next-line react-hooks/purity -- componente de servidor assíncrono, roda uma vez por requisição
       .gte("created_at", new Date(Date.now() - 30 * 86400000).toISOString())
       .limit(2000),
     // Base do alerta de possível concorrente (contrato, cláusula 5).
     supabase
       .from("leads_cadastro")
       .select("nome, email, nome_negocio, status, created_at")
+      // eslint-disable-next-line react-hooks/purity -- componente de servidor assíncrono, roda uma vez por requisição
       .gte("created_at", new Date(Date.now() - 120 * 86400000).toISOString())
       .order("created_at", { ascending: false })
       .limit(1000),

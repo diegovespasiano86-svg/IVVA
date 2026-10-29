@@ -370,6 +370,7 @@ export default function PlanosClient({ planos, pixDisponivel = false }: { planos
   // Vindo do site (ivva.app.br) com ?ciclo=anual, já abre no anual.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- lê a URL só no navegador
     if (params.get("ciclo") === "anual") setAnual(true);
     // Código de indicação (Indique e ganhe) vindo do link de quem indicou.
     const ref = (params.get("ref") ?? "").trim();

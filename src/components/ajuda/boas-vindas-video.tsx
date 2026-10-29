@@ -12,6 +12,7 @@ export default function BoasVindasVideo({ forcar }: { forcar?: boolean }) {
 
   useEffect(() => {
     try {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- lê localStorage só no navegador
       setVisivel(forcar || localStorage.getItem(CHAVE) !== "1");
     } catch {
       setVisivel(true);

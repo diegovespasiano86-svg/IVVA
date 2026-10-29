@@ -26,6 +26,7 @@ export default function ProximoPassoFlutuante({
   useEffect(() => {
     try {
       const hoje = new Date().toDateString();
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- lê localStorage só no navegador
       setFechado(localStorage.getItem(CHAVE) === hoje);
     } catch {
       setFechado(false);
