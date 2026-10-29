@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import ReplyForm from "../reply-form";
 import { encerrarConversa, restaurarBot } from "../../actions";
 import { atribuirConversa } from "../../../clientes/segmentacao-actions";
-import { CATEGORIA_LABEL, type CategoriaResumo } from "@/lib/resumo-conversas";
+import { CATEGORIA_LABEL, SENTIMENTO_LABEL, type CategoriaResumo, type Sentimento } from "@/lib/resumo-conversas";
 
 const STATUS_LABEL: Record<string, string> = {
   bot: "Com o robô",
@@ -38,7 +38,7 @@ export default async function ConversaDetalhePage({
 
   const { data: resumo } = await supabase
     .from("conversation_summaries")
-    .select("resumo, categoria, desfecho, perguntas_principais")
+    .select("resumo, categoria, desfecho, perguntas_principais, sentimento, interesse, motivo_perda")
     .eq("conversation_id", id)
     .maybeSingle();
 
@@ -151,6 +151,16 @@ export default async function ConversaDetalhePage({
               >
                 {resumo.desfecho === "fechou" ? "Fechou" : "Não fechou"}
               </span>
+              {resumo.interesse ? (
+                <span className="rounded-full bg-surface-soft px-2 py-0.5 text-[10.5px] font-bold" title={`Interesse ${resumo.interesse} de 5`}>
+                  {"🔥".repeat(resumo.interesse)}
+                </span>
+              ) : null}
+              {resumo.sentimento ? (
+                <span className="rounded-full bg-surface-soft px-2 py-0.5 text-[10.5px] font-bold text-ink-soft">
+                  {SENTIMENTO_LABEL[resumo.sentimento as Sentimento] ?? resumo.sentimento}
+                </span>
+              ) : null}
             </div>
             <p className="text-[12.5px] text-ink-soft">{resumo.resumo}</p>
             {Array.isArray(resumo.perguntas_principais) &&

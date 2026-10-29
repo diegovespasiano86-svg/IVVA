@@ -28,6 +28,8 @@ export const CATEGORIAS = [
 ] as const;
 export type CategoriaResumo = (typeof CATEGORIAS)[number];
 export type DesfechoResumo = "fechou" | "nao_fechou";
+export type Sentimento = "positivo" | "neutro" | "negativo";
+export const SENTIMENTO_LABEL: Record<Sentimento, string> = { positivo: "Positivo", neutro: "Neutro", negativo: "Negativo" };
 
 export const CATEGORIA_LABEL: Record<CategoriaResumo, string> = {
   agendamento: "Agendamento",
@@ -40,13 +42,16 @@ export const CATEGORIA_LABEL: Record<CategoriaResumo, string> = {
 const SYSTEM_PROMPT = `Você vai ler a transcrição de uma conversa entre um cliente e o assistente de WhatsApp (ivva) de um negócio local (salão, estética, pet shop, loja ou alimentação sob encomenda). Gere um resumo estruturado pro dono do negócio revisar rapidamente, sem precisar reler a conversa inteira.
 
 Devolva SOMENTE um objeto JSON, sem nenhum texto antes ou depois, no formato:
-{"resumo": "...", "categoria": "...", "desfecho": "...", "perguntas_principais": ["...", "..."]}
+{"resumo": "...", "categoria": "...", "desfecho": "...", "perguntas_principais": ["...", "..."], "sentimento": "...", "interesse": 3, "motivo_perda": "..."}
 
 Regras:
 - "resumo": 2-3 frases objetivas, em português, contando o que o cliente queria e como terminou.
 - "categoria": o motivo PRINCIPAL do contato — um destes valores exatos: "agendamento", "duvida_preco", "reclamacao", "cancelamento", "outro". Se o cliente só perguntou preço/horário e nunca confirmou nada, é "duvida_preco", não "agendamento".
 - "desfecho": "fechou" se o cliente confirmou um agendamento, resolveu o problema, ou a conversa terminou de forma satisfatória. "nao_fechou" se o cliente demonstrou interesse mas não confirmou nada, sumiu no meio, ou desistiu.
 - "perguntas_principais": até 3 perguntas ou pedidos do cliente, cada um como frase curta (ex: "Quanto custa corte + barba", "Tem horário sábado de manhã").
+- "sentimento": como o cliente se mostrou no geral: "positivo", "neutro" ou "negativo".
+- "interesse": número inteiro de 1 a 5 do quanto o cliente quer comprar/agendar. 1 = só curiosidade, 3 = comparando, 5 = pronto para fechar ou já fechou.
+- "motivo_perda": se o desfecho for "nao_fechou", a PROVÁVEL razão em até 8 palavras (ex: "achou o preço alto", "sem horário no dia", "sumiu depois de ver o valor"). Se fechou, use "".
 - Nunca invente informação que não está na transcrição.`;
 
 type ResumoConversa = {
@@ -54,6 +59,9 @@ type ResumoConversa = {
   categoria: CategoriaResumo;
   desfecho: DesfechoResumo;
   perguntas_principais: string[];
+  sentimento: Sentimento;
+  interesse: number;
+  motivo_perda: string;
 };
 
 export async function resumirConversa(transcript: string): Promise<ResumoConversa> {
@@ -62,7 +70,7 @@ export async function resumirConversa(transcript: string): Promise<ResumoConvers
     headers: headers(),
     body: JSON.stringify({
       model: MODEL,
-      max_tokens: 512,
+      max_tokens: 640,
       system: SYSTEM_PROMPT,
       messages: [{ role: "user", content: transcript }],
     }),
@@ -92,11 +100,18 @@ export async function resumirConversa(transcript: string): Promise<ResumoConvers
         .slice(0, 3)
     : [];
 
+  const sentimento: Sentimento = ["positivo", "neutro", "negativo"].includes(parsed.sentimento) ? parsed.sentimento : "neutro";
+  const interesse = Math.min(5, Math.max(1, Math.round(Number(parsed.interesse)) || 3));
+  const motivo_perda = desfecho === "nao_fechou" && typeof parsed.motivo_perda === "string" ? parsed.motivo_perda.trim().slice(0, 80) : "";
+
   return {
     resumo: typeof parsed.resumo === "string" && parsed.resumo.trim() ? parsed.resumo.trim() : "Sem resumo disponível.",
     categoria,
     desfecho,
     perguntas_principais: perguntas,
+    sentimento,
+    interesse,
+    motivo_perda,
   };
 }
 
@@ -136,6 +151,9 @@ export async function processarResumosPendentes(
         p_categoria: resultado.categoria,
         p_desfecho: resultado.desfecho,
         p_perguntas_principais: resultado.perguntas_principais,
+        p_sentimento: resultado.sentimento,
+        p_interesse: resultado.interesse,
+        p_motivo_perda: resultado.motivo_perda || null,
       });
       if (recordError) throw recordError;
       resumidas++;

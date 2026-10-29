@@ -51,8 +51,9 @@ export default async function ClientePerfilPage({ params }: { params: Promise<{ 
 
   const convIds = (conversas ?? []).map((v) => v.id);
   const { data: resumos } = convIds.length
-    ? await supabase.from("conversation_summaries").select("conversation_id, resumo, categoria, desfecho").in("conversation_id", convIds)
-    : { data: [] as { conversation_id: string; resumo: string; categoria: string; desfecho: string }[] };
+    ? await supabase.from("conversation_summaries").select("conversation_id, resumo, categoria, desfecho, interesse, gerado_em").in("conversation_id", convIds)
+    : { data: [] as { conversation_id: string; resumo: string; categoria: string; desfecho: string; interesse: number | null; gerado_em: string }[] };
+  const recente = [...(resumos ?? [])].filter((r) => r.interesse).sort((a, b) => b.gerado_em.localeCompare(a.gerado_em))[0];
   const resumoPor = new Map((resumos ?? []).map((r) => [r.conversation_id, r]));
 
   const visitasIso = [...(pagamentos ?? []).map((p) => p.created_at), ...(agenda ?? []).filter((a) => a.status === "concluido").map((a) => a.data_hora)];
@@ -92,6 +93,7 @@ export default async function ClientePerfilPage({ params }: { params: Promise<{ 
               <h1 className="no-accent text-[24px] font-extrabold leading-tight text-white">{c.nome}</h1>
               <div className="mt-1.5 flex flex-wrap items-center gap-2">
                 <span className={`badge ${seg.badge}`}>{seg.label}</span>
+                {recente?.interesse ? <span className="badge badge-neutral" title={`Interesse ${recente.interesse} de 5, pela última conversa`}>{"🔥".repeat(recente.interesse)}</span> : null}
                 {etapa?.label && <span className="badge bg-white/15 text-white">{etapa.label}</span>}
                 <span className={`badge ${c.aceita_mensagem_automatica === false ? "bg-white/15 text-white" : "badge-success"}`}>{c.aceita_mensagem_automatica === false ? "Não recebe mensagens automáticas" : "Recebe mensagens automáticas"}</span>
               </div>
