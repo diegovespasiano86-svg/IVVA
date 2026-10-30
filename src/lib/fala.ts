@@ -5,6 +5,8 @@
 export async function gerarFala(
   texto: string,
   voz: "masculina" | "feminina" = "feminina",
+  /** "opus" para o WhatsApp (bolha de voz); "mp3" para tocar em qualquer navegador (botão Ouvir da Ivva). */
+  formato: "opus" | "mp3" = "opus",
 ): Promise<{ base64: string; mimeType: string } | null> {
   const key = process.env.OPENAI_API_KEY;
   if (!key || !texto.trim()) return null;
@@ -19,7 +21,7 @@ export async function gerarFala(
       model: "gpt-4o-mini-tts",
       voice: voz === "masculina" ? "onyx" : "nova",
       input: texto,
-      response_format: "opus",
+      response_format: formato,
     }),
   });
 
@@ -32,5 +34,5 @@ export async function gerarFala(
   const buffer = Buffer.from(await res.arrayBuffer());
   // WhatsApp reconhece audio/ogg com codec opus como mensagem de voz de
   // verdade (bolha com forma de onda), não só um anexo de áudio comum.
-  return { base64: buffer.toString("base64"), mimeType: "audio/ogg; codecs=opus" };
+  return { base64: buffer.toString("base64"), mimeType: formato === "mp3" ? "audio/mpeg" : "audio/ogg; codecs=opus" };
 }

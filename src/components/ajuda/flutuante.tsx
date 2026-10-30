@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { PlayCircle, Send, X } from "lucide-react";
+import { Mic, PlayCircle, Send, Square, Volume2, X } from "lucide-react";
 import { guiaDaRota, guiasDoPerfil } from "@/lib/ajuda-busca";
 import VideoModal from "./video-modal";
 
@@ -54,6 +54,14 @@ export default function AjudaFlutuante({ ehDono }: { ehDono: boolean }) {
   const fimRef = useRef<HTMLDivElement>(null);
   const [pend, setPend] = useState<Pend | null>(null);
   const totalAntes = useRef<number | null>(null);
+  // Voz (opcional): "Ouvir" lê a resposta em voz alta; o microfone transforma a fala em pergunta. Só gasta quando a pessoa aperta.
+  const [gravando, setGravando] = useState(false);
+  const [transcrevendo, setTranscrevendo] = useState(false);
+  const [ouvindo, setOuvindo] = useState<number | null>(null);
+  const [avisoVoz, setAvisoVoz] = useState<string | null>(null);
+  const gravadorRef = useRef<MediaRecorder | null>(null);
+  const pedacosRef = useRef<Blob[]>([]);
+  const playerRef = useRef<HTMLAudioElement | null>(null);
   const [calmo, setCalmo] = useState(false); // "Depois": o círculo para de piscar até o próximo cadastro
   const [chegou, setChegou] = useState(false); // pulsada quando ela termina o voo do popup de boas-vindas
 
@@ -113,6 +121,89 @@ export default function AjudaFlutuante({ ehDono }: { ehDono: boolean }) {
     window.addEventListener("ivva:chegou", aoChegar);
     return () => window.removeEventListener("ivva:chegou", aoChegar);
   }, []);
+
+  function pararAudio() {
+    playerRef.current?.pause();
+    playerRef.current = null;
+    setOuvindo(null);
+  }
+
+  // Ao fechar a conversa, a voz para.
+  useEffect(() => {
+    if (!aberto) {
+      playerRef.current?.pause();
+      playerRef.current = null;
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- zera o estado do botão Ouvir ao fechar
+      setOuvindo(null);
+    }
+  }, [aberto]);
+
+  async function ouvir(i: number, conteudo: string) {
+    if (ouvindo === i) return pararAudio();
+    pararAudio();
+    setAvisoVoz(null);
+    setOuvindo(i);
+    try {
+      const res = await fetch("/api/ajuda/voz", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ texto: conteudo }) });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.erro ?? "A voz da Ivva não está disponível agora.");
+      }
+      const url = URL.createObjectURL(await res.blob());
+      const audio = new Audio(url);
+      playerRef.current = audio;
+      audio.onended = () => {
+        URL.revokeObjectURL(url);
+        setOuvindo((atual) => (atual === i ? null : atual));
+      };
+      await audio.play();
+    } catch (e) {
+      setOuvindo(null);
+      setAvisoVoz(e instanceof Error ? e.message : "A voz da Ivva não está disponível agora.");
+    }
+  }
+
+  async function alternarMicrofone() {
+    setAvisoVoz(null);
+    if (gravando) {
+      gravadorRef.current?.stop();
+      return;
+    }
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
+      setAvisoVoz("Este navegador não permite gravar a voz. Escreva a sua dúvida.");
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const gravador = new MediaRecorder(stream);
+      pedacosRef.current = [];
+      gravador.ondataavailable = (e) => e.data.size > 0 && pedacosRef.current.push(e.data);
+      gravador.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop());
+        setGravando(false);
+        const blob = new Blob(pedacosRef.current, { type: gravador.mimeType || "audio/webm" });
+        if (blob.size < 1500) return;
+        setTranscrevendo(true);
+        try {
+          const form = new FormData();
+          form.append("audio", blob, "pergunta.webm");
+          const res = await fetch("/api/ajuda/voz", { method: "POST", body: form });
+          const d = await res.json().catch(() => ({}));
+          if (!res.ok || !d.texto) throw new Error(d.erro ?? "Não consegui entender o áudio. Escreva a sua dúvida.");
+          await perguntar(d.texto);
+        } catch (e) {
+          setAvisoVoz(e instanceof Error ? e.message : "Não consegui entender o áudio. Escreva a sua dúvida.");
+        } finally {
+          setTranscrevendo(false);
+        }
+      };
+      gravadorRef.current = gravador;
+      gravador.start();
+      setGravando(true);
+    } catch {
+      setAvisoVoz("Não consegui acessar o microfone. Libere o microfone no navegador ou escreva a sua dúvida.");
+    }
+  }
 
   function depois() {
     setCalmo(true);
@@ -230,6 +321,11 @@ export default function AjudaFlutuante({ ehDono }: { ehDono: boolean }) {
               {msgs.map((m, i) => (
                 <div key={i} className={m.role === "user" ? "ml-8 rounded-2xl rounded-br-sm bg-purple px-3.5 py-2.5 text-white" : "mr-8 rounded-2xl rounded-bl-sm bg-surface-soft px-3.5 py-2.5"}>
                   {m.role === "user" ? <p className="whitespace-pre-wrap">{m.content}</p> : <Resposta texto={m.content} onNavegar={() => setAberto(false)} />}
+                  {m.role === "assistant" && (
+                    <button type="button" onClick={() => ouvir(i, m.content)} className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-border px-2.5 py-1 text-[11.5px] font-bold text-ink-soft hover:bg-surface">
+                      {ouvindo === i ? <Square size={12} /> : <Volume2 size={13} />} {ouvindo === i ? "Parar" : "Ouvir"}
+                    </button>
+                  )}
                 </div>
               ))}
               {enviando && <div className="mr-8 rounded-2xl rounded-bl-sm bg-surface-soft px-3.5 py-2.5 text-ink-soft">Pensando…</div>}
@@ -243,11 +339,26 @@ export default function AjudaFlutuante({ ehDono }: { ehDono: boolean }) {
               }}
               className="flex items-center gap-2 border-t border-border px-4 py-3"
             >
-              <input value={texto} onChange={(e) => setTexto(e.target.value)} maxLength={400} placeholder="Escreva a sua dúvida" aria-label="Sua dúvida" className="input h-10 flex-1 text-[13.5px]" />
+              <button
+                type="button"
+                onClick={alternarMicrofone}
+                disabled={transcrevendo || enviando}
+                aria-label={gravando ? "Parar de gravar e enviar" : "Falar a sua dúvida"}
+                aria-pressed={gravando}
+                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border disabled:opacity-50 ${gravando ? "bg-coral text-white motion-safe:animate-pulse" : "text-ink-soft hover:bg-surface-soft"}`}
+              >
+                {gravando ? <Square size={15} /> : <Mic size={16} />}
+              </button>
+              <input value={texto} onChange={(e) => setTexto(e.target.value)} maxLength={400} placeholder={gravando ? "Ouvindo… toque no quadrado para enviar" : transcrevendo ? "Entendendo o áudio…" : "Escreva ou fale a sua dúvida"} aria-label="Sua dúvida" className="input h-10 min-w-0 flex-1 text-[13.5px]" />
               <button type="submit" disabled={enviando || !texto.trim()} aria-label="Enviar" className="btn btn-primary btn-sm h-10 w-10 !p-0 disabled:opacity-50">
                 <Send size={16} />
               </button>
             </form>
+            {avisoVoz && (
+              <p role="status" className="border-t border-border bg-coral/10 px-4 py-2 text-[12px] font-semibold text-coral">
+                {avisoVoz}
+              </p>
+            )}
             <div className="flex items-center justify-between border-t border-border bg-surface-soft px-4 py-2 text-[11.5px] font-semibold text-ink-soft">
               <Link href="/ajuda" onClick={() => setAberto(false)} className="underline underline-offset-2 hover:text-ink">
                 Guias e vídeos
