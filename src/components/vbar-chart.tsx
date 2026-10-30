@@ -67,8 +67,15 @@ export function VBarChart({
       <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="block w-full overflow-visible" role="img" aria-label={resumoLista(itens, (v) => formatarValor(v, formato))}>
         <defs>
           <linearGradient id={`${uid}-b`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" style={{ stopColor: "var(--accent-b)" }} />
-            <stop offset="100%" style={{ stopColor: "var(--accent-a)" }} />
+            <stop offset="0%" style={{ stopColor: "var(--chart-b)" }} />
+            <stop offset="100%" style={{ stopColor: "var(--chart-a)" }} />
+          </linearGradient>
+          {/* faixa de luz que sobe pelas barras */}
+          <linearGradient id={`${uid}-sh`} gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="64">
+            <stop offset="0%" stopColor="#fff" stopOpacity="0" />
+            <stop offset="50%" stopColor="#fff" stopOpacity="0.38" />
+            <stop offset="100%" stopColor="#fff" stopOpacity="0" />
+            <animateTransform attributeName="gradientTransform" type="translate" values={`0 ${BASE};0 ${TOPO - 64};0 ${TOPO - 64}`} keyTimes="0;0.7;1" dur="4.2s" begin="1s" repeatCount="indefinite" />
           </linearGradient>
         </defs>
         {itens.map((item, i) => {
@@ -86,12 +93,16 @@ export function VBarChart({
                   d={barra(x, y, larg, BASE)}
                   className="chart-grow-y"
                   style={{
-                    fill: destaque ? `url(#${uid}-b)` : sobre ? "color-mix(in srgb, var(--purple) 60%, #fff)" : TEMA.suave,
+                    fill: destaque ? `url(#${uid}-b)` : sobre ? "color-mix(in srgb, var(--purple) 60%, var(--mix))" : TEMA.suave,
                     animationDelay: `${i * 40}ms`,
                     transition: "fill 160ms ease",
                   }}
                 />
-              ) : (
+              ) : null}
+              {h > 0 && (
+                <path d={barra(x, y, larg, BASE)} className="chart-fade-late" pointerEvents="none" style={{ fill: `url(#${uid}-sh)` }} />
+              )}
+              {h <= 0 && (
                 <line x1={x} x2={x + larg} y1={BASE - 1} y2={BASE - 1} strokeWidth="2" strokeLinecap="round" style={{ stroke: TEMA.suave }} />
               )}
               {mostrarValor && (

@@ -15,7 +15,7 @@ export default function PreviewWhatsApp({ texto, negocio }: { texto: string; neg
       </div>
       <div className="min-h-[220px] bg-[#ece5dd] px-3 py-4" style={{ backgroundImage: "radial-gradient(rgba(0,0,0,0.04) 1px, transparent 1px)", backgroundSize: "14px 14px" }}>
         {texto.trim() ? (
-          <div className="relative max-w-[92%] rounded-xl rounded-tl-sm bg-white px-3 py-2 shadow-sm">
+          <div className="keep-light relative max-w-[92%] rounded-xl rounded-tl-sm bg-white px-3 py-2 shadow-sm">
             <p className="whitespace-pre-wrap text-[12.5px] leading-snug text-[#111b21]">{previaComNome(texto)}</p>
             <p className="mt-1 flex items-center justify-end gap-1 text-[10px] text-[#667781]">
               {hora} <Check size={11} className="text-[#53bdeb]" />

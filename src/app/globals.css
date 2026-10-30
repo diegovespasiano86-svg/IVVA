@@ -903,7 +903,7 @@ main .card table td {
 }
 .table-clean tbody tr:hover,
 main .card table tbody tr:hover {
-  background: color-mix(in srgb, var(--purple) 4%, #fff);
+  background: color-mix(in srgb, var(--purple) 4%, var(--mix));
 }
 .table-clean tbody tr:last-child td {
   border-bottom: 0;
@@ -1073,13 +1073,13 @@ html[data-density="compact"] main .card table thead th {
   transition: background var(--dur-1) ease;
 }
 .chart-row:hover {
-  background: color-mix(in srgb, var(--purple) 5%, #fff);
+  background: color-mix(in srgb, var(--purple) 5%, var(--mix));
 }
 .chart-row .chart-bar-suave {
   transition: background var(--dur-2) ease;
 }
 .chart-row:hover .chart-bar-suave {
-  background: color-mix(in srgb, var(--purple) 58%, #fff) !important;
+  background: color-mix(in srgb, var(--purple) 58%, var(--mix)) !important;
 }
 .chart-row-pct {
   opacity: 0;

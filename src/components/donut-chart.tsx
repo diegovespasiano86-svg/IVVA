@@ -75,6 +75,7 @@ export function DonutChart({
     <div className="chart-root flex flex-wrap items-center gap-x-6 gap-y-4">
       <div className="relative mx-auto shrink-0 sm:mx-0" style={{ width: S, height: S }}>
         <svg width={S} height={S} viewBox={`0 0 ${S} ${S}`} role="img" aria-label={`Distribuição: ${resumoLista(lista, (v) => `${fmt(v)} (${pct(v)})`)}`}>
+          <circle cx={c} cy={c} r={r - 7} fill="none" strokeWidth="1" strokeDasharray="2 7" strokeLinecap="round" stroke="var(--ink-faint)" opacity="0.5" className="chart-orbita" pointerEvents="none" />
           <g className="chart-pop">
             {lista.map((f, i) => {
               const sobre = ativo === i;

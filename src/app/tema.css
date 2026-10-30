@@ -1,0 +1,469 @@
+/* Modo escuro + movimento do app.
+   O escuro troca as variáveis de cor (mesmos nomes do claro) e ajusta os poucos trechos com cor fixa.
+   Só vale dentro do app: quem aplica o atributo data-theme no <html> é o componente TemaApp (AppShell),
+   então planos, boas-vindas, login e páginas públicas nunca recebem o tema. */
+
+:root {
+  --mix: #fff; /* base das misturas "cor + branco" (no escuro vira o fundo) */
+  --chart-a: var(--accent-a);
+  --chart-b: var(--accent-b);
+  --fx-rgb: 109, 91, 224;
+  --fx-wave: 139, 127, 232;
+  --fx-glow: 0.5;
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --mix: #0e1330;
+  --bg: #070a18;
+  --surface: #10162f;
+  --surface-soft: #1a2142;
+  --ink: #eaeeff;
+  --ink-deep: #ffffff;
+  --ink-soft: #a9b2d6;
+  --ink-faint: #8a94bd;
+  --border: rgba(130, 160, 255, 0.17);
+  --purple: #9a8cff;
+  --purple-strong: #b3a8ff;
+  --teal: #3fe0c5;
+  --coral: #ff7a6b;
+  --amber: #ffb648;
+  --blue: #6aa8ff;
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4), 0 10px 28px -20px rgba(0, 0, 0, 0.7);
+  --shadow-2: 0 2px 4px rgba(0, 0, 0, 0.35), 0 16px 36px -16px rgba(0, 0, 0, 0.7);
+  --shadow-3: 0 4px 8px rgba(0, 0, 0, 0.4), 0 28px 54px -18px rgba(0, 0, 0, 0.8);
+  --shadow-4: 0 8px 16px rgba(0, 0, 0, 0.5), 0 44px 84px -20px rgba(0, 0, 0, 0.85);
+  --chart-a: #3fe0c5;
+  --chart-b: var(--purple);
+  --fx-rgb: 120, 200, 255;
+  --fx-wave: 130, 150, 255;
+  --fx-glow: 1;
+}
+/* cor de destaque escolhida em "Aparência": versão clara para texto sobre fundo escuro */
+html[data-theme="dark"][data-accent="azul"] { --purple: #6aa8ff; --purple-strong: #8fbaff; }
+html[data-theme="dark"][data-accent="verde"] { --purple: #3fe0c5; --purple-strong: #6ee7c8; }
+html[data-theme="dark"][data-accent="rosa"] { --purple: #ff8fbd; --purple-strong: #ffacd0; }
+html[data-theme="dark"][data-accent="laranja"] { --purple: #ffa166; --purple-strong: #ffb98f; }
+html[data-theme="dark"][data-accent="grafite"] { --purple: #c3c9ee; --purple-strong: #dde1f7; }
+
+/* troca suave entre os modos */
+html.tema-troca *,
+html.tema-troca *::before,
+html.tema-troca *::after {
+  transition: background-color 0.45s ease, border-color 0.45s ease, color 0.3s ease, fill 0.3s ease, stroke 0.3s ease, box-shadow 0.45s ease !important;
+}
+
+/* ================= fundo animado ================= */
+.fx {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+.fx-rede {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.fx-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(95px);
+  opacity: calc(0.3 * var(--fx-glow));
+  will-change: transform;
+}
+html:not([data-theme="dark"]) .fx-blob {
+  opacity: 0.18;
+}
+.fx-b1 { width: 620px; height: 620px; left: -10%; top: -12%; background: #8b7fe8; animation: fx-d1 26s ease-in-out infinite alternate; }
+.fx-b2 { width: 560px; height: 560px; right: -8%; top: 20%; background: #2fbf9f; animation: fx-d2 31s ease-in-out infinite alternate; }
+.fx-b3 { width: 520px; height: 520px; left: 32%; bottom: -24%; background: #ff6b5b; opacity: calc(0.12 * var(--fx-glow)); animation: fx-d3 36s ease-in-out infinite alternate; }
+html[data-theme="dark"] .fx-b3 { background: #3b6df0; opacity: 0.2; }
+@keyframes fx-d1 { to { transform: translate(18vw, 14vh) scale(1.15); } }
+@keyframes fx-d2 { to { transform: translate(-20vw, 18vh) scale(0.9); } }
+@keyframes fx-d3 { to { transform: translate(14vw, -16vh) scale(1.2); } }
+
+/* a onda da marca: desenha, brilha, some e volta */
+.fx-marca {
+  position: absolute;
+  overflow: visible;
+  color: rgb(var(--fx-wave));
+  opacity: 0;
+}
+.fx-marca path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  filter: drop-shadow(0 0 10px rgb(var(--fx-wave)));
+}
+.fx-m1 { width: min(62vw, 820px); right: -6vw; bottom: -6vh; animation: fx-fade 14s ease-in-out infinite; }
+.fx-m1 path { animation: fx-draw 14s ease-in-out infinite; }
+.fx-m2 { width: min(30vw, 380px); left: 18vw; top: 14vh; transform: rotate(-8deg); animation: fx-fade 14s ease-in-out infinite 7s; }
+.fx-m2 path { animation: fx-draw 14s ease-in-out infinite 7s; }
+@keyframes fx-draw {
+  0% { stroke-dashoffset: 1; }
+  38%, 62% { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: -1; }
+}
+@keyframes fx-fade {
+  0%, 100% { opacity: 0; }
+  25%, 75% { opacity: calc(0.22 * var(--fx-glow) + 0.06); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fx-marca { opacity: 0.1; }
+  .fx-marca path { stroke-dashoffset: 0; }
+}
+@media print {
+  .fx { display: none; }
+}
+
+/* brilhos de canto e pontinhos do ambient.css: no escuro ficam azulados */
+html[data-theme="dark"] body::before {
+  background-image:
+    radial-gradient(780px circle at 0% 6%, rgba(139, 127, 232, 0.2), transparent 66%),
+    radial-gradient(860px circle at 100% 0%, rgba(47, 191, 159, 0.14), transparent 66%),
+    radial-gradient(940px circle at 88% 108%, rgba(59, 109, 240, 0.16), transparent 66%);
+}
+html[data-theme="dark"] body::after {
+  background-image: radial-gradient(rgba(160, 180, 255, 0.07) 1px, transparent 1.3px);
+}
+
+/* ================= botão "Modo" no cabeçalho ================= */
+.modo-tema {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.modo-tema-rotulo {
+  display: none;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+}
+@media (min-width: 1024px) {
+  .modo-tema-rotulo { display: inline; }
+}
+.modo-tema-chave {
+  position: relative;
+  display: flex;
+  padding: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.modo-tema-chave button {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: rgba(255, 255, 255, 0.75);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.25s;
+}
+.modo-tema-chave button span { display: none; }
+@media (min-width: 640px) {
+  .modo-tema-chave button { padding: 6px 13px; }
+  .modo-tema-chave button span { display: inline; }
+}
+.modo-tema-chave button[aria-pressed="true"] { color: #14121b; }
+.modo-tema-chave[data-tema="escuro"] button[aria-pressed="true"] { color: #fff; }
+.modo-tema-chave button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.modo-tema-chave i {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  width: calc(50% - 3px);
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 4px 14px -4px rgba(255, 255, 255, 0.5);
+  transition: transform 0.35s cubic-bezier(0.5, 1.4, 0.5, 1), background 0.3s, box-shadow 0.3s;
+}
+.modo-tema-chave:not(.pronto) i,
+.modo-tema-chave:not(.pronto) button {
+  transition: none;
+}
+.modo-tema-chave[data-tema="escuro"] i {
+  transform: translateX(100%);
+  background: linear-gradient(100deg, #0a7f69, #6d5be0);
+  box-shadow: 0 6px 18px -6px rgba(109, 91, 224, 0.9);
+}
+
+/* ================= escuro: componentes do sistema ================= */
+html[data-theme="dark"] body { color: var(--ink); }
+
+html[data-theme="dark"] header.bg-ink-deep {
+  background: rgba(8, 11, 28, 0.82);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  backdrop-filter: blur(16px) saturate(1.4);
+  box-shadow: 0 1px 0 rgba(130, 160, 255, 0.12);
+}
+
+/* cartões: vidro azul-noite, mesmo formato do claro */
+html[data-theme="dark"] body .card {
+  background: rgba(16, 22, 47, 0.64);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-1), inset 0 1px 0 rgba(255, 255, 255, 0.045);
+}
+html[data-theme="dark"] body .card[class*="bg-"] {
+  background: revert-layer;
+}
+html[data-theme="dark"] body .card-lift:hover {
+  border-color: color-mix(in srgb, var(--purple) 45%, transparent);
+  box-shadow: 0 18px 44px -20px color-mix(in srgb, var(--purple) 50%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+html[data-theme="dark"] .page-hero {
+  border: 1px solid rgba(130, 160, 255, 0.2);
+}
+
+/* botões */
+html[data-theme="dark"] .btn-secondary {
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(150, 170, 255, 0.26);
+}
+html[data-theme="dark"] .btn-secondary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--purple) 16%, transparent);
+  border-color: var(--purple);
+  color: var(--purple);
+}
+html[data-theme="dark"] .btn-dark {
+  background: linear-gradient(135deg, #2a3068 0%, #1c2150 100%);
+  border-color: rgba(150, 170, 255, 0.25);
+}
+html[data-theme="dark"] .btn-ghost:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--purple) 14%, transparent);
+}
+html[data-theme="dark"] .btn:focus-visible {
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--purple);
+}
+
+/* etiquetas de status */
+html[data-theme="dark"] .badge-success { background: rgba(63, 224, 197, 0.14); }
+html[data-theme="dark"] .badge-warn { background: rgba(255, 182, 72, 0.14); }
+html[data-theme="dark"] .badge-danger { background: rgba(255, 122, 107, 0.14); }
+html[data-theme="dark"] .badge-info { background: rgba(106, 168, 255, 0.15); }
+html[data-theme="dark"] .badge-brand { background: rgba(154, 140, 255, 0.18); }
+
+/* formulários */
+html[data-theme="dark"] .input,
+html[data-theme="dark"] .select,
+html[data-theme="dark"] .textarea {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-color: rgba(150, 170, 255, 0.22);
+  color: var(--ink);
+}
+html[data-theme="dark"] .input:hover,
+html[data-theme="dark"] .select:hover,
+html[data-theme="dark"] .textarea:hover {
+  border-color: rgba(150, 170, 255, 0.42);
+}
+html[data-theme="dark"] .input:focus,
+html[data-theme="dark"] .select:focus,
+html[data-theme="dark"] .textarea:focus {
+  background-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--purple) 22%, transparent);
+}
+html[data-theme="dark"] .input::placeholder,
+html[data-theme="dark"] .textarea::placeholder {
+  color: #7480ab;
+}
+html[data-theme="dark"] .select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23a9b2d6' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+html[data-theme="dark"] .select option {
+  background: #10162f;
+  color: var(--ink);
+}
+html[data-theme="dark"] .switch,
+html[data-theme="dark"] input.toggle[type="checkbox"] {
+  background: rgba(255, 255, 255, 0.18);
+}
+html[data-theme="dark"] .switch[aria-checked="true"],
+html[data-theme="dark"] input.toggle[type="checkbox"]:checked {
+  background: linear-gradient(100deg, var(--accent-a) 0%, var(--accent-b) 100%);
+}
+
+/* abas, segmentos, tabelas, vidro, carregamento */
+html[data-theme="dark"] .segmented > [aria-selected="true"],
+html[data-theme="dark"] .segmented > [aria-current="page"] {
+  background: color-mix(in srgb, var(--purple) 22%, transparent);
+  color: var(--ink-deep);
+  box-shadow: none;
+}
+html[data-theme="dark"] .glass {
+  background: rgba(16, 22, 47, 0.82);
+  border-color: var(--border);
+}
+html[data-theme="dark"] .skeleton {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.05) 25%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0.05) 75%);
+  background-size: 200% 100%;
+}
+html[data-theme="dark"] .table-clean tbody tr:hover,
+html[data-theme="dark"] main .card table tbody tr:hover {
+  background: color-mix(in srgb, var(--purple) 8%, transparent);
+}
+html[data-theme="dark"] .table-clean th,
+html[data-theme="dark"] main .card table thead th {
+  background: rgba(255, 255, 255, 0.04);
+}
+html[data-theme="dark"] .chart-tip {
+  background: rgba(14, 20, 46, 0.96);
+  border-color: color-mix(in srgb, var(--chart-a) 45%, transparent);
+}
+html[data-theme="dark"] * {
+  scrollbar-color: rgba(150, 170, 255, 0.28) transparent;
+}
+
+/* ================= escuro: classes com cor fixa espalhadas pelas telas ================= */
+html[data-theme="dark"] .bg-white { background-color: var(--surface); }
+html[data-theme="dark"] .bg-white\/90 { background-color: rgba(9, 13, 34, 0.72); }
+html[data-theme="dark"] .ring-white { --tw-ring-color: var(--surface); }
+html[data-theme="dark"] .bg-purple { background-color: var(--accent-b); }
+html[data-theme="dark"] .bg-teal { background-color: #0f8f76; }
+html[data-theme="dark"] .bg-coral { background-color: #d9442f; }
+html[data-theme="dark"] .bg-ink,
+html[data-theme="dark"] .bg-ink-deep { background-color: var(--accent-b); }
+html[data-theme="dark"] .border-ink { border-color: var(--accent-b); }
+html[data-theme="dark"] .border-ink-deep { border-color: #2b3170; }
+html[data-theme="dark"] .bg-ink\/30 { background-color: rgba(3, 5, 16, 0.55); }
+html[data-theme="dark"] .bg-ink-deep\/50 { background-color: rgba(3, 5, 16, 0.6); }
+html[data-theme="dark"] .bg-ink-deep\/70 { background-color: rgba(3, 5, 16, 0.78); }
+html[data-theme="dark"] .bg-purple-soft { background-color: rgba(154, 140, 255, 0.18); }
+html[data-theme="dark"] .bg-coral-soft { background-color: rgba(255, 122, 107, 0.14); }
+html[data-theme="dark"] .bg-teal-soft { background-color: rgba(63, 224, 197, 0.13); }
+
+html[data-theme="dark"] .bg-\[\#ece9fc\] { background-color: rgba(154, 140, 255, 0.18); }
+html[data-theme="dark"] .bg-\[\#fdece9\] { background-color: rgba(255, 122, 107, 0.14); }
+html[data-theme="dark"] .bg-\[\#e3f4ef\] { background-color: rgba(63, 224, 197, 0.13); }
+html[data-theme="dark"] .bg-\[\#fdf0dc\] { background-color: rgba(255, 182, 72, 0.14); }
+html[data-theme="dark"] .bg-\[\#e6eefc\] { background-color: rgba(106, 168, 255, 0.15); }
+html[data-theme="dark"] .bg-\[\#f6f4fe\] { background-color: rgba(154, 140, 255, 0.08); }
+html[data-theme="dark"] .bg-\[\#f3f1ec\] { background-color: var(--surface-soft); }
+html[data-theme="dark"] .hover\:bg-\[\#fdece9\]:hover { background-color: rgba(255, 122, 107, 0.14); }
+
+html[data-theme="dark"] .text-\[\#8f2a1c\],
+html[data-theme="dark"] .text-\[\#c2402c\],
+html[data-theme="dark"] .text-\[\#a82f20\] { color: #ff9d90; }
+html[data-theme="dark"] .text-\[\#7a4a00\],
+html[data-theme="dark"] .text-\[\#8f4a00\],
+html[data-theme="dark"] .text-\[\#6b5800\] { color: #ffc872; }
+html[data-theme="dark"] .text-\[\#1d4c9e\] { color: #8fbaff; }
+html[data-theme="dark"] .text-\[\#1f9a80\],
+html[data-theme="dark"] .text-\[\#1f9a7f\] { color: #3fe0c5; }
+html[data-theme="dark"] .text-\[\#a02a63\] { color: #ff8fc0; }
+html[data-theme="dark"] .text-\[\#5a49c9\] { color: #b3a8ff; }
+html[data-theme="dark"] .text-\[\#6b6577\],
+html[data-theme="dark"] .text-\[\#4a4458\],
+html[data-theme="dark"] .text-\[\#4a4955\],
+html[data-theme="dark"] .text-\[\#353542\],
+html[data-theme="dark"] .text-\[\#5d5672\] { color: var(--ink-soft); }
+
+/* ================= movimento nos gráficos e indicadores ================= */
+/* brilho da linha principal e pulso do último ponto */
+html[data-theme="dark"] .chart-glow {
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--chart-a) 70%, transparent));
+}
+.chart-halo {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: chart-halo 2.4s ease-in-out infinite;
+}
+@keyframes chart-halo {
+  0%, 100% { transform: scale(0.7); opacity: 0.28; }
+  50% { transform: scale(1.5); opacity: 0.05; }
+}
+/* barras horizontais: faixa de luz que passa de tempos em tempos */
+.chart-row .chart-grow-x {
+  position: relative;
+  overflow: hidden;
+}
+.chart-row .chart-grow-x::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 38px;
+  left: -40px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+  animation: chart-shine 3.6s ease-in-out 1.2s infinite;
+}
+@keyframes chart-shine {
+  0% { left: -40px; opacity: 0; }
+  20% { opacity: 1; }
+  65%, 100% { left: 100%; opacity: 0; }
+}
+/* rosca: anel tracejado interno que gira devagar */
+.chart-orbita {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: chart-orbita 40s linear infinite;
+}
+@keyframes chart-orbita { to { transform: rotate(360deg); } }
+/* anel de meta: ponto que percorre o anel */
+.chart-orbitar { animation: chart-orbita 6s linear infinite; }
+/* minigráfico: ponto final com onda */
+.chart-ping {
+  animation: chart-ping 2.2s ease-out infinite;
+}
+@keyframes chart-ping {
+  0% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
+  80%, 100% { transform: translate(-50%, -50%) scale(3.2); opacity: 0; }
+}
+/* filete colorido dos indicadores: o degradê desliza */
+.kpi-strip {
+  background-size: 220% 100%;
+  animation: kpi-flow 7s linear infinite;
+}
+@keyframes kpi-flow { to { background-position: -220% 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .chart-halo, .chart-orbita, .chart-orbitar, .chart-ping, .kpi-strip,
+  .chart-row .chart-grow-x::after { animation: none !important; }
+  .chart-ping { display: none; }
+}
+@media print {
+  .chart-halo, .chart-orbita, .chart-orbitar, .chart-ping, .kpi-strip,
+  .chart-row .chart-grow-x::after { animation: none !important; display: none; }
+}
+
+/* no app a onda da marca é animada (camada .fx): some a versão estática do ambient.css */
+html body:has(.fx)::before {
+  background-image:
+    radial-gradient(780px circle at 0% 6%, color-mix(in srgb, var(--accent-a) 15%, transparent), transparent 66%),
+    radial-gradient(860px circle at 100% 0%, color-mix(in srgb, var(--accent-b) 17%, transparent), transparent 66%),
+    radial-gradient(940px circle at 88% 108%, color-mix(in srgb, var(--accent-c) 10%, transparent), transparent 66%);
+  background-size: auto, auto, auto;
+  background-position: 0 0, 0 0, 0 0;
+}
+html[data-theme="dark"] body:has(.fx)::before {
+  background-image:
+    radial-gradient(780px circle at 0% 6%, rgba(139, 127, 232, 0.2), transparent 66%),
+    radial-gradient(860px circle at 100% 0%, rgba(47, 191, 159, 0.14), transparent 66%),
+    radial-gradient(940px circle at 88% 108%, rgba(59, 109, 240, 0.16), transparent 66%);
+}
+
+/* ajustes pontuais do escuro */
+html[data-theme="dark"] [class*="f6f4fe_0%"] {
+  background-image: linear-gradient(100deg, rgba(154, 140, 255, 0.16), rgba(255, 182, 72, 0.06));
+}
+/* a prévia do WhatsApp imita o aplicativo: o balão fica branco nos dois modos */
+html[data-theme="dark"] .bg-white.keep-light { background-color: #fff; }
+html[data-theme="dark"] .rbc-toolbar button.rbc-active { background: var(--accent-b); border-color: var(--accent-b); }

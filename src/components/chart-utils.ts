@@ -31,11 +31,11 @@ export const COR_OUTROS = "#a8a3b3";
  */
 export const TEMA = {
   forte: "var(--purple)",
-  inicio: "var(--accent-a)",
-  fim: "var(--accent-b)",
-  suave: "color-mix(in srgb, var(--purple) 34%, #fff)",
-  muitoSuave: "color-mix(in srgb, var(--purple) 12%, #fff)",
-  degradeH: "linear-gradient(90deg, var(--accent-a), var(--accent-b))",
+  inicio: "var(--chart-a)",
+  fim: "var(--chart-b)",
+  suave: "color-mix(in srgb, var(--purple) 34%, var(--mix))",
+  muitoSuave: "color-mix(in srgb, var(--purple) 12%, var(--mix))",
+  degradeH: "linear-gradient(90deg, var(--chart-a), var(--chart-b))",
 } as const;
 
 /** Cores legadas da marca passadas por telas antigas que devem seguir o tema. */
