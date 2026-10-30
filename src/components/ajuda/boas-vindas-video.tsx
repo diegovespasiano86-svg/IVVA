@@ -24,6 +24,8 @@ export default function BoasVindasVideo({ forcar }: { forcar?: boolean }) {
     try {
       localStorage.setItem(CHAVE, "1");
     } catch {}
+    // A Ivva sobe logo depois do vídeo (components/ajuda/boas-vindas-modal.tsx).
+    window.dispatchEvent(new Event("ivva:video-fim"));
   }
 
   if (!visivel) return null;

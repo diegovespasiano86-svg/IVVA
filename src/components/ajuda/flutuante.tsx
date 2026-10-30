@@ -9,6 +9,16 @@ import { guiaDaRota, guiasDoPerfil } from "@/lib/ajuda-busca";
 import VideoModal from "./video-modal";
 
 type Msg = { role: "user" | "assistant"; content: string };
+type Pend = { total: number; essenciais: number; urgente: boolean; itens: { id: string; texto: string; href: string; essencial: boolean }[] };
+
+const CHAVE_DEPOIS = "ivva:pendencias-depois";
+const hoje = () => new Date().toISOString().slice(0, 10);
+
+/** "a, b e c" */
+function listar(textos: string[]) {
+  if (textos.length <= 1) return textos[0] ?? "";
+  return `${textos.slice(0, -1).join(", ")} e ${textos[textos.length - 1]}`;
+}
 
 const SUGESTOES = ["Como conecto o WhatsApp?", "Meu robô não está respondendo", "Como convido alguém da equipe?"];
 
@@ -31,7 +41,8 @@ function Resposta({ texto, onNavegar }: { texto: string; onNavegar: () => void }
   );
 }
 
-/** "Pergunte a Ivva": a Vi, no canto esquerdo de todas as telas, conversa como um chat e ajuda a navegar pelo sistema. */
+/** "Pergunte a Ivva": a Ivva, fixa no topo de todas as telas, conversa como um chat e ajuda a navegar pelo sistema.
+ *  Enquanto faltar cadastro (lib/pendencias.ts), o círculo em volta dela pisca com um selo (número ou "!"); ao clicar, ela diz o que falta. */
 export default function AjudaFlutuante({ ehDono }: { ehDono: boolean }) {
   const pathname = usePathname();
   const [aberto, setAberto] = useState(false);
@@ -41,6 +52,10 @@ export default function AjudaFlutuante({ ehDono }: { ehDono: boolean }) {
   const [enviando, setEnviando] = useState(false);
   const [nome, setNome] = useState<string | null>(null);
   const fimRef = useRef<HTMLDivElement>(null);
+  const [pend, setPend] = useState<Pend | null>(null);
+  const totalAntes = useRef<number | null>(null);
+  const [calmo, setCalmo] = useState(false); // "Depois": o círculo para de piscar até o próximo cadastro
+  const [chegou, setChegou] = useState(false); // pulsada quando ela termina o voo do popup de boas-vindas
 
   const guias = useMemo(() => guiasDoPerfil(ehDono), [ehDono]);
   const guia = useMemo(() => guiaDaRota(pathname, guias), [pathname, guias]);
@@ -53,7 +68,7 @@ export default function AjudaFlutuante({ ehDono }: { ehDono: boolean }) {
     return () => window.removeEventListener("keydown", aoTeclar);
   }, [aberto, tocando]);
 
-  // Primeiro nome de quem está logado: a Vi abre a conversa chamando a pessoa pelo nome.
+  // Primeiro nome de quem está logado: a Ivva abre a conversa chamando a pessoa pelo nome.
   useEffect(() => {
     if (!aberto || nome) return;
     fetch("/api/ajuda/assistente")
@@ -61,6 +76,51 @@ export default function AjudaFlutuante({ ehDono }: { ehDono: boolean }) {
       .then((d) => typeof d?.nome === "string" && setNome(d.nome))
       .catch(() => {});
   }, [aberto, nome]);
+
+  // O que ainda falta no cadastro (só para o dono): lido de novo a cada tela, então muda sozinho depois de cada cadastro.
+  useEffect(() => {
+    if (!ehDono) return;
+    let vivo = true;
+    fetch("/api/ajuda/pendencias", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: Pend | null) => {
+        if (!vivo || !d) return;
+        // Cadastro novo (o total mudou): volta a piscar mesmo que tenha escolhido "Depois".
+        if (totalAntes.current !== null && totalAntes.current !== d.total) {
+          try {
+            localStorage.removeItem(CHAVE_DEPOIS);
+          } catch {}
+          setCalmo(false);
+        }
+        totalAntes.current = d.total;
+        setPend(d);
+      })
+      .catch(() => {});
+    return () => {
+      vivo = false;
+    };
+  }, [ehDono, pathname]);
+
+  useEffect(() => {
+    try {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- lê localStorage só no navegador
+      setCalmo(localStorage.getItem(CHAVE_DEPOIS) === hoje());
+    } catch {}
+    const aoChegar = () => {
+      setChegou(true);
+      window.setTimeout(() => setChegou(false), 1400);
+    };
+    window.addEventListener("ivva:chegou", aoChegar);
+    return () => window.removeEventListener("ivva:chegou", aoChegar);
+  }, []);
+
+  function depois() {
+    setCalmo(true);
+    setAberto(false);
+    try {
+      localStorage.setItem(CHAVE_DEPOIS, hoje());
+    } catch {}
+  }
 
   useEffect(() => {
     fimRef.current?.scrollIntoView({ block: "end" });
@@ -94,18 +154,29 @@ export default function AjudaFlutuante({ ehDono }: { ehDono: boolean }) {
       <button
         type="button"
         onClick={() => setAberto((v) => !v)}
-        aria-label={aberto ? "Fechar a conversa com a Vi" : "Abrir Pergunte a Ivva"}
+        aria-label={aberto ? "Fechar a conversa com a Ivva" : pend?.total ? `Abrir Pergunte a Ivva: ${pend.total} pendências no cadastro` : "Abrir Pergunte a Ivva"}
         aria-expanded={aberto}
         className="flex h-10 shrink-0 items-center gap-2 rounded-full bg-white/10 py-1 pl-1 pr-1 text-[13px] font-extrabold text-white ring-1 ring-white/20 transition-colors hover:bg-white/20 md:pr-4"
       >
-        <Image src="/vi/vi-128.webp" alt="" width={32} height={32} className="h-8 w-8 rounded-full border-2 border-white/80 object-cover" />
+        <span className="relative inline-flex h-8 w-8 shrink-0">
+          {pend && pend.total > 0 && !calmo && !aberto && (
+            <span aria-hidden="true" className="absolute -inset-1 rounded-full border-2 border-white/90 motion-safe:animate-ping" />
+          )}
+          {chegou && <span aria-hidden="true" className="absolute -inset-1.5 rounded-full border-2 border-white motion-safe:animate-ping" />}
+          <Image id="ivva-avatar-topo" src="/vi/vi-128.webp" alt="" width={32} height={32} className="relative h-8 w-8 rounded-full border-2 border-white/80 object-cover" />
+          {pend && pend.total > 0 && (
+            <span aria-hidden="true" className={`absolute -right-1.5 -top-1.5 flex h-[17px] min-w-[17px] items-center justify-center rounded-full px-1 text-[10px] font-extrabold leading-none text-white ring-2 ring-[#2a2650] ${pend.urgente ? "bg-coral" : "bg-purple"}`}>
+              {pend.urgente ? "!" : pend.total > 9 ? "9+" : pend.total}
+            </span>
+          )}
+        </span>
         <span className="hidden md:inline">Pergunte a Ivva</span>
       </button>
 
       {aberto && (
         <div
           role="dialog"
-          aria-label="Pergunte a Ivva: conversa com a Vi, assistente virtual"
+          aria-label="Pergunte a Ivva: conversa com a Ivva, assistente virtual"
           className="fixed right-2 top-16 z-[65] flex max-h-[min(36rem,calc(100dvh-5rem))] w-[min(23rem,calc(100vw-1rem))] flex-col overflow-hidden rounded-3xl bg-[linear-gradient(145deg,#2fbf9f,#8b7fe8_55%,#ff6b5b)] p-[1.5px] text-ink shadow-[0_40px_80px_-30px_rgba(139,127,232,0.65)] md:right-5 print:hidden"
         >
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[calc(1.5rem-1.5px)] bg-surface">
@@ -113,7 +184,7 @@ export default function AjudaFlutuante({ ehDono }: { ehDono: boolean }) {
               <Image src="/vi/vi-128.webp" alt="" width={40} height={40} className="h-10 w-10 rounded-full object-cover" />
               <div className="min-w-0 flex-1">
                 <p className="text-[14px] font-extrabold">Pergunte a Ivva</p>
-                <p className="text-[11.5px] font-semibold text-teal">Vi, assistente virtual</p>
+                <p className="text-[11.5px] font-semibold text-teal">Ivva, assistente virtual</p>
               </div>
               <button type="button" onClick={() => setAberto(false)} aria-label="Fechar" className="rounded-full p-1.5 text-ink-soft hover:bg-surface-soft">
                 <X size={18} />
@@ -123,9 +194,25 @@ export default function AjudaFlutuante({ ehDono }: { ehDono: boolean }) {
             <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-4 text-[13.5px]" aria-live="polite">
               <div className="mr-8 rounded-2xl rounded-bl-sm bg-surface-soft px-3.5 py-2.5">
                 <p>
-                  Oi{nome ? `, ${nome}` : ""}! 👋 Eu sou a Vi, da ivva. Me conta o que você precisa: eu explico, mostro o vídeo e levo você até a tela certa 💜
+                  Oi{nome ? `, ${nome}` : ""}! 👋 Eu sou a Ivva. Me conta o que você precisa: eu explico, mostro o vídeo e levo você até a tela certa 💜
                 </p>
               </div>
+              {msgs.length === 0 && pend && pend.total > 0 && (
+                <div className="mr-8 rounded-2xl rounded-bl-sm bg-purple/10 px-3.5 py-2.5">
+                  <p>
+                    Olha, percebi que ainda falta {listar(pend.itens.slice(0, 4).map((i) => i.texto))}
+                    {pend.itens.length > 4 ? ` (e mais ${pend.itens.length - 4})` : ""}. Isso ajuda o robô a responder certo. Quer completar agora?
+                  </p>
+                  <div className="mt-2.5 flex flex-wrap gap-2">
+                    <Link href={pend.itens[0].href} onClick={() => setAberto(false)} className="btn btn-primary btn-sm">
+                      Responder agora
+                    </Link>
+                    <button type="button" onClick={depois} className="rounded-full border border-border px-3 py-1.5 text-[12.5px] font-semibold hover:bg-surface-soft">
+                      Depois
+                    </button>
+                  </div>
+                </div>
+              )}
               {msgs.length === 0 && (
                 <div className="flex flex-wrap gap-2">
                   {sugestoes.map((s) => (

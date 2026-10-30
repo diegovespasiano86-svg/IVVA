@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { manualDaVi } from "@/lib/vi-conhecimento";
 import { guiasDoPerfil } from "@/lib/ajuda-busca";
 
-// "Pergunte a Ivva": a Vi responde dúvidas de uso com base SÓ no manual da ivva (lib/vi-conhecimento.ts:
+// "Pergunte a Ivva": a Ivva responde dúvidas de uso com base SÓ no manual da ivva (lib/vi-conhecimento.ts:
 // menu, guias, transcrição dos vídeos, planos, problemas comuns). Só explica e indica a tela ou o vídeo;
 // não executa nada na conta. Fetch direto na Messages API, como resumo-conversas.ts.
 
@@ -31,7 +31,7 @@ type Msg = { role: "user" | "assistant"; content: string };
 
 const primeiroNome = (nome?: string | null) => (nome ?? "").trim().split(/\s+/)[0] || null;
 
-/** Primeiro nome de quem está logado, para a Vi abrir a conversa chamando a pessoa pelo nome. */
+/** Primeiro nome de quem está logado, para a Ivva abrir a conversa chamando a pessoa pelo nome. */
 export async function GET() {
   const supabase = await createClient();
   const {
@@ -42,7 +42,7 @@ export async function GET() {
   return NextResponse.json({ nome: primeiroNome(perfil?.nome) });
 }
 
-const PERSONALIDADE = `Você é a Vi, assistente virtual da ivva (botão "Pergunte a Ivva"). A ivva atende clientes pelo WhatsApp com um robô, agenda horários e organiza o negócio. Você é o suporte nível 1: ajuda o dono ou a equipe de um negócio local, gente que não é técnica, a se achar no sistema, a assistir ao vídeo certo e a resolver problemas. Quando não der, passa para a equipe (nível 2).
+const PERSONALIDADE = `Você é a Ivva, assistente virtual da ivva (botão "Pergunte a Ivva"). A ivva atende clientes pelo WhatsApp com um robô, agenda horários e organiza o negócio. Você é o suporte nível 1: ajuda o dono ou a equipe de um negócio local, gente que não é técnica, a se achar no sistema, a assistir ao vídeo certo e a resolver problemas. Quando não der, passa para a equipe (nível 2).
 
 COMO RESPONDER
 - Direto ao ponto: a primeira frase já é a resposta ou o próximo passo. Sem rodeios, sem repetir a pergunta, sem "claro!" nem "ótima pergunta". No máximo 5 linhas. Passos em linhas numeradas simples (1., 2., 3.).

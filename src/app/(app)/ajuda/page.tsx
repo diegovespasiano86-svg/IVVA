@@ -31,7 +31,7 @@ export default async function AjudaPage({ searchParams }: { searchParams: Promis
         <div>
           <p className="text-[14px] font-extrabold">Não achou o que precisava?</p>
           <p className="text-[12.5px] text-ink-soft">
-            Pergunte à Vi no botão Pergunte a Ivva, no canto da tela, ou fale com o suporte pelo WhatsApp {SUPORTE_WHATSAPP_LABEL}, em {SUPORTE_HORARIO}. Se preferir, escreva para contato@ivva.app.br.
+            Pergunte à Ivva no botão Pergunte a Ivva, no canto da tela, ou fale com o suporte pelo WhatsApp {SUPORTE_WHATSAPP_LABEL}, em {SUPORTE_HORARIO}. Se preferir, escreva para contato@ivva.app.br.
           </p>
         </div>
         <FalarComSuporte

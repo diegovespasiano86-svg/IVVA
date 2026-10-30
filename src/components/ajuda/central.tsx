@@ -56,7 +56,7 @@ export default function CentralAjuda({ guias, busca, abrir }: { guias: Guia[]; b
         <h2 className="mb-2.5 text-[15px] font-extrabold">{buscando ? "Guias" : "Guia escrito de cada tela"}</h2>
         {resultado.length === 0 && (
           <p className="card px-5 py-6 text-center text-[13.5px] text-ink-soft">
-            Nada encontrado para “{q}”. Tente outra palavra ou pergunte à Vi no botão Pergunte a Ivva, no canto da tela.
+            Nada encontrado para “{q}”. Tente outra palavra ou pergunte à Ivva no botão Pergunte a Ivva, no canto da tela.
           </p>
         )}
         <div className="space-y-2.5">

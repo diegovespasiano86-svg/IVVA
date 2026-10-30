@@ -1,4 +1,4 @@
-// Base de conhecimento da Vi ("Pergunte a Ivva"). Tudo que ela sabe vem daqui: navegação do menu,
+// Base de conhecimento da Ivva ("Pergunte a Ivva"). Tudo que ela sabe vem daqui: navegação do menu,
 // guias de cada tela, transcrição dos vídeos, planos e limites, perguntas frequentes, problemas comuns e suporte.
 // Regra de ouro: só entra fato que existe no sistema. Mudou uma tela, um plano ou um vídeo? Atualize aqui também
 // (os guias vêm de guias.ts e os menus de nav.ts, que já são a fonte única; os vídeos vêm de content/vi-videos.json).
@@ -39,6 +39,7 @@ const PLANOS = `# PLANOS E LIMITES
 - Pagou no Pix: a cobrança chega por e-mail antes do vencimento e também aparece em Minha assinatura. Sem pagar, o acesso é suspenso 5 dias após o vencimento, sem apagar nada, e volta assim que o pagamento cair.`;
 
 const FAQ = `# PERGUNTAS FREQUENTES
+- O círculo piscando em volta da Ivva (botão do topo) com um número ou "!" mostra o que ainda falta no cadastro para o robô atender bem (serviços, preços, horários, pagamento, regras, endereço, quem atende). Clicar nela mostra o que falta e leva à tela certa; "Depois" para de piscar até o próximo cadastro.
 - Ver plano, faturas, trocar cartão ou plano: [Minha assinatura](/assinatura).
 - Contrato aceito e data do aceite: [Políticas e privacidade](/politicas), no menu do nome.
 - A IA pode errar? Pode. Ela responde com base na Base de conhecimento, no Catálogo e nas regras do Robô. Manter preços e políticas atualizados e acompanhar em Conversas.
@@ -65,11 +66,11 @@ const SUPORTE = `# SUPORTE HUMANO (nível 2)
 - O link [Falar com a equipe](/ajuda#suporte) abre o WhatsApp já com negócio, plano e tela preenchidos.
 - Prazos da primeira resposta: ${URGENCIAS.map((u) => `${u.nome.toLowerCase()} (${u.quando.toLowerCase()}): ${u.prazo}`).join("; ")}.`;
 
-/** Manual completo da Vi para o perfil de quem pergunta (dono vê tudo; profissional só as telas dele). */
+/** Manual completo da Ivva para o perfil de quem pergunta (dono vê tudo; profissional só as telas dele). */
 export function manualDaVi(ehDono: boolean): string {
   const guias = GUIAS.filter((g) => ehDono || !g.soDono);
   return [`# MENU DO SISTEMA (onde fica cada coisa)\n${navegacao(ehDono)}`, `# GUIAS E VÍDEOS POR TELA\n${guias.map(guia).join("\n\n")}`, PLANOS, FAQ, PROBLEMAS, SUPORTE].join("\n\n");
 }
 
-/** IDs de guias que têm vídeo, para conferir os links que a Vi sugere. */
+/** IDs de guias que têm vídeo, para conferir os links que a Ivva sugere. */
 export const IDS_COM_VIDEO = new Set(GUIAS.filter((g) => g.video).map((g) => g.id));
