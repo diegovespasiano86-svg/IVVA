@@ -111,7 +111,7 @@ export default async function RelatoriosPage({ searchParams }: { searchParams: P
         </FeatureLock>
       )}
 
-      <section className="card mt-6 px-5 py-5 print:hidden">
+      <section className="card mt-6 px-5 py-4 print:hidden">
         <h2 className="flex items-center gap-2 text-[15px] font-extrabold">
           <Download size={17} className="text-purple" /> Exportar dados
         </h2>
@@ -143,7 +143,7 @@ type P = ReturnType<typeof lerPeriodo>;
 
 function Bloco({ titulo, subtitulo, children }: { titulo: string; subtitulo?: string; children: React.ReactNode }) {
   return (
-    <section className="card px-5 py-5">
+    <section className="card px-5 py-4">
       <h2 className="text-[14px] font-extrabold">{titulo}</h2>
       {subtitulo && <p className="mb-3.5 text-[12px] text-ink-soft">{subtitulo}</p>}
       {!subtitulo && <div className="mb-3.5" />}

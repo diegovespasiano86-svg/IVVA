@@ -16,7 +16,7 @@ export default function NovaCampanhaPage() {
         {MODELOS.map((m) => {
           const seg = SEGMENTOS_CAMPANHA.find((s) => s.id === m.segmento);
           return (
-            <form key={m.id} action={criarCampanha} className="card card-lift flex flex-col px-5 py-5">
+            <form key={m.id} action={criarCampanha} className="card card-lift flex flex-col px-5 py-4">
               <input type="hidden" name="modelo" value={m.id} />
               <h2 className="text-[15px] font-extrabold">{m.titulo}</h2>
               <p className="mt-0.5 text-[12.5px] text-ink-soft">{m.descricao}</p>
@@ -29,7 +29,7 @@ export default function NovaCampanhaPage() {
           );
         })}
 
-        <form action={criarCampanha} className="card card-lift flex flex-col items-start justify-center border-dashed px-5 py-5">
+        <form action={criarCampanha} className="card card-lift flex flex-col items-start justify-center border-dashed px-5 py-4">
           <h2 className="text-[15px] font-extrabold">Do zero</h2>
           <p className="mt-0.5 mb-4 text-[12.5px] text-ink-soft">Escreva a sua própria mensagem e escolha o público.</p>
           <button type="submit" className="btn btn-secondary btn-md">

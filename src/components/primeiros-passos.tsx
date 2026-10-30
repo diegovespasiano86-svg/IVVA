@@ -86,8 +86,8 @@ export default async function PrimeirosPassos({ termos }: { termos: Termos }) {
   const proximo = passos.find((p) => !p.feito);
 
   return (
-    <section className="card mb-5 overflow-hidden">
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4">
+    <section className="card mb-4 overflow-hidden">
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-3">
         <div>
           <h2 className="text-[16px] font-extrabold">Primeiros passos</h2>
           <p className="text-[12.5px] text-ink-soft">

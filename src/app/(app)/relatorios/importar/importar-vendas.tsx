@@ -165,7 +165,7 @@ export default function ImportarVendas() {
         </span>
       </p>
 
-      <section className="card px-5 py-5">
+      <section className="card px-5 py-4">
         <p className="mb-1 text-[11.5px] font-bold uppercase tracking-wide text-purple">Passo 1</p>
         <h2 className="mb-1 text-[16px] font-extrabold">Escolha o arquivo</h2>
         <p className="mb-4 text-[12.5px] text-ink-soft">
@@ -183,7 +183,7 @@ export default function ImportarVendas() {
       </section>
 
       {linhas.length > 1 && (
-        <section className="card px-5 py-5">
+        <section className="card px-5 py-4">
           <p className="mb-1 text-[11.5px] font-bold uppercase tracking-wide text-purple">Passo 2</p>
           <h2 className="mb-3 text-[16px] font-extrabold">Confira as colunas</h2>
           <div className="grid gap-3 sm:grid-cols-2">

@@ -51,7 +51,7 @@ export default async function IntegracoesPage({ searchParams }: { searchParams: 
         <p role="status" className={`mb-3 rounded-[12px] px-4 py-3 text-[13px] font-semibold ${avisoMP.ok ? "bg-teal/10 text-teal" : "bg-coral/10 text-coral"}`}>{avisoMP.texto}</p>
       )}
 
-      <div className="card mb-4 px-5 py-5">
+      <div className="card mb-4 px-5 py-4">
         <p className="text-[14px] font-bold">1. Asaas <span className="font-normal text-ink-soft">· cartão de crédito por link</span> {asaasEstado?.conectada && <b className="ml-1 text-[12px] text-teal">Conectado</b>}</p>
         <details className="my-2 text-[12.5px] text-ink-soft" open={!asaasEstado?.conectada}>
           <summary className="cursor-pointer font-bold text-purple">Como conectar, passo a passo</summary>
@@ -63,7 +63,7 @@ export default async function IntegracoesPage({ searchParams }: { searchParams: 
         <ConectarAsaas conectada={!!asaasEstado?.conectada} ambiente={asaasEstado?.ambiente ?? null} />
       </div>
 
-      <div className="card mb-4 px-5 py-5">
+      <div className="card mb-4 px-5 py-4">
         <p className="text-[14px] font-bold">2. Mercado Pago <span className="font-normal text-ink-soft">· Pix, link e maquininha Point</span> {mpEstado?.conectada && <b className="ml-1 text-[12px] text-teal">Conectado</b>}</p>
         {mpDisponivel() ? (
           <>
@@ -82,7 +82,7 @@ export default async function IntegracoesPage({ searchParams }: { searchParams: 
         )}
       </div>
 
-      <div className="card mb-4 px-5 py-5">
+      <div className="card mb-4 px-5 py-4">
         <p className="text-[14px] font-bold">3. Outras maquininhas <span className="font-normal text-ink-soft">· Stone, Cielo, Rede, Getnet, PagBank e outras</span></p>
         <ol className="ml-5 mt-2 list-decimal space-y-1 text-[12.5px] text-ink-soft">
           <li>Passe o cartão na sua maquininha normalmente.</li>
@@ -91,7 +91,7 @@ export default async function IntegracoesPage({ searchParams }: { searchParams: 
         </ol>
       </div>
 
-      <div className="card mb-4 px-5 py-5">
+      <div className="card mb-4 px-5 py-4">
         <p className="text-[14px] font-bold">Conferência das cobranças</p>
         <p className="mb-2 mt-1 text-[12.5px] text-ink-soft">Cada cobrança gerada pelo Checkout, com o que já foi pago e registrado. &ldquo;Paga, baixa falhou&rdquo; significa que o dinheiro entrou mas falta registrar a venda (ex.: sem estoque): registre manualmente no Checkout.</p>
         {cobrancas.length === 0 ? (
@@ -108,7 +108,7 @@ export default async function IntegracoesPage({ searchParams }: { searchParams: 
         )}
       </div>
 
-      <div className="card mb-4 px-5 py-5">
+      <div className="card mb-4 px-5 py-4">
         <p className="text-[14px] font-bold">Chaves de acesso</p>
         <p className="mb-3 mt-1 text-[12.5px] text-ink-soft">Quem tem a chave pode criar contatos no seu CRM. Trate como senha e revogue se vazar.</p>
         <NovaChave />
@@ -127,7 +127,7 @@ export default async function IntegracoesPage({ searchParams }: { searchParams: 
         )}
       </div>
 
-      <div className="card px-5 py-5">
+      <div className="card px-5 py-4">
         <p className="text-[14px] font-bold">Como usar</p>
         <p className="mb-2 mt-1 text-[12.5px] text-ink-soft">No Zapier, use a ação &ldquo;Webhooks by Zapier &gt; POST&rdquo;; no n8n, o nó &ldquo;HTTP Request&rdquo;. Dados em JSON:</p>
         <pre className="overflow-x-auto rounded-xl bg-surface-soft p-3 text-[12px] leading-relaxed">{`POST ${origem}/api/v1/contatos

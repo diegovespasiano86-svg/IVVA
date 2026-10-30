@@ -36,7 +36,7 @@ export default function IvvaEmNumeros({
   ];
 
   return (
-    <section className="card mb-4 px-5 py-5" aria-label="A ivva em números">
+    <section className="card mb-4 px-5 py-4" aria-label="A ivva em números">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-[14px] font-bold">A ivva em números neste mês</h2>
         {vezes >= 1 && (
@@ -45,11 +45,11 @@ export default function IvvaEmNumeros({
           </p>
         )}
       </div>
-      <div className="mt-3.5 grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4">
         {itens.map((i) => (
-          <div key={i.rotulo} className="rounded-[12px] bg-surface-soft px-3.5 py-3">
+          <div key={i.rotulo} className="rounded-[12px] bg-surface-soft px-3.5 py-2.5">
             <i.icon className="h-4 w-4 text-purple" strokeWidth={1.8} aria-hidden="true" />
-            <p className="mt-2 font-display text-[20px] font-extrabold leading-none">{i.valor}</p>
+            <p className="mt-2 font-display text-[19px] font-extrabold leading-none">{i.valor}</p>
             <p className="mt-1 text-[11.5px] leading-snug text-ink-faint">{i.rotulo}</p>
           </div>
         ))}

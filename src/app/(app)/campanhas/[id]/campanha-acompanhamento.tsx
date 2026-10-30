@@ -104,7 +104,7 @@ export default function CampanhaAcompanhamento({
         </p>
       )}
 
-      <section className="card px-5 py-5">
+      <section className="card px-5 py-4">
         <div className="mb-3 flex items-end justify-between gap-3">
           <p className="text-[13px] font-bold text-ink-soft">
             {status === "concluida" ? "Concluída" : status === "cancelada" ? "Cancelada" : status === "agendada" ? "Aguardando o horário agendado" : status === "pausada" ? "Pausada" : processando ? "Enviando agora…" : "Em andamento"}

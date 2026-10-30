@@ -28,7 +28,7 @@ export default async function ListasPage() {
         }
       />
       <div className="grid items-start gap-4 lg:grid-cols-[340px_1fr]">
-        <section className="card px-5 py-5">
+        <section className="card px-5 py-4">
           <h2 className="mb-3 text-[14px] font-extrabold">Nova lista</h2>
           <NovaLista />
           <p className="mt-4 text-[12px] leading-snug text-ink-soft">

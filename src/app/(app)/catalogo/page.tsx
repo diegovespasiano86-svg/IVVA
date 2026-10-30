@@ -235,7 +235,7 @@ function Analise({
         ))}
       </div>
 
-      <section className="card anim-rise px-5 py-5">
+      <section className="card anim-rise px-5 py-4">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-[14.5px] font-extrabold">Lista de compras</h2>
@@ -260,7 +260,7 @@ function Analise({
       </section>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <section className="card anim-rise px-5 py-5">
+        <section className="card anim-rise px-5 py-4">
           <h2 className="text-[14.5px] font-extrabold">Mais saíram (30 dias)</h2>
           <p className="mb-3 text-[12px] text-ink-soft">Vendas no Checkout e consumo pelas fichas técnicas.</p>
           {maisUsados.length === 0 ? (
@@ -277,7 +277,7 @@ function Analise({
           )}
         </section>
 
-        <section className="card anim-rise px-5 py-5">
+        <section className="card anim-rise px-5 py-4">
           <h2 className="text-[14.5px] font-extrabold">Parados há 60 dias</h2>
           <p className="mb-3 text-[12px] text-ink-soft">Com saldo e nenhuma saída. Vale uma promoção ou rever a compra.</p>
           {parados.length === 0 ? (
@@ -295,7 +295,7 @@ function Analise({
         </section>
       </div>
 
-      <section className="card anim-rise px-5 py-5">
+      <section className="card anim-rise px-5 py-4">
         <h2 className="text-[14.5px] font-extrabold">Margem dos serviços (sobre insumos)</h2>
         <p className="mb-3 text-[12px] text-ink-soft">Preço do serviço menos o custo dos insumos da ficha técnica. Serviço sem ficha não entra na conta.</p>
         {servicos.length === 0 ? (

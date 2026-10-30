@@ -27,7 +27,7 @@ export default function Alert({
   const t = TONS[tone];
   const Icon = icon ?? t.Icon;
   return (
-    <div role="status" className={`mb-5 flex flex-wrap items-center gap-3 rounded-2xl border px-4 py-3 ${t.box}`}>
+    <div role="status" className={`mb-4 flex flex-wrap items-center gap-3 rounded-2xl border px-4 py-2.5 ${t.box}`}>
       <span className={`relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${t.icon}`}>
         <Icon size={16} />
         {pulse && <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 animate-ping rounded-full bg-coral/80" />}

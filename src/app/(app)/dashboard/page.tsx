@@ -188,7 +188,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
   return (
     <div>
-      <section className="page-hero mb-5">
+      <section className="page-hero mb-4">
         <div className="relative z-10">
           <p className="text-[12.5px] font-bold uppercase tracking-wider text-white/60">{nomeNegocio || "Seu negócio"}</p>
           <h1 className="mt-1 font-display text-[26px] font-extrabold text-white">
@@ -220,7 +220,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
       {ehDono && <ResultadoEmReais inicioMes={startOfMonth.toISOString()} />}
 
-      <div className="mb-5">
+      <div className="mb-4">
         <AtendimentoAgora />
       </div>
 
@@ -233,13 +233,13 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       </div>
 
       <div className="mt-4 grid gap-3.5 lg:grid-cols-[1.4fr_1fr]">
-        <div className="card px-5 py-5">
+        <div className="card px-5 py-4">
           <p className="mb-0.5 text-[14px] font-bold">Atendimentos por dia</p>
           <p className="mb-3 text-[12px] text-ink-faint">Últimos 14 dias · novas conversas</p>
           <LineAreaChart pontos={pontosLinha} />
         </div>
 
-        <div className="card px-5 py-5">
+        <div className="card px-5 py-4">
           <p className="mb-0.5 text-[14px] font-bold">Serviços mais pedidos</p>
           <p className="mb-3 text-[12px] text-ink-faint">Por número de agendamentos</p>
           <HBarList itens={topServicos} />
@@ -247,7 +247,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       </div>
 
       <div className="mt-3.5 grid gap-3.5 lg:grid-cols-[1fr_1.1fr]">
-        <div className="card px-5 py-5">
+        <div className="card px-5 py-4">
           <p className="mb-0.5 text-[14px] font-bold">Funil do CRM</p>
           <p className="mb-3 text-[12px] text-ink-faint">Contatos por etapa agora</p>
           {etapasFunil.length === 0 ? (
@@ -257,7 +257,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           )}
         </div>
 
-        <div className="card px-5 py-5">
+        <div className="card px-5 py-4">
           <p className="mb-0.5 text-[14px] font-bold">Atendimentos por dia da semana</p>
           <p className="mb-3 text-[12px] text-ink-faint">Últimas 4 semanas</p>
           <VBarChart itens={itensDiaSemana} />
@@ -272,7 +272,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           variante="cards"
           className="px-5 py-4.5"
         >
-          <div className="card h-full px-5 py-4.5">
+          <div className="card h-full px-5 py-4">
           <p className="mb-3 text-[13px] font-bold">Central de atendimento</p>
           <div className="grid grid-cols-2 gap-4">
             <StatusTile
@@ -305,7 +305,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           variante="cards"
           className="px-5 py-4.5"
         >
-          <div className="card h-full px-5 py-4.5">
+          <div className="card h-full px-5 py-4">
             <StatusTile label="Satisfação média" valor={mediaNotas === "—" ? "—" : `${mediaNotas} ★`} tom="neutro" />
             <p className="mt-1.5 text-[11.5px] text-ink-faint">
               {notas.length} {notas.length === 1 ? "avaliação recebida" : "avaliações recebidas"}
@@ -313,14 +313,14 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           </div>
         </FeatureLock>
         {ehDono && (
-        <div className="card h-full px-5 py-4.5">
+        <div className="card h-full px-5 py-4">
           <StatusTile label="Faturamento do mês" valor={money.format(faturamentoMes)} tom="bom" />
           <p className="mt-1.5 text-[11.5px] text-ink-faint">Somando todos os profissionais</p>
         </div>
         )}
       </div>
 
-      <div className="card mt-3.5 px-5 py-5">
+      <div className="card mt-3.5 px-5 py-4">
         <p className="mb-1 text-[14px] font-bold">Próximos agendamentos</p>
         <p className="mb-4 text-[12px] text-ink-faint">
           Os 6 mais próximos, de todos os profissionais.

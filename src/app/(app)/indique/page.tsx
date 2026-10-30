@@ -49,7 +49,7 @@ export default async function IndiquePage() {
     <div className="mx-auto max-w-[820px]">
       <PageHeader icon={Gift} title="Indique e ganhe" subtitle="Ganhe 1 mês grátis do seu plano para cada negócio indicado que virar cliente pagante, até 6 meses. Quem você indica ganha 10% na primeira mensalidade." />
 
-      <section className="card mb-4 px-5 py-5">
+      <section className="card mb-4 px-5 py-4">
         <p className="text-[11px] font-extrabold uppercase tracking-wide text-ink-faint">Seu link de indicação</p>
         {link ? (
           <>
@@ -78,7 +78,7 @@ export default async function IndiquePage() {
         </div>
       </section>
 
-      <section className="card mb-4 px-5 py-5">
+      <section className="card mb-4 px-5 py-4">
         <h2 className="text-[14px] font-extrabold">Regras</h2>
         <ul className="mt-2.5 list-disc space-y-1.5 pl-5 text-[13px] text-ink-soft">
           {REGRAS_INDICACAO.map((r) => (
@@ -87,7 +87,7 @@ export default async function IndiquePage() {
         </ul>
       </section>
 
-      <section className="card px-5 py-5">
+      <section className="card px-5 py-4">
         <h2 className="text-[14px] font-extrabold">Suas indicações</h2>
         {!lista || lista.length === 0 ? (
           <p className="mt-2 text-[13px] text-ink-soft">Ainda não há indicações. Compartilhe o seu link para começar.</p>

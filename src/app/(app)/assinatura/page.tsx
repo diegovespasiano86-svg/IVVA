@@ -112,7 +112,7 @@ export default async function AssinaturaPage(props: { searchParams: Promise<{ er
       )}
 
       {agendado && (
-        <div className="card mb-4 border-purple/40 px-5 py-5">
+        <div className="card mb-4 border-purple/40 px-5 py-4">
           <p className="text-[11px] font-extrabold uppercase tracking-wide text-purple">Antes de você ir</p>
           <p className="mt-1 font-display text-[18px] font-extrabold">
             Sua assinatura termina em {new Date(agendado.fim).toLocaleDateString("pt-BR")}
@@ -136,7 +136,7 @@ export default async function AssinaturaPage(props: { searchParams: Promise<{ er
         </div>
       )}
 
-      <div className="card mb-4 flex flex-wrap items-center justify-between gap-4 px-5 py-5">
+      <div className="card mb-4 flex flex-wrap items-center justify-between gap-4 px-5 py-4">
         <div>
           <p className="text-[11px] font-extrabold uppercase tracking-wide text-ink-faint">Plano atual</p>
           <p className="font-display text-[22px] font-extrabold">
@@ -194,7 +194,7 @@ function AssinaturaPix({
       <h1 className="font-display text-[22px] font-bold">Minha assinatura</h1>
       <p className="mb-5 text-[13px] text-ink-soft">Plano, pagamento e faturas do seu negócio.</p>
 
-      <div className="card mb-4 flex flex-wrap items-center justify-between gap-4 px-5 py-5">
+      <div className="card mb-4 flex flex-wrap items-center justify-between gap-4 px-5 py-4">
         <div>
           <p className="text-[11px] font-extrabold uppercase tracking-wide text-ink-faint">Plano atual · pago no Pix</p>
           <p className="font-display text-[22px] font-extrabold">

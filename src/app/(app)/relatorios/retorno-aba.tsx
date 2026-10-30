@@ -105,7 +105,7 @@ export default async function RetornoAba({
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <section className="card px-5 py-5">
+        <section className="card px-5 py-4">
           <h2 className="text-[14px] font-extrabold">Como chegamos nesse número</h2>
           <p className="mb-3.5 text-[12px] text-ink-soft">Tudo vem dos seus dados. Nada é projeção, exceto onde está escrito estimativa.</p>
           <dl className="text-[13px]">
@@ -125,7 +125,7 @@ export default async function RetornoAba({
           </p>
         </section>
 
-        <section className="card px-5 py-5 print:hidden">
+        <section className="card px-5 py-4 print:hidden">
           <h2 className="text-[14px] font-extrabold">Ajuste a conta para a sua realidade</h2>
           <p className="mb-3.5 text-[12px] text-ink-soft">Estes valores servem só para este cálculo. Eles não ficam salvos.</p>
           <form method="get" action="/relatorios" className="flex flex-col gap-3">

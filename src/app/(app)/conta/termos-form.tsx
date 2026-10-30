@@ -16,7 +16,7 @@ export default function TermosForm({ padrao, atuais, nichoNome }: { padrao: Term
   const [estado, acao, pendente] = useActionState<EstadoTermos, FormData>(salvarTermos, { erro: null });
 
   return (
-    <form action={acao} className="card mb-4 px-5 py-5">
+    <form action={acao} className="card mb-4 px-5 py-4">
       <div className="mb-4">
         <p className="text-[14px] font-bold">Como você chama as coisas</p>
         <p className="text-[12.5px] text-ink-soft">

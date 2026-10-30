@@ -145,7 +145,7 @@ export default function CampanhaEditor({
     <div className="grid items-start gap-5 lg:grid-cols-[1fr_340px]">
       <div className="flex flex-col gap-4">
         {/* ---------- passo 1 ---------- */}
-        <section className="card px-5 py-5">
+        <section className="card px-5 py-4">
           <p className="mb-1 text-[11.5px] font-bold uppercase tracking-wide text-purple">Passo 1</p>
           <h2 className="mb-3 flex items-center gap-2 text-[16px] font-extrabold">
             <Users size={18} className="text-purple" /> Quem vai receber
@@ -226,7 +226,7 @@ export default function CampanhaEditor({
         </section>
 
         {/* ---------- passo 2 ---------- */}
-        <section className="card px-5 py-5">
+        <section className="card px-5 py-4">
           <p className="mb-1 text-[11.5px] font-bold uppercase tracking-wide text-purple">Passo 2</p>
           <h2 className="mb-1 text-[16px] font-extrabold">A mensagem</h2>
           <p className="mb-3 text-[12.5px] text-ink-soft">
@@ -277,7 +277,7 @@ export default function CampanhaEditor({
         </section>
 
         {/* ---------- passo 3 ---------- */}
-        <section className="card px-5 py-5">
+        <section className="card px-5 py-4">
           <p className="mb-1 text-[11.5px] font-bold uppercase tracking-wide text-purple">Passo 3</p>
           <h2 className="mb-3 flex items-center gap-2 text-[16px] font-extrabold">
             <ShieldCheck size={18} className="text-teal" /> Autorização e envio

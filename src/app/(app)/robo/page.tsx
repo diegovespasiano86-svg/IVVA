@@ -120,7 +120,7 @@ export default async function RoboPage() {
       <LinkPublico />
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <div className="card px-5 py-5">
+        <div className="card px-5 py-4">
           <p className="mb-1 text-[14px] font-bold">
             Personalidade do atendimento
           </p>
@@ -131,7 +131,7 @@ export default async function RoboPage() {
           <AssistantForm identidade={tenant?.identidade_assistente ?? null} />
         </div>
 
-        <div className="card px-5 py-5">
+        <div className="card px-5 py-4">
           <p className="mb-1 text-[14px] font-bold">
             Pós-venda, vendas e automações
           </p>

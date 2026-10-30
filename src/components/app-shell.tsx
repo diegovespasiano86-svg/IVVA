@@ -413,7 +413,7 @@ export default function AppShell({
         </div>
 
         {/* ---------- conteúdo ---------- */}
-        <main className="min-w-0 flex-1 overflow-x-hidden px-4 pb-24 pt-6 md:px-8 md:pb-8 md:pt-8"><div className="mx-auto w-full max-w-[1320px]">{children}</div></main>
+        <main className="min-w-0 flex-1 overflow-x-hidden px-4 pb-24 pt-4 md:px-7 md:pb-6 md:pt-5"><div className="mx-auto w-full max-w-[1320px]">{children}</div></main>
       </div>
 
       {/* ---------- barra inferior (celular) ---------- */}

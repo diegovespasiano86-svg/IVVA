@@ -102,7 +102,7 @@ export default async function TarefasPage() {
         </form></>} />
 
       <div className="mb-5 grid grid-cols-1 gap-3.5 sm:grid-cols-3">
-        <div className="card px-5 py-4.5">
+        <div className="card px-5 py-4">
           <p className="mb-2.5 text-[11.5px] font-bold uppercase tracking-wide text-ink-faint">
             Contatos esta semana
           </p>
@@ -110,7 +110,7 @@ export default async function TarefasPage() {
             {estaSemana.length}
           </p>
         </div>
-        <div className="card px-5 py-4.5">
+        <div className="card px-5 py-4">
           <p className="mb-2.5 text-[11.5px] font-bold uppercase tracking-wide text-ink-faint">
             Responderam
           </p>
@@ -121,7 +121,7 @@ export default async function TarefasPage() {
             </span>
           </p>
         </div>
-        <div className="card px-5 py-4.5">
+        <div className="card px-5 py-4">
           <p className="mb-2.5 text-[11.5px] font-bold uppercase tracking-wide text-ink-faint">
             Agendamentos gerados
           </p>
