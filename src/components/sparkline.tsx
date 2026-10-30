@@ -71,6 +71,11 @@ export function Sparkline({
       </svg>
       <span
         aria-hidden="true"
+        className="chart-ping absolute h-[7px] w-[7px] rounded-full"
+        style={{ left: `${(ult.x / VW) * 100}%`, top: ult.y, background: traco }}
+      />
+      <span
+        aria-hidden="true"
         className="chart-fade-late absolute h-[7px] w-[7px] -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-white"
         style={{ left: `${(ult.x / VW) * 100}%`, top: ult.y, background: traco }}
       />

@@ -134,13 +134,15 @@ export function LineAreaChart({
         <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="block w-full overflow-visible" role="img" aria-label={resumo}>
           <defs>
             <linearGradient id={`${uid}-a`} gradientUnits="userSpaceOnUse" x1="0" y1={TOPO} x2="0" y2={BASE}>
-              <stop offset="0%" style={{ stopColor: fixa ?? "var(--accent-b)", stopOpacity: 0.26 }} />
-              <stop offset="70%" style={{ stopColor: fixa ?? "var(--accent-b)", stopOpacity: 0.06 }} />
-              <stop offset="100%" style={{ stopColor: fixa ?? "var(--accent-b)", stopOpacity: 0 }} />
+              <stop offset="0%" style={{ stopColor: fixa ?? "var(--chart-b)" }} stopOpacity={0.26}>
+                <animate attributeName="stop-opacity" values="0.26;0.13;0.26" dur="5s" repeatCount="indefinite" />
+              </stop>
+              <stop offset="70%" style={{ stopColor: fixa ?? "var(--chart-b)", stopOpacity: 0.06 }} />
+              <stop offset="100%" style={{ stopColor: fixa ?? "var(--chart-b)", stopOpacity: 0 }} />
             </linearGradient>
             <linearGradient id={`${uid}-l`} gradientUnits="userSpaceOnUse" x1={ESQ} y1="0" x2={ESQ + largPlot} y2="0">
-              <stop offset="0%" style={{ stopColor: "var(--accent-a)" }} />
-              <stop offset="100%" style={{ stopColor: "var(--accent-b)" }} />
+              <stop offset="0%" style={{ stopColor: "var(--chart-a)" }} />
+              <stop offset="100%" style={{ stopColor: "var(--chart-b)" }} />
             </linearGradient>
           </defs>
 
@@ -174,20 +176,23 @@ export function LineAreaChart({
 
           {/* período anterior */}
           {linhaComp && (
-            <path d={linhaComp} fill="none" stroke="var(--ink-faint)" strokeOpacity="0.7" strokeWidth="1.75" strokeDasharray="4 4" strokeLinecap="round" className="chart-fade" />
+            <path d={linhaComp} fill="none" stroke="var(--ink-faint)" strokeOpacity="0.7" strokeWidth="1.75" strokeDasharray="4 4" strokeLinecap="round" className="chart-fade">
+              <animate attributeName="stroke-dashoffset" from="0" to="-16" dur="2s" repeatCount="indefinite" />
+            </path>
           )}
 
           {/* área + linha */}
           {n > 1 && <path d={area} fill={`url(#${uid}-a)`} className="chart-fade" />}
           {n > 1 && (
             <path
+              id={`${uid}-p`}
               d={linha}
               fill="none"
               pathLength={1}
               strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="chart-draw"
+              className="chart-draw chart-glow"
               style={{ stroke: corLinha }}
             />
           )}
@@ -206,6 +211,21 @@ export function LineAreaChart({
             >
               {formatarCompacto(pontos[picoIdx].valor, formato)}
             </text>
+            {/* ponto de luz que percorre a curva */}
+            {n > 1 && (
+              <>
+                <circle r="8" opacity="0.22" style={{ fill: corPonto }}>
+                  <animateMotion dur="7s" repeatCount="indefinite" begin="1s">
+                    <mpath href={`#${uid}-p`} />
+                  </animateMotion>
+                </circle>
+                <circle r="3.2" stroke={corPonto} strokeWidth="1.5" style={{ fill: "var(--surface)" }}>
+                  <animateMotion dur="7s" repeatCount="indefinite" begin="1s">
+                    <mpath href={`#${uid}-p`} />
+                  </animateMotion>
+                </circle>
+              </>
+            )}
             {/* último ponto com halo */}
             <circle cx={coords[ultIdx].x} cy={coords[ultIdx].y} r="9" opacity="0.16" style={{ fill: corPonto }} className="chart-halo" />
             <circle cx={coords[ultIdx].x} cy={coords[ultIdx].y} r="4.5" stroke="var(--surface)" strokeWidth="2" style={{ fill: corPonto }} />

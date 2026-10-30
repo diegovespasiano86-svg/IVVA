@@ -35,8 +35,8 @@ export function ProgressRing({
         <svg width={tamanho} height={tamanho} viewBox={`0 0 ${tamanho} ${tamanho}`} aria-hidden="true" className="-rotate-90">
           <defs>
             <linearGradient id={`${uid}-r`} x1="0" y1="1" x2="1" y2="0">
-              <stop offset="0%" style={{ stopColor: "var(--accent-a)" }} />
-              <stop offset="100%" style={{ stopColor: "var(--accent-b)" }} />
+              <stop offset="0%" style={{ stopColor: "var(--chart-a)" }} />
+              <stop offset="100%" style={{ stopColor: "var(--chart-b)" }} />
             </linearGradient>
           </defs>
           <circle cx={c} cy={c} r={r} fill="none" stroke="var(--surface-soft)" strokeWidth={esp} />
@@ -53,6 +53,11 @@ export function ProgressRing({
               strokeDasharray={`${pct} 100`}
               className="chart-ring"
             />
+          )}
+          {pct > 0 && (
+            <g className="chart-orbitar" style={{ transformOrigin: `${c}px ${c}px` }}>
+              <circle cx={c} cy={c - r} r={Math.max(2, esp * 0.2)} fill="#fff" opacity="0.9" />
+            </g>
           )}
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
