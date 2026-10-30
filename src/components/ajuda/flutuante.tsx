@@ -4,7 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Mic, PlayCircle, Send, Square, Volume2, X } from "lucide-react";
+import { Mic, PlayCircle, Send, Square, Volume2, VolumeX, X } from "lucide-react";
+import { definirVoz, FRASES, pararFrases, tocarFrases, vozLigada } from "@/lib/voz-ivva";
 import { guiaDaRota, guiasDoPerfil } from "@/lib/ajuda-busca";
 import VideoModal from "./video-modal";
 
@@ -62,6 +63,10 @@ export default function AjudaFlutuante({ ehDono }: { ehDono: boolean }) {
   const gravadorRef = useRef<MediaRecorder | null>(null);
   const pedacosRef = useRef<Blob[]>([]);
   const playerRef = useRef<HTMLAudioElement | null>(null);
+  // Frases gravadas da Ivva (voz fixa, sem custo): tocam ao abrir a conversa; o ícone de som silencia.
+  const [somLigado, setSomLigado] = useState(true);
+  const [completou, setCompletou] = useState(false);
+  const falouRef = useRef(false);
   const [calmo, setCalmo] = useState(false); // "Depois": o círculo para de piscar até o próximo cadastro
   const [chegou, setChegou] = useState(false); // pulsada quando ela termina o voo do popup de boas-vindas
 
@@ -101,6 +106,9 @@ export default function AjudaFlutuante({ ehDono }: { ehDono: boolean }) {
           setCalmo(false);
         }
         totalAntes.current = d.total;
+        try {
+          if (d.total > 0) localStorage.setItem("ivva:tinha-pendencia", "1");
+        } catch {}
         setPend(d);
       })
       .catch(() => {});
@@ -121,6 +129,42 @@ export default function AjudaFlutuante({ ehDono }: { ehDono: boolean }) {
     window.addEventListener("ivva:chegou", aoChegar);
     return () => window.removeEventListener("ivva:chegou", aoChegar);
   }, []);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- lê localStorage só no navegador
+    setSomLigado(vozLigada());
+  }, []);
+
+  // Ao abrir a conversa, a Ivva fala: o que falta (8 e 10) ou, se tudo ficou pronto, a comemoração (9).
+  useEffect(() => {
+    if (!aberto) {
+      falouRef.current = false;
+      pararFrases();
+      return;
+    }
+    if (falouRef.current || !pend) return;
+    falouRef.current = true;
+    if (pend.total > 0) {
+      if (somLigado) tocarFrases([FRASES.percebi, FRASES.agoraOuDepois]);
+      return;
+    }
+    let tinha = false;
+    try {
+      tinha = localStorage.getItem("ivva:tinha-pendencia") === "1";
+      if (tinha) localStorage.removeItem("ivva:tinha-pendencia");
+    } catch {}
+    if (tinha) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- mostra a mensagem de tudo pronto uma vez
+      setCompletou(true);
+      if (somLigado) tocarFrases([FRASES.completou]);
+    }
+  }, [aberto, pend, somLigado]);
+
+  function alternarSom() {
+    const novo = !somLigado;
+    setSomLigado(novo);
+    definirVoz(novo);
+  }
 
   function pararAudio() {
     playerRef.current?.pause();
@@ -277,6 +321,9 @@ export default function AjudaFlutuante({ ehDono }: { ehDono: boolean }) {
                 <p className="text-[14px] font-extrabold">Pergunte a Ivva</p>
                 <p className="text-[11.5px] font-semibold text-teal">Ivva, assistente virtual</p>
               </div>
+              <button type="button" onClick={alternarSom} aria-label={somLigado ? "Silenciar a voz da Ivva" : "Ligar a voz da Ivva"} aria-pressed={somLigado} className="rounded-full p-1.5 text-ink-soft hover:bg-surface-soft">
+                {somLigado ? <Volume2 size={17} /> : <VolumeX size={17} />}
+              </button>
               <button type="button" onClick={() => setAberto(false)} aria-label="Fechar" className="rounded-full p-1.5 text-ink-soft hover:bg-surface-soft">
                 <X size={18} />
               </button>
@@ -288,6 +335,11 @@ export default function AjudaFlutuante({ ehDono }: { ehDono: boolean }) {
                   Oi{nome ? `, ${nome}` : ""}! 👋 Eu sou a Ivva. Me conta o que você precisa: eu explico, mostro o vídeo e levo você até a tela certa 💜
                 </p>
               </div>
+              {msgs.length === 0 && completou && pend && pend.total === 0 && (
+                <div className="mr-8 rounded-2xl rounded-bl-sm bg-purple/10 px-3.5 py-2.5">
+                  <p>Pronto! Você completou o essencial. O robô já sabe atender. 🙌</p>
+                </div>
+              )}
               {msgs.length === 0 && pend && pend.total > 0 && (
                 <div className="mr-8 rounded-2xl rounded-bl-sm bg-purple/10 px-3.5 py-2.5">
                   <p>

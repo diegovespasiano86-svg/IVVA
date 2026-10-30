@@ -3,7 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { X } from "lucide-react";
+import { Square, Volume2, X } from "lucide-react";
+import { APRESENTACAO, pararFrases, tocarFrases, vozLigada } from "@/lib/voz-ivva";
 
 const CHAVE = "ivva:boas-vindas-modal";
 const CHAVE_VIDEO = "ivva:boas-vindas-video";
@@ -86,7 +87,30 @@ export default function BoasVindasModal({ nome, passos }: { nome?: string; passo
     };
   }, [temPendente]);
 
+  const [falando, setFalando] = useState(false);
+
+  async function falar() {
+    if (falando) {
+      pararFrases();
+      setFalando(false);
+      return;
+    }
+    setFalando(true);
+    await tocarFrases(APRESENTACAO, () => setFalando(false));
+    setFalando(false);
+  }
+
+  // A Ivva se apresenta em voz assim que o popup abre. Se o navegador bloquear o som, o botão "Ouvir a Ivva" fica à mão.
+  useEffect(() => {
+    if (!aberto || !vozLigada()) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- inicia a fala ao abrir o popup
+    setFalando(true);
+    tocarFrases(APRESENTACAO, () => setFalando(false)).then((ok) => !ok && setFalando(false));
+    return () => pararFrases();
+  }, [aberto]);
+
   function fechar() {
+    pararFrases();
     voarParaOTopo();
     setAberto(false);
     try {
@@ -126,6 +150,10 @@ export default function BoasVindasModal({ nome, passos }: { nome?: string; passo
           <p>Depois seguimos com os clientes, o catálogo e a agenda. Cada passo tem um vídeo curto: acesse em <Link href="/ajuda" onClick={fechar} className="font-bold text-purple hover:underline">Guias e vídeos</Link> ou me peça que eu mostro.</p>
           <p>Se achar que o cadastro não está completo, é só me chamar: eu trago o que já concluímos e o que falta. Estou aqui no topo, é só clicar em mim. 💜</p>
         </div>
+
+        <button type="button" onClick={falar} className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-[12.5px] font-bold text-ink-soft hover:bg-surface-soft">
+          {falando ? <Square size={12} /> : <Volume2 size={14} />} {falando ? "Parar" : "Ouvir a Ivva"}
+        </button>
 
         <div className="mt-5 flex flex-wrap items-center gap-3">
           <Link href="/base-conhecimento" onClick={fechar} className="btn btn-primary btn-md">
