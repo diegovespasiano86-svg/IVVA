@@ -137,7 +137,21 @@ export default function TemaApp() {
     };
   }, []);
 
-  const onda = "M2 24c8 0 10-18 20-18s8 30 18 30 10-26 20-26 8 22 18 22 10-14 20-14 8 10 18 10";
+  // brilho de vidro que acompanha o cursor dentro do cartão (ver vidro.css)
+  useEffect(() => {
+    const mover = (e: PointerEvent) => {
+      const alvo = e.target as Element | null;
+      const c = alvo?.closest?.(".card") as HTMLElement | null;
+      if (!c) return;
+      const r = c.getBoundingClientRect();
+      c.style.setProperty("--mx", `${e.clientX - r.left}px`);
+      c.style.setProperty("--my", `${e.clientY - r.top}px`);
+    };
+    document.addEventListener("pointermove", mover, { passive: true });
+    return () => document.removeEventListener("pointermove", mover);
+  }, []);
+
+  const onda ="M2 24c8 0 10-18 20-18s8 30 18 30 10-26 20-26 8 22 18 22 10-14 20-14 8 10 18 10";
   return (
     <div className="fx" aria-hidden="true">
       <canvas id="fx-rede" className="fx-rede" />

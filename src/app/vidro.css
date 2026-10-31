@@ -1,0 +1,80 @@
+/* Vidro (glass): cartões e barras translúcidos com desfoque, brilho que segue o cursor
+   e entrada das telas em movimento. Só em telas com mouse/telão; no celular os cartões
+   continuam sólidos para poupar bateria. Vem depois de ambient.css e tema.css. */
+
+@media (min-width: 768px) {
+  html body .card:not([class*="bg-"]) {
+    background-color: rgba(255, 255, 255, 0.55);
+    border-color: rgba(255, 255, 255, 0.8);
+    -webkit-backdrop-filter: blur(20px) saturate(1.6);
+    backdrop-filter: blur(20px) saturate(1.6);
+    box-shadow:
+      0 0 0 1px rgba(36, 31, 46, 0.045),
+      inset 0 1px 0 rgba(255, 255, 255, 0.7),
+      var(--shadow-1);
+  }
+  html[data-theme="dark"] body .card:not([class*="bg-"]) {
+    background-color: rgba(14, 19, 44, 0.5);
+    border-color: rgba(150, 170, 255, 0.2);
+    box-shadow: var(--shadow-1), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  }
+
+  /* brilho de vidro que acompanha o cursor (posição vem de tema-app.tsx) */
+  html body .card:not([class*="bg-"]):hover {
+    background-image: radial-gradient(280px circle at var(--mx, 50%) var(--my, -30%), rgba(255, 255, 255, 0.5), transparent 62%);
+  }
+  html[data-theme="dark"] body .card:not([class*="bg-"]):hover {
+    background-image: radial-gradient(280px circle at var(--mx, 50%) var(--my, -30%), rgba(154, 140, 255, 0.2), transparent 62%);
+  }
+
+  /* menu lateral em vidro */
+  html:not([data-theme="dark"]) nav[aria-label="Menu principal"].bg-white\/90 {
+    background-color: rgba(255, 255, 255, 0.5);
+  }
+  html:not([data-theme="dark"]) nav[aria-label="Menu principal"].bg-white {
+    background-color: rgba(255, 255, 255, 0.78);
+  }
+}
+
+/* o fundo animado aparece por trás do vidro: mesma intensidade nos dois modos */
+html:not([data-theme="dark"]) .fx-blob {
+  opacity: 0.4;
+}
+html:not([data-theme="dark"]) {
+  --fx-pico: 0.4;
+}
+
+/* entrada das telas: os blocos sobem, desfocam e entram um atrás do outro */
+@keyframes ivva-in {
+  from {
+    opacity: 0;
+    transform: translateY(26px) scale(0.975);
+    filter: blur(10px);
+  }
+  60% {
+    filter: blur(0);
+  }
+}
+.stagger > * > * {
+  animation-duration: 0.8s;
+  animation-timing-function: cubic-bezier(0.2, 0.85, 0.25, 1);
+}
+.stagger > * > *:nth-child(2) { animation-delay: 70ms; }
+.stagger > * > *:nth-child(3) { animation-delay: 140ms; }
+.stagger > * > *:nth-child(4) { animation-delay: 210ms; }
+.stagger > * > *:nth-child(5) { animation-delay: 280ms; }
+.stagger > * > *:nth-child(6) { animation-delay: 350ms; }
+.stagger > * > *:nth-child(7) { animation-delay: 420ms; }
+.stagger > * > *:nth-child(n + 8) { animation-delay: 480ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  @keyframes ivva-in {
+    from { opacity: 1; transform: none; filter: none; }
+  }
+}
+@media print {
+  html body .card {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
