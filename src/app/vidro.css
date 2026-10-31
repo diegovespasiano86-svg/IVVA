@@ -392,3 +392,20 @@ html:not([data-theme="dark"]) body .fixed .card {
     backdrop-filter: blur(20px) saturate(1.6);
   }
 }
+
+/* ================= janelas (vídeo etc.) abrem por cima, nunca no rodapé =================
+   Animações de entrada com "fill: both" deixavam filter/transform ativos depois de acabar, e isso
+   prende qualquer janela "fixed" ao bloco da página (a janela abria lá embaixo). Agora o efeito só
+   vale antes e durante a animação (backwards) e some ao terminar. */
+.stagger > * > *,
+.anim-rise,
+html body .tela-rise {
+  animation-fill-mode: backwards;
+}
+/* rede de segurança: bloco que contém uma janela aberta nunca vira referência do "fixed" */
+html body :is(.card, .page-hero, .tela-rise, .tela-pre, .stagger > * > *):has(.fixed[role="dialog"]) {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  transform: none;
+  filter: none;
+}
