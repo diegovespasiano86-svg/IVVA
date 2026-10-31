@@ -20,6 +20,7 @@ import MotionEffects from "@/components/motion-effects";
 import Aparencia from "@/components/aparencia";
 import ModoTema from "@/components/modo-tema";
 import TemaApp from "@/components/tema-app";
+import EntradaTela from "@/components/entrada-tela";
 import AjudaFlutuante from "@/components/ajuda/flutuante";
 import TourDaTela from "@/components/ajuda/tour-da-tela";
 import { SuporteModal } from "@/components/suporte/falar-com-suporte";
@@ -240,6 +241,7 @@ export default function AppShell({
   return (
     <div className="flex min-h-screen flex-col">
       <TemaApp />
+      <EntradaTela />
       {/* ---------- topo ---------- */}
       <header className="sticky top-0 z-40 bg-ink-deep text-white print:hidden">
         <div className="flex h-14 items-center gap-3 px-4 md:px-5">
