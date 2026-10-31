@@ -30,13 +30,14 @@ export function aplicarTema(t: Tema) {
  * Montado dentro do AppShell: aplica o tema guardado enquanto o usuário está no app, remove ao sair
  * e desenha o fundo animado (rede de pontos, brilhos que derivam e a onda da marca que aparece e some).
  */
-export default function TemaApp() {
+export default function TemaApp({ semTema = false }: { semTema?: boolean }) {
   useEffect(() => {
+    if (semTema) return;
     aplicarTema(temaGuardado());
     return () => {
       document.documentElement.removeAttribute("data-theme");
     };
-  }, []);
+  }, [semTema]);
 
   useEffect(() => {
     const cv = document.getElementById("fx-rede") as HTMLCanvasElement | null;
@@ -135,7 +136,7 @@ export default function TemaApp() {
       document.removeEventListener("visibilitychange", iniciar);
       reduzir.removeEventListener("change", iniciar);
     };
-  }, []);
+  }, [semTema]);
 
   // brilho de vidro que acompanha o cursor dentro do cartão (ver vidro.css)
   useEffect(() => {
@@ -168,7 +169,7 @@ export default function TemaApp() {
       document.removeEventListener("pointermove", mover);
       document.documentElement.removeEventListener("pointerleave", sair);
     };
-  }, []);
+  }, [semTema]);
 
   const onda ="M2 24c8 0 10-18 20-18s8 30 18 30 10-26 20-26 8 22 18 22 10-14 20-14 8 10 18 10";
   return (
