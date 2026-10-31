@@ -139,7 +139,21 @@ export default function TemaApp() {
 
   // brilho de vidro que acompanha o cursor dentro do cartão (ver vidro.css)
   useEffect(() => {
+    const luz = document.getElementById("fx-cursor");
+    let quadro = 0;
+    let lx = 0;
+    let ly = 0;
+    const seguir = () => {
+      quadro = 0;
+      if (!luz) return;
+      luz.style.transform = `translate3d(${lx}px, ${ly}px, 0)`;
+      luz.classList.add("on");
+    };
+    const sair = () => luz?.classList.remove("on");
     const mover = (e: PointerEvent) => {
+      lx = e.clientX;
+      ly = e.clientY;
+      if (!quadro) quadro = requestAnimationFrame(seguir);
       const alvo = e.target as Element | null;
       const c = alvo?.closest?.(".card") as HTMLElement | null;
       if (!c) return;
@@ -148,7 +162,12 @@ export default function TemaApp() {
       c.style.setProperty("--my", `${e.clientY - r.top}px`);
     };
     document.addEventListener("pointermove", mover, { passive: true });
-    return () => document.removeEventListener("pointermove", mover);
+    document.documentElement.addEventListener("pointerleave", sair);
+    return () => {
+      cancelAnimationFrame(quadro);
+      document.removeEventListener("pointermove", mover);
+      document.documentElement.removeEventListener("pointerleave", sair);
+    };
   }, []);
 
   const onda ="M2 24c8 0 10-18 20-18s8 30 18 30 10-26 20-26 8 22 18 22 10-14 20-14 8 10 18 10";
@@ -158,6 +177,7 @@ export default function TemaApp() {
       <span className="fx-blob fx-b1" />
       <span className="fx-blob fx-b2" />
       <span className="fx-blob fx-b3" />
+      <span id="fx-cursor" className="fx-cursor" />
       <svg className="fx-marca fx-m1" viewBox="0 0 120 40">
         <path pathLength={1} d={onda} />
       </svg>
