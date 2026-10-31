@@ -78,3 +78,97 @@ html:not([data-theme="dark"]) {
     backdrop-filter: none;
   }
 }
+
+/* ================= ajustes: fundo claro calmo, menu e faixa em vidro, entrada das telas ================= */
+
+/* fundo claro: lilás suave (sem arco-íris); as animações são as mesmas do escuro */
+html:not([data-theme="dark"]) {
+  --fx-pico: 0.3;
+}
+html:not([data-theme="dark"]) body:has(.fx) {
+  background-color: #f1eff9;
+}
+html:not([data-theme="dark"]) .fx-blob {
+  opacity: 0.2;
+}
+html:not([data-theme="dark"]) .fx-b1 { background: #9b8cf0; }
+html:not([data-theme="dark"]) .fx-b2 { background: #86d6c4; opacity: 0.13; }
+html:not([data-theme="dark"]) .fx-b3 { background: #8fb0f5; opacity: 0.13; }
+html:not([data-theme="dark"]) body:has(.fx)::before {
+  background-image:
+    radial-gradient(900px circle at 0% 0%, rgba(139, 127, 232, 0.16), transparent 66%),
+    radial-gradient(900px circle at 100% 100%, rgba(120, 150, 240, 0.1), transparent 66%);
+}
+
+/* menu lateral em vidro (claro e escuro) */
+@media (min-width: 768px) {
+  html:not([data-theme="dark"]) nav[aria-label="Menu principal"].bg-white\/90 {
+    background-color: rgba(255, 255, 255, 0.26);
+  }
+  html:not([data-theme="dark"]) nav[aria-label="Menu principal"].bg-white {
+    background-color: rgba(255, 255, 255, 0.5);
+  }
+  html:not([data-theme="dark"]) nav[aria-label="Menu principal"] {
+    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.08));
+    border-right-color: rgba(255, 255, 255, 0.75);
+    -webkit-backdrop-filter: blur(22px) saturate(1.8);
+    backdrop-filter: blur(22px) saturate(1.8);
+    box-shadow: inset -1px 0 0 rgba(139, 127, 232, 0.14), 10px 0 30px -22px rgba(80, 60, 160, 0.4);
+  }
+  html[data-theme="dark"] nav[aria-label="Menu principal"].bg-white\/90 {
+    background-color: rgba(9, 13, 34, 0.42);
+  }
+  html[data-theme="dark"] nav[aria-label="Menu principal"] {
+    -webkit-backdrop-filter: blur(22px) saturate(1.6);
+    backdrop-filter: blur(22px) saturate(1.6);
+  }
+}
+
+/* faixa "Boa noite" em vidro, com destaque, no modo claro */
+html:not([data-theme="dark"]) .page-hero {
+  color: var(--ink-deep);
+  background:
+    linear-gradient(180deg, #2fbf9f, #8b7fe8) left / 4px 100% no-repeat,
+    radial-gradient(520px 200px at 92% -50%, rgba(139, 127, 232, 0.45), transparent 62%),
+    radial-gradient(420px 180px at 0% 150%, rgba(47, 191, 159, 0.24), transparent 62%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.74), rgba(255, 255, 255, 0.46));
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  -webkit-backdrop-filter: blur(22px) saturate(1.6);
+  backdrop-filter: blur(22px) saturate(1.6);
+  box-shadow:
+    0 20px 44px -26px rgba(80, 60, 160, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 0 0 1px rgba(139, 127, 232, 0.16);
+}
+html:not([data-theme="dark"]) .page-hero h1 { color: var(--ink-deep); }
+html:not([data-theme="dark"]) .page-hero [class*="text-white"] { color: var(--ink-soft); }
+html:not([data-theme="dark"]) .page-hero > div > p:first-child { color: var(--purple); }
+html:not([data-theme="dark"]) .page-hero::before,
+html:not([data-theme="dark"]) .page-hero::after {
+  background: radial-gradient(circle, rgba(139, 127, 232, 0.35), transparent 70%);
+}
+
+/* entrada das telas (marcada por entrada-tela.tsx) */
+@keyframes tela-rise {
+  from {
+    opacity: 0;
+    transform: translateY(34px) scale(0.965);
+    filter: blur(14px);
+  }
+  60% {
+    filter: blur(0);
+  }
+}
+html body .tela-rise {
+  animation: tela-rise 0.85s cubic-bezier(0.2, 0.85, 0.25, 1) both;
+  animation-delay: calc(var(--i, 0) * 85ms);
+}
+@media (prefers-reduced-motion: reduce) {
+  html body .tela-rise { animation: none; }
+}
+
+/* cabeçalho das tabelas em vidro lilás (antes bege) no modo claro */
+html:not([data-theme="dark"]) main .card table thead th,
+html:not([data-theme="dark"]) main .card table thead tr {
+  background-color: rgba(139, 127, 232, 0.08);
+}

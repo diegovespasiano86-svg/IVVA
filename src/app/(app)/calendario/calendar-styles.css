@@ -96,3 +96,101 @@
 .rbc-current-time-indicator {
   background-color: var(--coral);
 }
+
+/* ===== agenda em vidro: células translúcidas, eventos em gradiente, hoje em destaque ===== */
+html body .rbc-month-view,
+html body .rbc-time-view {
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.34);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+html[data-theme="dark"] body .rbc-month-view,
+html[data-theme="dark"] body .rbc-time-view {
+  border-color: rgba(150, 170, 255, 0.18);
+  background: rgba(14, 19, 44, 0.34);
+}
+html body .rbc-header {
+  border-bottom: 1px solid var(--border);
+  padding: 10px 4px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--ink-faint);
+}
+html body .rbc-day-bg + .rbc-day-bg,
+html body .rbc-header + .rbc-header,
+html body .rbc-month-row + .rbc-month-row,
+html body .rbc-timeslot-group,
+html body .rbc-time-content > * + * > * {
+  border-color: rgba(36, 31, 46, 0.06);
+}
+html[data-theme="dark"] body .rbc-day-bg + .rbc-day-bg,
+html[data-theme="dark"] body .rbc-header + .rbc-header,
+html[data-theme="dark"] body .rbc-month-row + .rbc-month-row,
+html[data-theme="dark"] body .rbc-timeslot-group,
+html[data-theme="dark"] body .rbc-time-content > * + * > * {
+  border-color: rgba(150, 170, 255, 0.1);
+}
+html body .rbc-today {
+  background: linear-gradient(180deg, rgba(139, 127, 232, 0.18), rgba(139, 127, 232, 0.03));
+}
+html body .rbc-header.rbc-today {
+  color: var(--purple);
+}
+html body .rbc-off-range-bg {
+  background: rgba(36, 31, 46, 0.04);
+}
+html body .rbc-time-slot {
+  color: var(--ink-faint);
+  font-size: 11px;
+  font-weight: 600;
+}
+html body .rbc-event {
+  border-radius: 12px;
+  padding: 4px 9px;
+  background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(0, 0, 0, 0.1));
+  box-shadow: 0 10px 20px -14px rgba(20, 18, 27, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  transition: transform 0.25s cubic-bezier(0.2, 0.85, 0.25, 1), box-shadow 0.25s;
+  animation: evento-in 0.7s cubic-bezier(0.2, 0.85, 0.25, 1) both;
+}
+html body .rbc-event:hover {
+  transform: scale(1.03) translateY(-1px);
+  z-index: 3;
+  box-shadow: 0 16px 28px -14px rgba(20, 18, 27, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+html body .rbc-event-label {
+  font-size: 10.5px;
+  opacity: 0.85;
+}
+html body .rbc-events-container > div:nth-child(2) .rbc-event, html body .rbc-day-slot .rbc-event:nth-child(2) { animation-delay: 60ms; }
+html body .rbc-events-container > div:nth-child(3) .rbc-event, html body .rbc-day-slot .rbc-event:nth-child(3) { animation-delay: 120ms; }
+html body .rbc-events-container > div:nth-child(n + 4) .rbc-event, html body .rbc-day-slot .rbc-event:nth-child(n + 4) { animation-delay: 180ms; }
+@keyframes evento-in {
+  from {
+    opacity: 0;
+    transform: scale(0.85) translateY(8px);
+  }
+}
+html body .rbc-toolbar button {
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.5);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+html[data-theme="dark"] body .rbc-toolbar button {
+  background: rgba(255, 255, 255, 0.06);
+}
+html body .rbc-toolbar button.rbc-active {
+  background: linear-gradient(135deg, #0a7f69, #6d5be0);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 10px 22px -12px rgba(109, 91, 224, 0.9);
+}
+html body .rbc-current-time-indicator {
+  box-shadow: 0 0 8px var(--coral);
+}
+@media (prefers-reduced-motion: reduce) {
+  html body .rbc-event { animation: none; }
+}
