@@ -10,6 +10,7 @@
   --fx-rgb: 109, 91, 224;
   --fx-wave: 139, 127, 232;
   --fx-glow: 0.5;
+  --fx-pico: 0.42;
 }
 
 html[data-theme="dark"] {
@@ -38,6 +39,7 @@ html[data-theme="dark"] {
   --fx-rgb: 120, 200, 255;
   --fx-wave: 130, 150, 255;
   --fx-glow: 1;
+  --fx-pico: 0.28;
 }
 /* cor de destaque escolhida em "Aparência": versão clara para texto sobre fundo escuro */
 html[data-theme="dark"][data-accent="azul"] { --purple: #6aa8ff; --purple-strong: #8fbaff; }
@@ -75,7 +77,7 @@ html.tema-troca *::after {
   will-change: transform;
 }
 html:not([data-theme="dark"]) .fx-blob {
-  opacity: 0.18;
+  opacity: 0.32;
 }
 .fx-b1 { width: 620px; height: 620px; left: -10%; top: -12%; background: #8b7fe8; animation: fx-d1 26s ease-in-out infinite alternate; }
 .fx-b2 { width: 560px; height: 560px; right: -8%; top: 20%; background: #2fbf9f; animation: fx-d2 31s ease-in-out infinite alternate; }
@@ -113,7 +115,7 @@ html[data-theme="dark"] .fx-b3 { background: #3b6df0; opacity: 0.2; }
 }
 @keyframes fx-fade {
   0%, 100% { opacity: 0; }
-  25%, 75% { opacity: calc(0.22 * var(--fx-glow) + 0.06); }
+  25%, 75% { opacity: var(--fx-pico); }
 }
 @media (prefers-reduced-motion: reduce) {
   .fx-marca { opacity: 0.1; }

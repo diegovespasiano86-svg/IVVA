@@ -87,14 +87,14 @@ export default function TemaApp() {
       for (let i = 0; i < pts.length; i++) {
         const a = pts[i];
         ctx.beginPath();
-        ctx.fillStyle = `rgba(${rgb},${escuro ? 0.7 : 0.45})`;
+        ctx.fillStyle = `rgba(${rgb},0.7)`;
         ctx.arc(a.x, a.y, a.r, 0, 7);
         ctx.fill();
         for (let j = i + 1; j < pts.length; j++) {
           const b = pts[j];
           const d = Math.hypot(a.x - b.x, a.y - b.y);
           if (d < 140) {
-            ctx.strokeStyle = `rgba(${rgb},${(1 - d / 140) * (escuro ? 0.22 : 0.16)})`;
+            ctx.strokeStyle = `rgba(${rgb},${(1 - d / 140) * (escuro ? 0.22 : 0.3)})`;
             ctx.lineWidth = 1;
             ctx.beginPath();
             ctx.moveTo(a.x, a.y);
