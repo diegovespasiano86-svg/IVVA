@@ -79,19 +79,19 @@ export default async function ConversasDashboard({ desde }: { desde: string }) {
   return (
     <div>
       <div className="grid grid-cols-2 gap-3.5 md:grid-cols-4">
-        <div className="card px-5 py-4.5">
+        <div className="card px-5 py-4">
           <p className="mb-2.5 text-[11.5px] font-bold uppercase tracking-wide text-ink-faint">
             Clientes atendidos
           </p>
           <p className="font-display text-[26px] font-extrabold">{clientesAtendidos}</p>
         </div>
-        <div className="card px-5 py-4.5">
+        <div className="card px-5 py-4">
           <p className="mb-2.5 text-[11.5px] font-bold uppercase tracking-wide text-ink-faint">
             Conversas
           </p>
           <p className="font-display text-[26px] font-extrabold">{totalConversas}</p>
         </div>
-        <div className="card border-purple/35 px-5 py-4.5">
+        <div className="card border-purple/35 px-5 py-4">
           <p className="mb-2.5 text-[11.5px] font-bold uppercase tracking-wide text-ink-faint">
             Taxa de fechamento
           </p>
@@ -99,7 +99,7 @@ export default async function ConversasDashboard({ desde }: { desde: string }) {
             {taxaFechamento}%
           </p>
         </div>
-        <div className="card border-coral/35 px-5 py-4.5">
+        <div className="card border-coral/35 px-5 py-4">
           <p className="mb-2.5 text-[11.5px] font-bold uppercase tracking-wide text-ink-faint">
             Passaram para a equipe
           </p>
@@ -110,7 +110,7 @@ export default async function ConversasDashboard({ desde }: { desde: string }) {
       </div>
 
       <div className="mt-4 grid gap-3.5 md:grid-cols-2">
-        <div className="card px-5 py-5">
+        <div className="card px-5 py-4">
           <p className="mb-4 text-[14px] font-bold">Principal motivo de contato</p>
           {categoriasOrdenadas.length === 0 ? (
             <p className="text-[12.5px] text-ink-faint">
@@ -139,7 +139,7 @@ export default async function ConversasDashboard({ desde }: { desde: string }) {
           )}
         </div>
 
-        <div className="card px-5 py-5">
+        <div className="card px-5 py-4">
           <p className="mb-4 text-[14px] font-bold">Perguntas recentes dos clientes</p>
           {perguntasRecentes.length === 0 ? (
             <p className="text-[12.5px] text-ink-faint">Ainda sem dados.</p>
@@ -158,7 +158,7 @@ export default async function ConversasDashboard({ desde }: { desde: string }) {
       </div>
 
       <div className="mt-4 grid gap-3.5 md:grid-cols-2">
-        <div className="card px-5 py-5">
+        <div className="card px-5 py-4">
           <p className="mb-4 text-[14px] font-bold">Como os clientes se sentem</p>
           {comSentimento === 0 ? (
             <p className="text-[12.5px] text-ink-faint">Aparece a partir das próximas conversas resumidas.</p>
@@ -185,7 +185,7 @@ export default async function ConversasDashboard({ desde }: { desde: string }) {
           )}
         </div>
 
-        <div className="card px-5 py-5">
+        <div className="card px-5 py-4">
           <p className="mb-1 text-[14px] font-bold">Onde os clientes desistem</p>
           <p className="mb-3 text-[12.5px] text-ink-faint">Motivo provável e perguntas das conversas que não fecharam.</p>
           {motivosOrdenados.length === 0 && perguntasPerdidasOrdenadas.length === 0 ? (

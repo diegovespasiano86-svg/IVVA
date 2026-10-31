@@ -120,7 +120,7 @@ export default async function AvaliacoesAba({ supabase, desde }: { supabase: Sb;
       <p className="mb-4 text-[12.5px] text-ink-soft">Coletadas automaticamente pelo WhatsApp após o atendimento.</p>
 
       <div className="mb-4 grid grid-cols-2 gap-3.5 md:grid-cols-4">
-        <div className="card px-5 py-4.5">
+        <div className="card px-5 py-4">
           <p className="mb-2.5 text-[11.5px] font-bold uppercase tracking-wide text-ink-faint">
             Nota média
           </p>
@@ -128,7 +128,7 @@ export default async function AvaliacoesAba({ supabase, desde }: { supabase: Sb;
             {media.toFixed(1)}
           </p>
         </div>
-        <div className="card px-5 py-4.5">
+        <div className="card px-5 py-4">
           <p className="mb-2.5 text-[11.5px] font-bold uppercase tracking-wide text-ink-faint">
             Taxa de resposta
           </p>
@@ -136,7 +136,7 @@ export default async function AvaliacoesAba({ supabase, desde }: { supabase: Sb;
             {taxaResposta === null ? "—" : `${taxaResposta}%`}
           </p>
         </div>
-        <div className="card px-5 py-4.5">
+        <div className="card px-5 py-4">
           <p className="mb-2.5 text-[11.5px] font-bold uppercase tracking-wide text-ink-faint">
             Avaliações neste mês
           </p>
@@ -144,7 +144,7 @@ export default async function AvaliacoesAba({ supabase, desde }: { supabase: Sb;
             {avaliacoesMes}
           </p>
         </div>
-        <div className="card px-5 py-4.5 border-purple/35">
+        <div className="card px-5 py-4 border-purple/35">
           <p className="mb-2.5 text-[11.5px] font-bold uppercase tracking-wide text-ink-faint">
             Promotores (nota 4-5)
           </p>
@@ -155,7 +155,7 @@ export default async function AvaliacoesAba({ supabase, desde }: { supabase: Sb;
       </div>
 
       <div className="mb-4 grid gap-3.5 lg:grid-cols-[1fr_1.3fr]">
-        <div className="card px-5 py-5">
+        <div className="card px-5 py-4">
           <p className="mb-3 text-[14px] font-bold">Distribuição de notas</p>
           <div className="flex flex-col gap-2">
             {distribuicao.map((d) => (
@@ -179,14 +179,14 @@ export default async function AvaliacoesAba({ supabase, desde }: { supabase: Sb;
           </div>
         </div>
 
-        <div className="card px-5 py-5">
+        <div className="card px-5 py-4">
           <p className="mb-0.5 text-[14px] font-bold">Nota média por mês</p>
           <p className="mb-3 text-[12px] text-ink-faint">Últimos 6 meses</p>
           <LineAreaChart pontos={pontosNota} cor="#FF6B5B" />
         </div>
       </div>
 
-      <div className="card mb-4 px-5 py-5">
+      <div className="card mb-4 px-5 py-4">
         <p className="mb-0.5 text-[14px] font-bold">Comparativo por canal</p>
         <p className="mb-4 text-[12px] text-ink-faint">
           Cada canal em que o cliente deixou a nota.

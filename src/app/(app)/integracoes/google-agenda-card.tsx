@@ -29,7 +29,7 @@ export default async function GoogleAgendaCard({ aviso }: { aviso?: string }) {
       : null;
 
   return (
-    <div className="card mb-4 px-5 py-5">
+    <div className="card mb-4 px-5 py-4">
       <p className="text-[14px] font-bold">
         Google Agenda <span className="font-normal text-ink-soft">· seus agendamentos na agenda do celular</span>{" "}
         {conexao?.ativo && <b className="ml-1 text-[12px] text-teal">Conectado</b>}

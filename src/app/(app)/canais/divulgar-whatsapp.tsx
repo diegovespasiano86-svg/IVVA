@@ -37,7 +37,7 @@ export default function DivulgarWhatsApp({ telefone, negocio }: { telefone: stri
   if (!numero) return null;
 
   return (
-    <section className="card mb-5 px-5 py-5">
+    <section className="card mb-5 px-5 py-4">
       <h2 className="flex items-center gap-2 text-[15px] font-extrabold">
         <QrCode size={18} className="text-purple" /> Divulgue o seu WhatsApp
       </h2>

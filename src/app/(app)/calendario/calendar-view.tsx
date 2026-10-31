@@ -241,7 +241,7 @@ export default function CalendarView({
           onClick={fechar}
         >
           <div
-            className="card w-full max-w-[360px] px-5 py-5"
+            className="card w-full max-w-[360px] px-5 py-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-3 flex items-center justify-between">

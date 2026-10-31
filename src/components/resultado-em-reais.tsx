@@ -49,13 +49,13 @@ export default async function ResultadoEmReais({ inicioMes }: { inicioMes: strin
   ];
 
   return (
-    <section className="card mb-4 px-5 py-5" aria-label="Resultado em reais">
+    <section className="card mb-4 px-5 py-4" aria-label="Resultado em reais">
       <h2 className="text-[14px] font-bold">O que o robô rendeu neste mês</h2>
-      <div className="mt-3.5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
         {itens.map((i) => (
-          <div key={i.rotulo} className="rounded-[12px] bg-surface-soft px-3.5 py-3">
+          <div key={i.rotulo} className="rounded-[12px] bg-surface-soft px-3.5 py-2.5">
             <i.icon className="h-4 w-4 text-teal" strokeWidth={1.8} aria-hidden="true" />
-            <p className="mt-2 font-display text-[20px] font-extrabold leading-none">{i.valor}</p>
+            <p className="mt-2 font-display text-[19px] font-extrabold leading-none">{i.valor}</p>
             <p className="mt-1 text-[11.5px] leading-snug text-ink-faint">{i.rotulo}</p>
           </div>
         ))}

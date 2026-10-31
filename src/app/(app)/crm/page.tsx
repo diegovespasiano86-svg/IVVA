@@ -367,13 +367,13 @@ function CrmDashboard({
   return (
     <div>
       <div className="grid grid-cols-2 gap-3.5 md:grid-cols-4">
-        <div className="card px-5 py-4.5">
+        <div className="card px-5 py-4">
           <p className="mb-2.5 text-[11.5px] font-bold uppercase tracking-wide text-ink-faint">
             Contatos no funil
           </p>
           <p className="font-display text-[26px] font-extrabold">{total}</p>
         </div>
-        <div className="card border-purple/35 px-5 py-4.5">
+        <div className="card border-purple/35 px-5 py-4">
           <p className="mb-2.5 text-[11.5px] font-bold uppercase tracking-wide text-ink-faint">
             Taxa de conversão
           </p>
@@ -381,13 +381,13 @@ function CrmDashboard({
             {taxaConversao}%
           </p>
         </div>
-        <div className="card px-5 py-4.5">
+        <div className="card px-5 py-4">
           <p className="mb-2.5 text-[11.5px] font-bold uppercase tracking-wide text-ink-faint">
             {ultimaFase?.label ?? "Última fase"}
           </p>
           <p className="font-display text-[26px] font-extrabold">{fechados}</p>
         </div>
-        <div className="card border-teal/35 px-5 py-4.5">
+        <div className="card border-teal/35 px-5 py-4">
           <p className="mb-2.5 text-[11.5px] font-bold uppercase tracking-wide text-ink-faint">
             Aniversários em 30 dias
           </p>
@@ -398,7 +398,7 @@ function CrmDashboard({
       </div>
 
       <div className="mt-4 grid gap-3.5 md:grid-cols-2">
-        <div className="card px-5 py-5">
+        <div className="card px-5 py-4">
           <p className="mb-4 text-[14px] font-bold">Funil por fase</p>
           {total === 0 ? (
             <p className="text-[12.5px] text-ink-faint">
@@ -426,7 +426,7 @@ function CrmDashboard({
           )}
         </div>
 
-        <div className="card px-5 py-5">
+        <div className="card px-5 py-4">
           <p className="mb-4 text-[14px] font-bold">Como os clientes conheceram</p>
           {origensOrdenadas.length === 0 ? (
             <p className="text-[12.5px] text-ink-faint">Ainda sem dados.</p>
@@ -451,7 +451,7 @@ function CrmDashboard({
         </div>
       </div>
 
-      <div className="card mt-3.5 px-5 py-5">
+      <div className="card mt-3.5 px-5 py-4">
         <p className="mb-1 text-[14px] font-bold">Próximos aniversários</p>
         <p className="mb-4 text-[12px] text-ink-faint">
           Base pronta pra disparo automático de mensagem de aniversário.

@@ -38,7 +38,7 @@ export default function StageManager({ estagios }: { estagios: Estagio[] }) {
           onClick={() => setAberto(false)}
         >
           <div
-            className="card w-full max-w-[440px] px-5 py-5"
+            className="card w-full max-w-[440px] px-5 py-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-4 flex items-center justify-between">

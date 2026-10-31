@@ -168,13 +168,13 @@ export default async function AdminPage() {
         </div>
 
         <div className="mb-5 grid grid-cols-3 gap-3.5">
-          <div className="card px-5 py-4.5">
+          <div className="card px-5 py-4">
             <p className="mb-2.5 text-[11.5px] font-bold uppercase tracking-wide text-ink-faint">
               Empresas
             </p>
             <p className="font-display text-[26px] font-extrabold">{total}</p>
           </div>
-          <div className="card px-5 py-4.5">
+          <div className="card px-5 py-4">
             <p className="mb-2.5 text-[11.5px] font-bold uppercase tracking-wide text-ink-faint">
               Com WhatsApp conectado
             </p>
@@ -183,7 +183,7 @@ export default async function AdminPage() {
               <span className="text-[15px] text-ink-faint">/{total}</span>
             </p>
           </div>
-          <div className="card px-5 py-4.5">
+          <div className="card px-5 py-4">
             <p className="mb-2.5 text-[11.5px] font-bold uppercase tracking-wide text-ink-faint">
               Chamados abertos
             </p>

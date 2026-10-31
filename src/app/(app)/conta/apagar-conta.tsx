@@ -10,7 +10,7 @@ export default function ApagarConta({ tenantNome }: { tenantNome: string }) {
   });
 
   return (
-    <div className="card border-coral/30 px-5 py-5">
+    <div className="card border-coral/30 px-5 py-4">
       <p className="mb-1 text-[12.5px] font-bold uppercase tracking-wide text-coral">
         Zona de risco
       </p>

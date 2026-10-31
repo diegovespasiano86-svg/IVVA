@@ -172,7 +172,7 @@ export default async function ContaPage({
       )}
 
       {isDono && resumoUso && (
-        <div className="card mb-4 px-5 py-5">
+        <div className="card mb-4 px-5 py-4">
           <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
             <div>
               <p className="text-[14px] font-bold">Conversas com a IA neste mês</p>
@@ -219,7 +219,7 @@ export default async function ContaPage({
       )}
 
       {isDono && (
-        <div className="card mb-4 px-5 py-5">
+        <div className="card mb-4 px-5 py-4">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-[14px] font-bold">Planos e assinatura</p>
@@ -312,7 +312,7 @@ export default async function ContaPage({
       )}
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <div className="card px-5 py-5">
+        <div className="card px-5 py-4">
           <div className="mb-3 flex items-center justify-between">
             <p className="text-[14px] font-bold">WhatsApp Business</p>
             {conta && (
@@ -348,7 +348,7 @@ export default async function ContaPage({
         </div>
 
         <div className="flex flex-col gap-4">
-          <div className="card px-5 py-5">
+          <div className="card px-5 py-4">
             <p className="mb-3 text-[14px] font-bold">Equipe</p>
             <div className="flex flex-col gap-2">
               {(equipe ?? []).map((u) => (
@@ -409,7 +409,7 @@ export default async function ContaPage({
           </div>
 
           {chamados && chamados.length > 0 && (
-            <div className="card px-5 py-5">
+            <div className="card px-5 py-4">
               <p className="mb-3 text-[14px] font-bold">Seus chamados</p>
               <div className="flex flex-col gap-2">
                 {chamados.map((c) => (

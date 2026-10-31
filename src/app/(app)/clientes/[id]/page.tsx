@@ -149,7 +149,7 @@ export default async function ClientePerfilPage({ params }: { params: Promise<{ 
         </section>
 
         <div className="flex flex-col gap-4">
-          <section className="card px-5 py-5">
+          <section className="card px-5 py-4">
             <h2 className="mb-3 text-[14px] font-extrabold">Contato</h2>
             <ul className="flex flex-col gap-2.5 text-[13px]">
               <li className="flex items-center gap-2.5"><Phone size={15} className="text-ink-faint" /> {formatarTelefone(c.telefone) || "—"}</li>
@@ -168,7 +168,7 @@ export default async function ClientePerfilPage({ params }: { params: Promise<{ 
             listasAtivas={(minhasListas ?? []).map((x) => x.list_id)}
           />
 
-          <section className="card px-5 py-5">
+          <section className="card px-5 py-4">
             <h2 className="mb-1 text-[14px] font-extrabold">Perfil de compra</h2>
             <p className="mb-3 text-[12px] text-ink-soft">{seg.dica}</p>
             <dl className="grid grid-cols-3 gap-2 text-center">
@@ -187,7 +187,7 @@ export default async function ClientePerfilPage({ params }: { params: Promise<{ 
             </dl>
           </section>
 
-          <section className="card px-5 py-5">
+          <section className="card px-5 py-4">
             <h2 className="mb-3 text-[14px] font-extrabold">Anotar sobre o cliente</h2>
             <form action={adicionarNotaCliente} className="flex flex-col gap-2">
               <input type="hidden" name="contact_id" value={c.id} />

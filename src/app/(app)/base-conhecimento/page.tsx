@@ -138,7 +138,7 @@ export default async function BaseConhecimentoPage() {
         <h2 className="mb-1 text-[15px] font-extrabold">Complete do seu jeito</h2>
         <p className="mb-3 text-[12.5px] text-ink-soft">Escreva, envie um arquivo ou simplesmente fale. A ivva organiza tudo nos blocos certos.</p>
         <div className="grid gap-4 lg:grid-cols-3">
-          <div className="card px-5 py-5">
+          <div className="card px-5 py-4">
             <p className="mb-1 flex items-center gap-2 text-[14px] font-extrabold">
               <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#ece9fc] text-purple">
                 <PenLine size={16} />
@@ -153,7 +153,7 @@ export default async function BaseConhecimentoPage() {
               </button>
             </form>
           </div>
-          <div className="card px-5 py-5">
+          <div className="card px-5 py-4">
             <p className="mb-1 flex items-center gap-2 text-[14px] font-extrabold">
               <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#e3f4ef] text-teal">
                 <FileUp size={16} />
@@ -163,7 +163,7 @@ export default async function BaseConhecimentoPage() {
             <p className="mb-3 text-[12px] text-ink-soft">Tabela de preços (.csv), catálogo em PDF ou documento Word (.docx). A ivva lê e separa os fatos para você revisar.</p>
             <UploadArquivo />
           </div>
-          <div className="card px-5 py-5">
+          <div className="card px-5 py-4">
             <p className="mb-1 flex items-center gap-2 text-[14px] font-extrabold">
               <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#fdece9] text-coral">
                 <Mic size={16} />
@@ -174,7 +174,7 @@ export default async function BaseConhecimentoPage() {
             <EntrevistaAudio />
           </div>
         </div>
-        <div className="card mt-4 px-5 py-5">
+        <div className="card mt-4 px-5 py-4">
           <p className="mb-1 flex items-center gap-2 text-[14px] font-extrabold">
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#ece9fc] text-purple">
               <Globe size={16} />

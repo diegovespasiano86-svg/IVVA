@@ -64,7 +64,7 @@ export default async function AtendimentoAgora() {
   const { semResposta, maiorEspera, comAtendente, med, amostra } = await carregarAtendimento();
 
   return (
-    <section className="card px-5 py-4.5">
+    <section className="card px-5 py-4">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div>
           <p className="text-[13px] font-bold">Atendimento agora</p>

@@ -190,7 +190,7 @@ export default async function FaturamentoAba({
       </div>
 
       <div className="mb-4 grid grid-cols-2 gap-3.5 md:grid-cols-4">
-        <div className="card px-5 py-4.5">
+        <div className="card px-5 py-4">
           <p className="mb-2.5 text-[11.5px] font-bold uppercase tracking-wide text-ink-faint">
             Faturamento no período
           </p>
@@ -198,7 +198,7 @@ export default async function FaturamentoAba({
             {money.format(faturamentoTotal)}
           </p>
         </div>
-        <div className="card px-5 py-4.5">
+        <div className="card px-5 py-4">
           <p className="mb-2.5 text-[11.5px] font-bold uppercase tracking-wide text-ink-faint">
             Comissão a pagar
           </p>
@@ -206,7 +206,7 @@ export default async function FaturamentoAba({
             {money.format(comissaoTotal)}
           </p>
         </div>
-        <div className="card px-5 py-4.5">
+        <div className="card px-5 py-4">
           <p className="mb-2.5 text-[11.5px] font-bold uppercase tracking-wide text-ink-faint">
             Ticket médio
           </p>
@@ -214,7 +214,7 @@ export default async function FaturamentoAba({
             {money.format(ticketMedio)}
           </p>
         </div>
-        <div className="card px-5 py-4.5">
+        <div className="card px-5 py-4">
           <p className="mb-2.5 text-[11.5px] font-bold uppercase tracking-wide text-ink-faint">
             Clientes atendidos
           </p>
@@ -291,12 +291,12 @@ export default async function FaturamentoAba({
       )}
 
       <div className="mb-4 grid gap-3.5 lg:grid-cols-[1.3fr_1fr]">
-        <div className="card px-5 py-5">
+        <div className="card px-5 py-4">
           <p className="mb-0.5 text-[14px] font-bold">Faturamento por mês</p>
           <p className="mb-3 text-[12px] text-ink-faint">Últimos 6 meses</p>
           <LineAreaChart pontos={pontosFaturamento} />
         </div>
-        <div className="card px-5 py-5">
+        <div className="card px-5 py-4">
           <p className="mb-0.5 text-[14px] font-bold">
             Principais serviços (receita)
           </p>
@@ -309,7 +309,7 @@ export default async function FaturamentoAba({
         </div>
       </div>
 
-      <div className="card px-5 py-5">
+      <div className="card px-5 py-4">
         <p className="mb-3 text-[14px] font-bold">Atendimentos</p>
         {!pagamentos || pagamentos.length === 0 ? (
           <p className="rounded-[10px] bg-surface-soft px-4 py-6 text-center text-[13px] text-ink-faint">

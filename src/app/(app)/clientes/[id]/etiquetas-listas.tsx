@@ -45,7 +45,7 @@ export default function EtiquetasListas({
   }
 
   return (
-    <section className="card px-5 py-5">
+    <section className="card px-5 py-4">
       <h2 className="mb-3 text-[14px] font-extrabold">Etiquetas e listas</h2>
 
       <p className="mb-2 text-[11.5px] font-bold uppercase tracking-wide text-ink-faint">Etiquetas</p>

@@ -1,0 +1,69 @@
+/* Densidade: menos altura em cabeçalhos, botões, campos e tabelas, para rolar menos a tela.
+   Só em telas com mouse (em celular os alvos de toque continuam grandes, ver globals.css). */
+
+:root {
+  --row-h: 46px;
+}
+html[data-density="compact"] {
+  --row-h: 36px;
+}
+
+/* faixa de boas-vindas (ex.: "Boa noite, Fulano") */
+.page-hero {
+  padding: 12px 22px;
+  border-radius: 16px;
+}
+.page-hero > div > p:first-child {
+  line-height: 1.2;
+}
+.page-hero h1 {
+  margin-top: 0;
+  font-size: 22px;
+  line-height: 1.15;
+}
+.page-hero p {
+  margin-top: 1px;
+}
+@media (min-width: 768px) {
+  .page-hero p {
+    max-width: none;
+    white-space: nowrap;
+  }
+}
+.page-hero::before {
+  width: 120px;
+  height: 120px;
+  top: -44px;
+}
+.page-hero::after {
+  width: 70px;
+  height: 70px;
+  bottom: -26px;
+}
+
+/* título padrão das telas */
+.stagger h1:not(.no-accent):not(.page-hero h1) {
+  font-size: 22px;
+}
+
+@media (pointer: fine) {
+  .btn-sm {
+    height: 30px;
+    padding: 0 12px;
+    font-size: 12px;
+  }
+  .btn-md {
+    height: 36px;
+    padding: 0 18px;
+    font-size: 13px;
+  }
+  .btn-lg {
+    height: 42px;
+    padding: 0 22px;
+    font-size: 14px;
+  }
+  .input,
+  .select {
+    height: 38px;
+  }
+}

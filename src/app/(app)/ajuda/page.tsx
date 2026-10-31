@@ -27,7 +27,7 @@ export default async function AjudaPage({ searchParams }: { searchParams: Promis
 
       <CentralAjuda guias={guias} busca={q} abrir={abrir} />
 
-      <div id="suporte" className="card mt-6 flex flex-wrap items-center justify-between gap-4 px-5 py-5">
+      <div id="suporte" className="card mt-6 flex flex-wrap items-center justify-between gap-4 px-5 py-4">
         <div>
           <p className="text-[14px] font-extrabold">Não achou o que precisava?</p>
           <p className="text-[12.5px] text-ink-soft">

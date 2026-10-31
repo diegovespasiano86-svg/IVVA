@@ -10,6 +10,7 @@
   --fx-rgb: 109, 91, 224;
   --fx-wave: 139, 127, 232;
   --fx-glow: 0.5;
+  --fx-pico: 0.42;
 }
 
 html[data-theme="dark"] {
@@ -38,6 +39,7 @@ html[data-theme="dark"] {
   --fx-rgb: 120, 200, 255;
   --fx-wave: 130, 150, 255;
   --fx-glow: 1;
+  --fx-pico: 0.28;
 }
 /* cor de destaque escolhida em "Aparência": versão clara para texto sobre fundo escuro */
 html[data-theme="dark"][data-accent="azul"] { --purple: #6aa8ff; --purple-strong: #8fbaff; }
@@ -75,7 +77,7 @@ html.tema-troca *::after {
   will-change: transform;
 }
 html:not([data-theme="dark"]) .fx-blob {
-  opacity: 0.18;
+  opacity: 0.32;
 }
 .fx-b1 { width: 620px; height: 620px; left: -10%; top: -12%; background: #8b7fe8; animation: fx-d1 26s ease-in-out infinite alternate; }
 .fx-b2 { width: 560px; height: 560px; right: -8%; top: 20%; background: #2fbf9f; animation: fx-d2 31s ease-in-out infinite alternate; }
@@ -113,7 +115,7 @@ html[data-theme="dark"] .fx-b3 { background: #3b6df0; opacity: 0.2; }
 }
 @keyframes fx-fade {
   0%, 100% { opacity: 0; }
-  25%, 75% { opacity: calc(0.22 * var(--fx-glow) + 0.06); }
+  25%, 75% { opacity: var(--fx-pico); }
 }
 @media (prefers-reduced-motion: reduce) {
   .fx-marca { opacity: 0.1; }
@@ -467,3 +469,34 @@ html[data-theme="dark"] [class*="f6f4fe_0%"] {
 /* a prévia do WhatsApp imita o aplicativo: o balão fica branco nos dois modos */
 html[data-theme="dark"] .bg-white.keep-light { background-color: #fff; }
 html[data-theme="dark"] .rbc-toolbar button.rbc-active { background: var(--accent-b); border-color: var(--accent-b); }
+
+/* ================= cabeçalho no modo claro: vidro claro, com as cores do formato claro ================= */
+html:not([data-theme="dark"]) header.bg-ink-deep {
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.84);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  backdrop-filter: blur(16px) saturate(1.4);
+  box-shadow: 0 1px 0 rgba(36, 31, 46, 0.06), 0 8px 24px -18px rgba(20, 18, 27, 0.25);
+}
+html:not([data-theme="dark"]) header [aria-label="ivva"] > span:last-child { color: var(--ink-deep) !important; }
+html:not([data-theme="dark"]) header .bg-white\/10 { background-color: rgba(36, 31, 46, 0.06); }
+html:not([data-theme="dark"]) header .hover\:bg-white\/15:hover,
+html:not([data-theme="dark"]) header .hover\:bg-white\/10:hover { background-color: rgba(109, 91, 224, 0.12); }
+html:not([data-theme="dark"]) header .text-white\/70,
+html:not([data-theme="dark"]) header .text-white\/80 { color: var(--ink-soft); }
+html:not([data-theme="dark"]) header .bg-white\/10.text-white { color: var(--ink); }
+html:not([data-theme="dark"]) header .ring-white\/20 { --tw-ring-color: rgba(36, 31, 46, 0.14); }
+html:not([data-theme="dark"]) header kbd { color: var(--ink-soft); }
+
+html:not([data-theme="dark"]) .modo-tema-rotulo { color: var(--ink-faint); }
+html:not([data-theme="dark"]) .modo-tema-chave {
+  background: rgba(36, 31, 46, 0.06);
+  border-color: var(--border);
+}
+html:not([data-theme="dark"]) .modo-tema-chave button { color: var(--ink-soft); }
+html:not([data-theme="dark"]) .modo-tema-chave button[aria-pressed="true"] { color: var(--ink-deep); }
+html:not([data-theme="dark"]) .modo-tema-chave i {
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(20, 18, 27, 0.22);
+}
+html:not([data-theme="dark"]) .modo-tema-chave button:focus-visible { outline-color: var(--purple); }

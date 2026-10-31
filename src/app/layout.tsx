@@ -3,6 +3,8 @@ import { Plus_Jakarta_Sans, Instrument_Serif } from "next/font/google";
 import "./globals.css";
 import "./ambient.css";
 import "./tema.css";
+import "./densidade.css";
+import "./vidro.css";
 
 const jakarta = Plus_Jakarta_Sans({
   variable: "--font-jakarta",
