@@ -160,8 +160,8 @@ html:not([data-theme="dark"]) .page-hero::after {
   }
 }
 html body .tela-rise {
-  animation: tela-rise 0.85s cubic-bezier(0.2, 0.85, 0.25, 1) both;
-  animation-delay: calc(var(--i, 0) * 85ms);
+  animation: tela-rise 0.9s cubic-bezier(0.2, 0.85, 0.25, 1) both;
+  animation-delay: calc(var(--i, 0) * 140ms);
 }
 @media (prefers-reduced-motion: reduce) {
   html body .tela-rise { animation: none; }
@@ -171,4 +171,91 @@ html body .tela-rise {
 html:not([data-theme="dark"]) main .card table thead th,
 html:not([data-theme="dark"]) main .card table thead tr {
   background-color: rgba(139, 127, 232, 0.08);
+}
+
+/* ================= entrada em etapas e efeito do mouse ================= */
+
+/* espera a vez: cartão escondido e os movimentos de dentro (gráficos) pausados até ele começar a entrar */
+html body .tela-pre {
+  opacity: 0;
+}
+html body .tela-pre *,
+html body .tela-rise:not(.tela-go) * {
+  animation-play-state: paused !important;
+}
+@media print {
+  html body .tela-pre { opacity: 1; }
+}
+
+/* modo claro: o bege dá lugar a um vidro lilás translúcido (também no passar do mouse) */
+html:not([data-theme="dark"]) {
+  --surface-soft: rgba(139, 127, 232, 0.1);
+}
+html:not([data-theme="dark"]) body .hover\:bg-surface-soft:hover,
+html:not([data-theme="dark"]) body .hover\:bg-surface-soft\/60:hover {
+  background-color: rgba(139, 127, 232, 0.14);
+}
+
+/* linhas de tabela e de gráfico: faixa de vidro com marca lateral */
+html body main .card table tbody tr,
+html body .chart-row {
+  transition: background-color 0.25s, box-shadow 0.25s;
+}
+html:not([data-theme="dark"]) body main .card table tbody tr:hover,
+html:not([data-theme="dark"]) body .chart-row:hover {
+  background-color: rgba(139, 127, 232, 0.13);
+  box-shadow: inset 3px 0 0 var(--purple);
+}
+html[data-theme="dark"] body main .card table tbody tr:hover,
+html[data-theme="dark"] body .chart-row:hover {
+  box-shadow: inset 3px 0 0 var(--purple);
+}
+
+/* itens do menu lateral e botões: leve elevação e brilho de vidro ao passar o mouse */
+@media (hover: hover) {
+  nav[aria-label="Menu principal"] a,
+  nav[aria-label="Menu principal"] button {
+    transition: background-color 0.25s, transform 0.25s, box-shadow 0.25s;
+  }
+  nav[aria-label="Menu principal"] a:hover {
+    transform: translateX(3px);
+    background-image: linear-gradient(90deg, rgba(139, 127, 232, 0.18), rgba(139, 127, 232, 0.04));
+  }
+  html body .btn:not(:disabled):hover,
+  html body .segmented button:hover,
+  html body .tab:hover {
+    transform: translateY(-1px);
+  }
+  html:not([data-theme="dark"]) body .btn-secondary:hover,
+  html:not([data-theme="dark"]) body .btn-ghost:hover {
+    background-color: rgba(255, 255, 255, 0.7);
+    box-shadow: 0 10px 22px -14px rgba(80, 60, 160, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  }
+  html body .badge:hover {
+    transform: translateY(-1px);
+  }
+}
+
+/* luz do mouse: um brilho suave acompanha o cursor por toda a tela, por trás do vidro */
+.fx-cursor {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 560px;
+  height: 560px;
+  margin: -280px 0 0 -280px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(139, 127, 232, 0.3), rgba(139, 127, 232, 0.08) 45%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.5s;
+  will-change: transform;
+}
+.fx-cursor.on {
+  opacity: 1;
+}
+html[data-theme="dark"] .fx-cursor {
+  background: radial-gradient(circle, rgba(120, 170, 255, 0.28), rgba(120, 170, 255, 0.07) 45%, transparent 70%);
+}
+@media (hover: none) {
+  .fx-cursor { display: none; }
 }
