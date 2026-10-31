@@ -293,7 +293,8 @@ html:not([data-theme="dark"]) body .hover\:bg-\[\#faf6ef\]:hover {
   background-color: rgba(139, 127, 232, 0.1);
 }
 html:not([data-theme="dark"]) body .bg-\[\#ece5dd\] {
-  background-color: rgba(139, 127, 232, 0.12);
+  background-color: #ece9fc;
+  background-image: linear-gradient(180deg, #ece9fc, #e3f4ef);
 }
 html:not([data-theme="dark"]) body [class*="fdf6ee"] {
   background-image: linear-gradient(100deg, rgba(139, 127, 232, 0.14), rgba(47, 191, 159, 0.08));
@@ -316,4 +317,34 @@ html:not([data-theme="dark"]) body main .bg-surface section.bg-bg {
 }
 html:not([data-theme="dark"]) body main .bg-surface .border-border {
   border-color: rgba(255, 255, 255, 0.7);
+}
+
+/* ================= revisão geral do claro: pastéis sólidos e brancos viram vidro ================= */
+html:not([data-theme="dark"]) body .bg-\[\#ece9fc\],
+html:not([data-theme="dark"]) body .badge-brand {
+  background-color: rgba(139, 127, 232, 0.16);
+}
+html:not([data-theme="dark"]) body .bg-\[\#e3f4ef\],
+html:not([data-theme="dark"]) body .badge-success {
+  background-color: rgba(31, 174, 145, 0.14);
+}
+html:not([data-theme="dark"]) body .bg-\[\#f6f4fe\],
+html:not([data-theme="dark"]) body .hover\:bg-\[\#f6f4fe\]:hover {
+  background-color: rgba(139, 127, 232, 0.09);
+}
+html:not([data-theme="dark"]) body .bg-\[\#e6eefc\],
+html:not([data-theme="dark"]) body .badge-info {
+  background-color: rgba(47, 111, 222, 0.12);
+}
+html:not([data-theme="dark"]) body .hover\:bg-\[\#fdece9\]:hover {
+  background-color: rgba(201, 58, 40, 0.1);
+}
+html:not([data-theme="dark"]) body main .bg-white:not(.keep-light) {
+  background-color: rgba(255, 255, 255, 0.55);
+}
+html:not([data-theme="dark"]) body .hover\:bg-surface:hover {
+  background-color: rgba(139, 127, 232, 0.1);
+}
+html:not([data-theme="dark"]) body .table-clean th {
+  background-color: rgba(139, 127, 232, 0.08);
 }
