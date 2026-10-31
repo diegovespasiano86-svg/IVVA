@@ -348,3 +348,47 @@ html:not([data-theme="dark"]) body .hover\:bg-surface:hover {
 html:not([data-theme="dark"]) body .table-clean th {
   background-color: rgba(139, 127, 232, 0.08);
 }
+
+/* ================= vidro em todo o claro, inclusive telas de acesso, avisos e menus ================= */
+
+/* fundo lilás calmo em qualquer tela clara (login, recuperar senha, contrato...), sem creme/pêssego */
+html:not([data-theme="dark"]) body {
+  background-color: #f1eff9;
+}
+html:not([data-theme="dark"]) body::before {
+  background-image:
+    radial-gradient(900px circle at 0% 0%, rgba(139, 127, 232, 0.16), transparent 66%),
+    radial-gradient(900px circle at 100% 100%, rgba(120, 150, 240, 0.1), transparent 66%);
+  background-size: auto, auto;
+  background-position: 0 0, 0 0;
+}
+
+/* aviso de cookies em vidro */
+html body [role="dialog"][aria-label="Aviso de cookies"] {
+  background-color: rgba(255, 255, 255, 0.78);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  backdrop-filter: blur(20px) saturate(1.5);
+  border-color: rgba(255, 255, 255, 0.8);
+}
+
+/* menus e painéis flutuantes (fora do conteúdo): vidro mais firme, para ler bem */
+html:not([data-theme="dark"]) body header .bg-surface,
+html:not([data-theme="dark"]) body .fixed.bg-surface,
+html:not([data-theme="dark"]) body .absolute.bg-surface {
+  background-color: rgba(255, 255, 255, 0.8);
+  -webkit-backdrop-filter: blur(22px) saturate(1.6);
+  backdrop-filter: blur(22px) saturate(1.6);
+}
+/* janelas (modais): vidro quase opaco sobre o escurecimento */
+html:not([data-theme="dark"]) body .fixed .card {
+  background-color: rgba(255, 255, 255, 0.86);
+}
+/* cartões que traziam branco no próprio estilo também viram vidro */
+@media (min-width: 768px) {
+  html:not([data-theme="dark"]) body .card[class*="bg-white"],
+  html:not([data-theme="dark"]) body .card[class*="bg-surface"] {
+    background-color: rgba(255, 255, 255, 0.55);
+    -webkit-backdrop-filter: blur(20px) saturate(1.6);
+    backdrop-filter: blur(20px) saturate(1.6);
+  }
+}

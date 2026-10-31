@@ -1,10 +1,12 @@
 import { CalendarCheck, ShieldCheck } from "lucide-react";
 import { Logo } from "@/components/logo";
+import TemaApp from "@/components/tema-app";
 
 /** Estrutura das telas de acesso (login, recuperar senha...): painel da marca + formulário. */
 export default function AuthLayout({ children, footer }: { children: React.ReactNode; footer?: React.ReactNode }) {
   return (
     <main className="grid min-h-screen lg:grid-cols-[1.05fr_1fr]">
+      <TemaApp semTema />
       {/* ---- painel da marca (desktop) ---- */}
       <aside className="relative hidden flex-col justify-between overflow-hidden bg-[#0b0b10] p-12 text-white lg:flex">
         <div aria-hidden="true" className="pointer-events-none absolute inset-0">
