@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { X } from "lucide-react";
+import Portal from "@/components/portal";
 
 /** Player sobre a página; Esc ou clique fora fecham. */
 export default function VideoModal({ titulo, src, poster, onClose }: { titulo: string; src: string; poster?: string; onClose: () => void }) {
@@ -12,7 +13,7 @@ export default function VideoModal({ titulo, src, poster, onClose }: { titulo: s
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center px-4" role="dialog" aria-modal="true" aria-label={titulo}>
+    <Portal><div className="fixed inset-0 z-[70] flex items-center justify-center px-4" role="dialog" aria-modal="true" aria-label={titulo}>
       <button className="absolute inset-0 bg-ink-deep/70" aria-label="Fechar vídeo" onClick={onClose} />
       <div className="relative w-full max-w-[960px]">
         <div className="mb-2 flex items-center justify-between text-white">
@@ -23,6 +24,6 @@ export default function VideoModal({ titulo, src, poster, onClose }: { titulo: s
         </div>
         <video src={src} poster={poster} controls autoPlay playsInline className="w-full rounded-2xl bg-black shadow-2xl" />
       </div>
-    </div>
+    </div></Portal>
   );
 }

@@ -1,4 +1,5 @@
 "use client";
+import Portal from "@/components/portal";
 
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
@@ -51,7 +52,7 @@ export function SuporteModal({ contexto, onFechar }: { contexto: Contexto; onFec
   const pronto = mensagem.trim().length >= 5;
 
   return (
-        <div className="fixed inset-0 z-[90] flex items-center justify-center px-4" role="dialog" aria-modal="true" aria-label="Falar com o suporte">
+        <Portal><div className="fixed inset-0 z-[90] flex items-center justify-center px-4" role="dialog" aria-modal="true" aria-label="Falar com o suporte">
           <button className="absolute inset-0 bg-ink-deep/70" aria-label="Fechar" onClick={() => onFechar()} />
           <div className="card relative w-full max-w-[500px] px-6 py-6 text-left text-ink">
             <button type="button" onClick={() => onFechar()} aria-label="Fechar" className="absolute right-3 top-3 rounded-full p-1.5 text-ink-soft hover:bg-surface-soft">
@@ -118,6 +119,6 @@ export function SuporteModal({ contexto, onFechar }: { contexto: Contexto; onFec
               <span className="text-[12px] text-ink-faint">{pronto ? "Revise a mensagem no WhatsApp e envie." : "Conte o que aconteceu para continuar."}</span>
             </div>
           </div>
-        </div>
+        </div></Portal>
   );
 }

@@ -1,4 +1,5 @@
 "use client";
+import Portal from "@/components/portal";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -128,7 +129,7 @@ export default function BoasVindasModal({ nome, passos }: { nome?: string; passo
   if (!aberto || !temPendente) return null;
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center px-4" role="dialog" aria-modal="true" aria-label="A Ivva se apresenta">
+    <Portal><div className="fixed inset-0 z-[80] flex items-center justify-center px-4" role="dialog" aria-modal="true" aria-label="A Ivva se apresenta">
       <button className="absolute inset-0 bg-ink-deep/70" aria-label="Fechar" onClick={fechar} />
       <div className="card relative w-full max-w-[520px] px-6 py-6">
         <button type="button" onClick={fechar} aria-label="Fechar" className="absolute right-3 top-3 rounded-full p-1.5 text-ink-soft hover:bg-surface-soft">
@@ -164,6 +165,6 @@ export default function BoasVindasModal({ nome, passos }: { nome?: string; passo
           </button>
         </div>
       </div>
-    </div>
+    </div></Portal>
   );
 }
