@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { HORARIOS } from "@/lib/estudio";
+import { HORARIOS } from "@/lib/estudio-dados";
 
 const PERGUNTAS: { id: string; rotulo: string; opcoes?: string[] }[] = [
   { id: "negocio", rotulo: "Qual é o seu negócio?" },

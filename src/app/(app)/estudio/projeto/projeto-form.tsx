@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { FORMATOS } from "@/lib/estudio";
+import { FORMATOS } from "@/lib/estudio-dados";
 
 export default function ProjetoForm({ bloqueado }: { bloqueado: boolean }) {
   const [urls, setUrls] = useState(["", "", ""]);
