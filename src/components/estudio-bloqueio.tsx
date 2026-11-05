@@ -11,12 +11,12 @@ export default function EstudioBloqueio({ planoMinimo, nomeDoPlano }: { planoMin
       <div className="min-w-0 flex-1">
         <p className="text-[14px] font-extrabold">Diagnóstico mensal a partir do plano {planoMinimo}</p>
         <p className="text-[13px] text-ink-soft">
-          Seu plano atual é o {nomeDoPlano}. Você pode ver tudo na vitrine e conversar com a ivva quando quiser, em qualquer plano.
+          Seu plano atual é o {nomeDoPlano}. Você pode ver a vitrine e pedir uma proposta à ivva quando quiser, em qualquer plano.
         </p>
       </div>
       <div className="flex flex-wrap gap-2">
         <Link href="/assinatura" className="btn btn-primary btn-md">Ver planos</Link>
-        <Link href="/estudio/reuniao" className="btn btn-secondary btn-md">Falar com a ivva</Link>
+        <Link href="/estudio" className="btn btn-secondary btn-md">Pedir proposta</Link>
       </div>
     </div>
   );

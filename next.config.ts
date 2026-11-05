@@ -21,7 +21,17 @@ const nextConfig: NextConfig = {
     return [{ source: "/estudio-ivva", destination: "/estudio-ivva/index.html" }];
   },
   async headers() {
-    return [{ source: "/:path*", headers: SECURITY_HEADERS }];
+    return [
+      { source: "/:path*", headers: SECURITY_HEADERS },
+      // a landing do Estúdio aparece dentro do app (vitrine): só o próprio app pode embutir
+      {
+        source: "/estudio-ivva",
+        headers: [
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          { key: "Content-Security-Policy", value: "frame-ancestors 'self'; object-src 'none'; base-uri 'self'" },
+        ],
+      },
+    ];
   },
 };
 

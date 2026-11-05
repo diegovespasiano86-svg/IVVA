@@ -29,6 +29,8 @@ export type NavGroup = {
   icon: LucideIcon;
   /** vai pro rodapé do menu lateral */
   bottom?: boolean;
+  /** ambiente à parte: aparece depois de um traço separador */
+  separado?: boolean;
   items: NavLeaf[];
 };
 
@@ -114,23 +116,24 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [{ href: "/relatorios", label: "Relatórios e exportação", roles: DONO }],
   },
   {
-    id: "estudio",
-    label: "IVVA Estúdio",
-    icon: Clapperboard,
-    items: [
-      { href: "/estudio", label: "Vitrine e exemplos", roles: DONO },
-      { href: "/estudio/projeto", label: "Faça seu projeto", roles: DONO },
-      { href: "/estudio/relatorios", label: "Meus relatórios", roles: DONO },
-      { href: "/estudio/reuniao", label: "Falar com a ivva", roles: DONO },
-    ],
-  },
-  {
     id: "canais",
     label: "Canais",
     icon: Plug,
     items: [
       { href: "/canais", label: "WhatsApp e canais", roles: DONO },
       { href: "/integracoes", label: "Integrações e API", roles: DONO },
+    ],
+  },
+  {
+    id: "estudio",
+    label: "IVVA Estúdio",
+    icon: Clapperboard,
+    separado: true,
+    items: [
+      { href: "/estudio", label: "Vitrine e proposta", roles: DONO },
+      { href: "/estudio/projeto", label: "Faça seu projeto", roles: DONO },
+      { href: "/estudio/relatorios", label: "Meus relatórios", roles: DONO },
+      { href: "/estudio/repositorio", label: "Repositório do projeto", roles: DONO },
     ],
   },
   {

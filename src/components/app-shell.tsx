@@ -15,7 +15,7 @@ import {
   X,
 } from "lucide-react";
 import { logout } from "@/app/(app)/actions";
-import { Logo } from "@/components/logo";
+import { Logo, LogoMark } from "@/components/logo";
 import MotionEffects from "@/components/motion-effects";
 import Aparencia from "@/components/aparencia";
 import ModoTema from "@/components/modo-tema";
@@ -177,7 +177,19 @@ export default function AppShell({
     const rowClass = `relative flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-left text-[13.5px] font-semibold transition-colors ${
       active ? "bg-gradient-to-r from-[#8b7fe8]/20 to-[#8b7fe8]/5 text-purple" : "text-ink-soft hover:bg-surface-soft hover:text-ink"
     }`;
-    const inner = (
+    const ehEstudio = g.id === "estudio";
+    const inner = ehEstudio ? (
+      <>
+        {active && <span className="absolute -left-3 top-2 h-6 w-[3px] rounded-r bg-purple" />}
+        <span className="relative flex shrink-0 estudio-logo"><LogoMark size={22} /></span>
+        <span className={`flex-1 truncate text-[14px] font-extrabold tracking-tight transition-opacity ${expanded ? "opacity-100" : "opacity-0"}`}>
+          <span className="estudio-grad">ivva Estúdio</span>
+        </span>
+        {!single && expanded && (
+          <ChevronDown size={15} className={`shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+        )}
+      </>
+    ) : (
       <>
         {active && <span className="absolute -left-3 top-2 h-6 w-[3px] rounded-r bg-purple" />}
         <span className="relative flex shrink-0">
@@ -195,7 +207,7 @@ export default function AppShell({
       </>
     );
     return (
-      <div key={g.id}>
+      <div key={g.id} className={g.separado ? "mt-2 border-t border-border pt-3" : undefined}>
         {single ? (
           <Link href={g.items[0].href} className={rowClass} title={g.label} aria-current={active ? "page" : undefined}>
             {inner}
