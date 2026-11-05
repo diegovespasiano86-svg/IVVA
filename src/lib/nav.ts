@@ -2,6 +2,7 @@ import {
   BarChart3,
   Bot,
   CalendarDays,
+  Clapperboard,
   Home,
   Megaphone,
   MessageSquare,
@@ -111,6 +112,17 @@ export const NAV_GROUPS: NavGroup[] = [
     label: "Relatórios",
     icon: BarChart3,
     items: [{ href: "/relatorios", label: "Relatórios e exportação", roles: DONO }],
+  },
+  {
+    id: "estudio",
+    label: "IVVA Estúdio",
+    icon: Clapperboard,
+    items: [
+      { href: "/estudio", label: "Vitrine e exemplos", roles: DONO },
+      { href: "/estudio/projeto", label: "Faça seu projeto", roles: DONO },
+      { href: "/estudio/relatorios", label: "Meus relatórios", roles: DONO },
+      { href: "/estudio/reuniao", label: "Falar com a ivva", roles: DONO },
+    ],
   },
   {
     id: "canais",
