@@ -182,8 +182,8 @@ export default function AppShell({
       <>
         {active && <span className="absolute -left-3 top-2 h-6 w-[3px] rounded-r bg-purple" />}
         <span className="relative flex shrink-0 estudio-logo"><LogoMark size={22} /></span>
-        <span className={`flex-1 truncate text-[14px] font-extrabold tracking-tight transition-opacity ${expanded ? "opacity-100" : "opacity-0"}`}>
-          <span className="estudio-grad">ivva Estúdio</span>
+        <span className={`flex-1 truncate text-[19px] leading-none transition-opacity ${expanded ? "opacity-100" : "opacity-0"}`}>
+          <span className="font-accent text-gradient">ivva Estúdio</span>
         </span>
         {!single && expanded && (
           <ChevronDown size={15} className={`shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`} />

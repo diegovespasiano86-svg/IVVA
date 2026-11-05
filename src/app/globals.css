@@ -1189,15 +1189,6 @@ html[data-density="compact"] main .card table thead th {
 }
 
 /* IVVA Estúdio no menu: marca em degradê com movimento suave */
-@keyframes ivva-grad-move { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
 @keyframes ivva-estudio-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
-.estudio-grad {
-  background: linear-gradient(90deg, #2fbf9f, #8b7fe8, #ff6b5b, #2fbf9f);
-  background-size: 200% 100%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  animation: ivva-grad-move 5s linear infinite;
-}
 .estudio-logo { animation: ivva-estudio-pulse 3.2s ease-in-out infinite; }
-@media (prefers-reduced-motion: reduce) { .estudio-grad, .estudio-logo { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .estudio-logo { animation: none; } }
