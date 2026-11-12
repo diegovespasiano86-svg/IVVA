@@ -29,9 +29,9 @@ export const REGRAS_INDICACAO_FUNDADORES = [
 export const REGRAS_PROGRAMA = [
   `Programa Fundadores: plano ${FUNDADORES.nomePlano} sem custo de hoje até ${FUNDADORES.ultimoDiaCancelar}, para quem se cadastra por esta página.`,
   "O cadastro do cartão é obrigatório para ativar o acesso, mas nada é cobrado durante o período gratuito.",
-  `Para não ser cobrado, cancele até ${FUNDADORES.ultimoDiaCancelar}, em app.ivva.app.br (Conta) ou pelo WhatsApp de suporte. Sem cancelamento, a 1ª mensalidade de R$ ${FUNDADORES.precoMensal},00 é cobrada em ${FUNDADORES.primeiraCobranca}.`,
+  `Para não ser cobrado, cancele até ${FUNDADORES.ultimoDiaCancelar}, em app.ivva.app.br (Minha assinatura) ou pelo WhatsApp de suporte. Sem cancelamento, a 1ª mensalidade de R$ ${FUNDADORES.precoMensal},00 é cobrada em ${FUNDADORES.primeiraCobranca}.`,
   "Depois disso, a mensalidade é cobrada todo mês no mesmo cartão, até você cancelar. O acesso segue ativo até o fim do período já pago.",
-  "Durante o período gratuito você usa o plano Completo, o mais alto da ivva. Até 12/02/2027 você pode trocar para o plano que fizer mais sentido (Essencial ou Profissional) em app.ivva.app.br, em Conta; sem troca, a assinatura segue no Completo. Os valores são os de tabela e podem ser reajustados, com aviso por escrito de 30 dias.",
+  "Durante o período gratuito você usa o plano Completo, o mais alto da ivva. Até 12/02/2027 você pode trocar para o plano que fizer mais sentido (Essencial ou Profissional) em app.ivva.app.br, em Minha assinatura > Trocar de plano; sem troca, a assinatura segue no Completo. Os valores são os de tabela e podem ser reajustados, com aviso por escrito de 30 dias.",
   "Vale o Contrato de Prestação de Serviços, os Termos de Uso e a Política de Privacidade da ivva. Fica preservado o direito de arrependimento de 7 dias previsto em lei.",
   "O comparativo com outros sistemas usa páginas públicas pesquisadas em outubro de 2026 (Frontzapp, Zendesk, RD Station e Leadster) e pode mudar.",
   "Recursos marcados como em breve, como o ivva Estúdio, estão em desenvolvimento, sem data confirmada, e não fazem parte do que é contratado neste programa.",
