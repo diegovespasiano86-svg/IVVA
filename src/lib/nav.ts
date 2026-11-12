@@ -138,15 +138,6 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    id: "videos",
-    label: "Vídeos",
-    icon: PlayCircle,
-    items: [
-      { href: "/ajuda?abrir=boas-vindas", label: "Comece por aqui", roles: AMBOS },
-      { href: "/ajuda", label: "Todos os vídeos e guias", roles: AMBOS },
-    ],
-  },
-  {
     id: "config",
     label: "Configurações",
     icon: Settings,
@@ -154,6 +145,16 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [{ href: "/conta", label: "Conta e equipe", roles: DONO },
       { href: "/assinatura", label: "Minha assinatura", roles: DONO },
       { href: "/indique", label: "Indique e ganhe", roles: DONO }],
+  },
+  {
+    id: "videos",
+    label: "Vídeos de ajuda",
+    icon: PlayCircle,
+    bottom: true,
+    items: [
+      { href: "/ajuda?abrir=boas-vindas", label: "Comece por aqui", roles: AMBOS },
+      { href: "/ajuda", label: "Todos os vídeos e guias", roles: AMBOS },
+    ],
   },
 ];
 
