@@ -6,7 +6,7 @@ import ConfirmarEmail from "./confirmar-email";
 import { SEGMENTOS, getSegmento } from "@/lib/segmentos";
 
 const CAMPO =
-  "w-full rounded-xl border border-[rgba(14,14,19,0.16)] bg-white px-4 py-2.5 text-[14px] text-[#0e0e13] outline-none placeholder:text-[#8a8896] focus:ring-2 focus:ring-[#2fbf9f]";
+  "w-full rounded-xl border border-[rgba(14,14,19,0.16)] bg-white keep-light px-4 py-2.5 text-[14px] text-[#0e0e13] outline-none placeholder:text-[#8a8896] focus:ring-2 focus:ring-[#2fbf9f]";
 const ROTULO = "mb-1 block text-[12.5px] font-bold text-[#0e0e13]";
 
 export default function SetupForm({

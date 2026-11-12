@@ -2,13 +2,13 @@ import { lerPagamentoCadastro } from "@/lib/pagamento-cadastro";
 import SetupForm from "./setup-form";
 import { TrackEvent } from "@/components/tracking";
 
-const CARTAO = "rounded-3xl bg-white p-7 text-[#0e0e13] shadow-[0_40px_90px_-30px_rgba(0,0,0,0.6)]";
+const CARTAO = "rounded-3xl bg-white keep-light p-7 text-[#0e0e13] shadow-[0_40px_90px_-30px_rgba(0,0,0,0.6)]";
 
 function Aviso({ titulo, children }: { titulo: string; children: React.ReactNode }) {
   return (
     <div className={`${CARTAO} text-center`}>
       <h1 className="text-[20px] font-extrabold">{titulo}</h1>
-      <p className="mt-2 text-[13.5px] text-[#6b6577]">{children}</p>
+      <p className="mt-2 text-[13.5px] text-[#5d5770]">{children}</p>
     </div>
   );
 }
@@ -61,7 +61,7 @@ export default async function BemVindoPage(props: {
         params={{ method: pix ? "pix" : "stripe" }}
       />
       <h1 className="text-[20px] font-extrabold">Pagamento confirmado 🎉</h1>
-      <p className="mt-1 text-[13.5px] text-[#6b6577]">
+      <p className="mt-1 text-[13.5px] text-[#5d5770]">
         Falta pouco pra {nomeNegocio} começar a usar a ivva — só criar seu acesso.
       </p>
       <SetupForm sessionId={sessionId} nomeInicial={nomeInicial} segmentoInicial={segmentoInicial} />

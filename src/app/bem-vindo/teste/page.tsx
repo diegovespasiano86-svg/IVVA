@@ -4,9 +4,9 @@ import { createClient } from "@/lib/supabase/server";
 
 function Painel({ titulo, texto, acao }: { titulo: string; texto: string; acao?: { href: string; rotulo: string } }) {
   return (
-    <div className="rounded-3xl bg-white p-7 text-center text-[#0e0e13] shadow-[0_40px_90px_-30px_rgba(0,0,0,0.6)]">
+    <div className="rounded-3xl bg-white keep-light p-7 text-center text-[#0e0e13] shadow-[0_40px_90px_-30px_rgba(0,0,0,0.6)]">
       <h1 className="text-[20px] font-extrabold">{titulo}</h1>
-      <p className="mt-2 text-[13.5px] text-[#6b6577]">{texto}</p>
+      <p className="mt-2 text-[13.5px] text-[#5d5770]">{texto}</p>
       {acao && (
         <Link href={acao.href} className="mt-6 inline-flex rounded-full bg-[linear-gradient(100deg,#2fbf9f,#8b7fe8)] px-6 py-3 text-[14px] font-semibold text-white">
           {acao.rotulo}

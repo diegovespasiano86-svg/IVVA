@@ -15,7 +15,7 @@ export default function ConfirmarEmail({ email, sessionId }: { email: string; se
           <MailCheck size={24} />
         </span>
         <h2 className="text-[17px] font-extrabold">Falta confirmar o seu e-mail</h2>
-        <p className="mt-1.5 text-[13.5px] leading-relaxed text-[#6b6577]">
+        <p className="mt-1.5 text-[13.5px] leading-relaxed text-[#5d5770]">
           Enviamos um e-mail para <strong className="text-[#0e0e13]">{email}</strong>. Abra e clique em{" "}
           <strong className="text-[#0e0e13]">Confirmar meu e-mail</strong> para ativar o seu acesso. Sem esse clique, o sistema não libera o seu negócio.
         </p>
