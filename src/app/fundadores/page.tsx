@@ -63,6 +63,13 @@ const DIFERENCIAIS = [
   { titulo: "O conjunto, não uma peça", texto: "Agenda, sinal, recall, campanhas, CRM e relatórios no mesmo lugar, com preço público.", cor: "#ff6b5b" },
 ];
 
+const ESTUDIO = [
+  { titulo: "Estratégia contra concorrentes", texto: "Compara o seu negócio com quem disputa o mesmo cliente e mostra onde você pode ganhar espaço.", cor: "#2fbf9f" },
+  { titulo: "Análise do seu posicionamento nas redes", texto: "Lê o seu perfil e diz o que comunica bem, o que confunde e o que ajustar.", cor: "#8b7fe8" },
+  { titulo: "Roteiro de criação de conteúdo", texto: "Ideias e roteiros prontos para o seu nicho, do tema ao passo a passo de gravação.", cor: "#ff6b5b" },
+  { titulo: "Postagem automática", texto: "Agenda e publica o conteúdo nas suas redes, sem você precisar lembrar.", cor: "#2fbf9f" },
+];
+
 const INCLUI = [
   "Atendimento no WhatsApp 24h, em texto e voz",
   "Agenda, cobrança e confirmação automáticas",
@@ -265,6 +272,35 @@ export default function FundadoresPage() {
             <p className="mt-2 max-w-2xl text-[14px] leading-relaxed text-[#a5a3b0]">
               Análise do app aprovada em novembro de 2026 e empresa verificada. Seus clientes falam com a ivva pelo canal oficial, sem risco de bloqueio do número.
             </p>
+          </div>
+        </section>
+
+        {/* ivva Estúdio: em breve */}
+        <section className="relative mt-12 overflow-hidden rounded-3xl border border-white/[0.12] bg-white/[0.035] p-7 shadow-[inset_0_1px_0_rgba(255,255,255,0.14)] backdrop-blur-2xl sm:p-10">
+          <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-[radial-gradient(circle,rgba(139,127,232,0.35),transparent_65%)]" />
+          <div className="relative">
+            <p className="inline-flex rounded-full border border-[#ff6b5b]/50 bg-[#ff6b5b]/10 px-3.5 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[#ff9b8f]">Em breve</p>
+            <h2 className="mt-3 text-[28px] font-extrabold tracking-[-0.02em] sm:text-[36px]">
+              ivva{" "}
+              <span className={`${GRADIENTE} bg-clip-text italic text-transparent`} style={SERIF}>
+                Estúdio
+              </span>
+            </h2>
+            <p className="mt-2 max-w-2xl text-[15px] leading-relaxed text-[#c7c5d1]">
+              Depois de atender, agendar e cobrar, a ivva vai cuidar também de como o seu negócio aparece e cresce nas redes.
+            </p>
+            <ul className="mt-6 grid gap-3 sm:grid-cols-2">
+              {ESTUDIO.map((e) => (
+                <li key={e.titulo} className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+                  <p className="flex items-center gap-2.5 text-[15.5px] font-extrabold">
+                    <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: e.cor, boxShadow: `0 0 14px ${e.cor}` }} />
+                    {e.titulo}
+                  </p>
+                  <p className="mt-1.5 text-[13.5px] leading-snug text-[#a5a3b0]">{e.texto}</p>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-5 text-[12px] text-[#8a8896]">Recurso em desenvolvimento, sem data de lançamento confirmada.</p>
           </div>
         </section>
 
