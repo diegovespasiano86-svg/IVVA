@@ -1,4 +1,5 @@
 import { GlowBackdrop } from "./brand-fx";
+import MetaSelo from "@/components/meta-seal";
 import IvvaLogo from "./logo";
 import PlanosClient from "./planos-client";
 import DemoViva from "./demo-viva";
@@ -118,7 +119,11 @@ export default async function PlanosPage(props: { searchParams: Promise<{ pix?: 
           {POLITICA_CANCELAMENTO}
         </p>
 
-        <p className="mt-10 text-center text-[13px] text-[#8a8896]">
+        <div className="mt-8 flex justify-center">
+          <MetaSelo />
+        </div>
+
+        <p className="mt-6 text-center text-[13px] text-[#8a8896]">
           Já tem conta?{" "}
           <a href="/login" className="font-semibold text-[#f7f6f2] hover:underline">
             Entrar

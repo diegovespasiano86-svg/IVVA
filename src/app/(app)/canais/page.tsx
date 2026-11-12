@@ -8,6 +8,7 @@ import WhatsAppForm from "../conta/whatsapp-form";
 import SituacaoNumero from "./situacao-numero";
 import DivulgarWhatsApp from "./divulgar-whatsapp";
 import SaudeNumero from "./saude-numero";
+import MetaSelo from "@/components/meta-seal";
 
 // As ações desta tela falam com a Meta (conexão do WhatsApp); damos mais tempo que o padrão da Vercel.
 export const maxDuration = 60;
@@ -125,6 +126,9 @@ export default async function CanaisPage() {
               ))}
             </ol>
             <EmbeddedSignupButton />
+            <div className="mt-4">
+              <MetaSelo />
+            </div>
             <details className="mt-4 border-t border-border pt-4">
               <summary className="cursor-pointer text-[12.5px] font-bold text-ink-soft hover:text-ink">
                 Prefiro conectar manualmente com meus próprios dados de desenvolvedor da Meta
