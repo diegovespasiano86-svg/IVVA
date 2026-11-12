@@ -98,7 +98,7 @@ export default function FundadoresPage() {
       <style>{CSS}</style>
 
       {/* HERO: cabe na primeira tela */}
-      <section className="relative isolate overflow-hidden px-4 pb-10 pt-6">
+      <section className="relative isolate flex min-h-[calc(100svh-54px)] flex-col overflow-hidden px-4 pb-10 pt-6">
         <div className="pointer-events-none absolute inset-0 -z-10 bg-[#0b0b10]">
           <div className="fund-aurora absolute -left-40 top-10 h-[560px] w-[560px] rounded-full bg-[radial-gradient(circle,rgba(47,191,159,0.42),transparent_65%)]" />
           <div className="fund-aurora absolute -right-32 -top-48 h-[700px] w-[700px] rounded-full bg-[radial-gradient(circle,rgba(139,127,232,0.5),transparent_65%)]" style={{ animationDelay: "-5s" }} />
@@ -119,7 +119,7 @@ export default function FundadoresPage() {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.05)_1px,transparent_0)] [background-size:28px_28px]" />
         </div>
 
-        <div className="relative mx-auto max-w-[1100px]">
+        <div className="relative mx-auto flex w-full max-w-[1100px] flex-1 flex-col">
           <div className="mb-6 flex items-center justify-between gap-4">
             <IvvaLogo light />
             <a href="/login" className="rounded-full border border-white/15 px-4 py-2 text-[13px] font-semibold text-[#c7c5d1] transition-colors hover:border-white/30 hover:text-[#f7f6f2]">
@@ -127,46 +127,46 @@ export default function FundadoresPage() {
             </a>
           </div>
 
-          <div className="grid items-center gap-8 lg:grid-cols-[1fr_1fr]">
+          <div className="my-auto grid items-center gap-8 py-6 lg:grid-cols-[1fr_1fr] lg:gap-12">
             <div>
               <p className="inline-flex rounded-full border border-[#2fbf9f]/40 bg-[#2fbf9f]/10 px-3.5 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[#2fbf9f]">
                 Programa de parceiros fundadores
               </p>
-              <h1 className="mt-4 text-[36px] font-extrabold leading-[1.02] tracking-[-0.035em] text-balance sm:text-[54px]">
+              <h1 className="mt-4 text-[36px] font-extrabold leading-[1.02] tracking-[-0.035em] text-balance sm:text-[clamp(48px,5.4vw,72px)]">
                 Demorou, mas{" "}
                 <span className={`${GRADIENTE} bg-clip-text italic text-transparent`} style={SERIF}>
                   chegou.
                 </span>
               </h1>
-              <p className="mt-3 max-w-lg text-[16px] leading-relaxed text-[#c7c5d1] text-balance">
+              <p className="mt-4 max-w-lg text-[16px] leading-relaxed text-[#c7c5d1] text-balance lg:text-[18px]">
                 Não é robô. É a sua empresa, sempre viva. Aprovada pela Meta para usar a API oficial do WhatsApp Business, a ivva abre para você primeiro:{" "}
                 <strong className="text-[#f7f6f2]">plano {FUNDADORES.nomePlano} por nossa conta até {FUNDADORES.ultimoDiaCancelar}</strong>.
               </p>
-              <div className="mt-5 flex flex-wrap items-center gap-3">
-                <a href="#entrar" className={`fund-btn ${GRADIENTE} rounded-full px-6 py-3 text-[15px] font-semibold text-white shadow-[0_14px_40px_-10px_rgba(139,127,232,0.8)]`}>
+              <div className="mt-6 flex flex-wrap items-center gap-3">
+                <a href="#entrar" className={`fund-btn ${GRADIENTE} rounded-full px-7 py-3.5 text-[15px] font-semibold text-white shadow-[0_14px_40px_-10px_rgba(139,127,232,0.8)]`}>
                   Quero ser Fundador
                 </a>
                 <a href="#regras" className="rounded-full border border-white/15 px-5 py-3 text-[14px] font-semibold text-[#c7c5d1] hover:border-white/30 hover:text-[#f7f6f2]">
                   Ver as regras
                 </a>
               </div>
-              <div className="mt-4">
+              <div className="mt-5">
                 <MetaSelo />
               </div>
             </div>
 
             {/* Painel de pitch em vidro */}
-            <div className="fund-float relative overflow-hidden rounded-[1.5rem] border border-white/[0.12] bg-white/[0.035] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_30px_70px_-40px_rgba(0,0,0,0.6)] backdrop-blur-2xl sm:p-5">
+            <div className="fund-float relative overflow-hidden rounded-[1.5rem] border border-white/[0.12] bg-white/[0.035] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_30px_70px_-40px_rgba(0,0,0,0.6)] backdrop-blur-2xl sm:p-5 lg:p-6">
               <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.1),transparent_38%,transparent_70%,rgba(139,127,232,0.1))]" />
               <p className="relative text-[11px] font-bold uppercase tracking-[0.14em] text-[#a99cfa]">Só a ivva junta tudo isso</p>
-              <ul className="relative mt-3 grid gap-2 sm:grid-cols-2">
+              <ul className="relative mt-3 grid gap-2.5 sm:grid-cols-2 lg:mt-4 lg:gap-3">
                 {PAINEL.map((d) => (
-                  <li key={d.titulo} className="rounded-xl border border-white/[0.09] bg-white/[0.03] p-3">
-                    <p className="flex items-center gap-2 text-[13.5px] font-extrabold">
+                  <li key={d.titulo} className="rounded-xl border border-white/[0.09] bg-white/[0.03] p-3 lg:p-4">
+                    <p className="flex items-center gap-2 text-[13.5px] font-extrabold lg:text-[15px]">
                       <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: d.cor, boxShadow: `0 0 12px ${d.cor}` }} />
                       {d.titulo}
                     </p>
-                    <p className="mt-1 text-[12px] leading-snug text-[#b4b2c0]">{d.texto}</p>
+                    <p className="mt-1 text-[12px] leading-snug text-[#b4b2c0] lg:text-[13px]">{d.texto}</p>
                   </li>
                 ))}
               </ul>
