@@ -435,6 +435,19 @@ export default async function ContaPage({
         </div>
       </div>
 
+      {isDono && (
+        <div className="card mt-4 px-5 py-4">
+          <p className="text-[14px] font-extrabold">A base é sua</p>
+          <p className="mt-1 text-[12.5px] text-ink-soft">
+            Os clientes, conversas e números do seu negócio pertencem a você. Leve quando quiser, em planilha, sem pedir permissão. Se um dia quiser sair, você também apaga tudo abaixo.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <a href="/relatorios/exportar?tipo=clientes&periodo=tudo&formato=xlsx" className="btn btn-secondary btn-md">Exportar meus clientes</a>
+            <a href="/relatorios" className="btn btn-secondary btn-md">Exportar relatórios</a>
+          </div>
+        </div>
+      )}
+
       {isDono && tenant?.nome && (
         <div className="mt-4">
           <ApagarConta tenantNome={tenant.nome} />
