@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Mic, PlayCircle, Send, Square, Volume2, VolumeX, X } from "lucide-react";
-import { definirVoz, FRASES, pararFrases, tocarFrases, vozLigada } from "@/lib/voz-ivva";
+import { definirVoz, FRASES, pararFrases, tocarFrases, VELOCIDADE_VOZ, vozLigada } from "@/lib/voz-ivva";
 import { guiaDaRota, guiasDoPerfil } from "@/lib/ajuda-busca";
 import VideoModal from "./video-modal";
 
@@ -195,6 +195,8 @@ export default function AjudaFlutuante({ ehDono }: { ehDono: boolean }) {
       }
       const url = URL.createObjectURL(await res.blob());
       const audio = new Audio(url);
+      audio.preservesPitch = true;
+      audio.playbackRate = VELOCIDADE_VOZ;
       playerRef.current = audio;
       audio.onended = () => {
         URL.revokeObjectURL(url);

@@ -33,6 +33,9 @@ export function definirVoz(ligada: boolean) {
   if (!ligada) pararFrases();
 }
 
+/** Velocidade da voz da Ivva: 1,3x soa natural e mais ágil (o tom é preservado). */
+export const VELOCIDADE_VOZ = 1.3;
+
 let atual: HTMLAudioElement | null = null;
 let rodada = 0;
 
@@ -49,6 +52,8 @@ export async function tocarFrases(arquivos: string[], aoTerminar?: () => void): 
   for (let i = 0; i < arquivos.length; i++) {
     if (minha !== rodada) return true;
     const audio = new Audio(arquivos[i]);
+    audio.preservesPitch = true;
+    audio.playbackRate = VELOCIDADE_VOZ;
     atual = audio;
     try {
       await audio.play();
