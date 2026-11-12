@@ -26,6 +26,17 @@ const CSS = `
 .fund-float { animation: fund-float 6s ease-in-out infinite; }
 .fund-btn { position: relative; overflow: hidden; }
 .fund-btn::after { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 28%; background: linear-gradient(100deg, transparent, rgba(255,255,255,0.45), transparent); animation: fund-shine 3.6s ease-in-out infinite; }
+@keyframes est-rec { 0%, 55% { opacity: 1; } 56%, 100% { opacity: 0.12; } }
+@keyframes est-spin { to { transform: rotate(360deg); } }
+@keyframes est-glare { from { transform: translateX(-60px) skewX(-20deg); } to { transform: translateX(80px) skewX(-20deg); } }
+@keyframes est-focus { 0%, 100% { transform: scale(1); opacity: 0.55; } 50% { transform: scale(0.94); opacity: 1; } }
+@keyframes est-flash { 0%, 92%, 100% { opacity: 0; } 95% { opacity: 0.55; } }
+.est-rec { animation: est-rec 1.2s steps(1, end) infinite; }
+.est-spin { transform-origin: 120px 112px; animation: est-spin 14s linear infinite; }
+.est-glare { animation: est-glare 4.2s ease-in-out infinite; }
+.est-focus { transform-origin: 120px 100px; animation: est-focus 3.2s ease-in-out infinite; }
+.est-flash { animation: est-flash 6s ease-out infinite; }
+@media (prefers-reduced-motion: reduce) { .est-rec, .est-spin, .est-glare, .est-focus, .est-flash { animation: none; } }
 @media (prefers-reduced-motion: reduce) { .fund-draw, .fund-marquee, .fund-aurora, .fund-float, .fund-btn::after { animation: none; } .fund-draw { stroke-dashoffset: 0; } }
 `;
 
@@ -78,6 +89,47 @@ const INCLUI = [
   "Administração pelo WhatsApp, sinal antecipado e recibo automático",
   "Suporte direto com o fundador, sem fila",
 ];
+
+function EstudioCam() {
+  return (
+    <svg viewBox="0 0 240 210" fill="none" role="img" aria-label="Câmera gravando, com a luz de REC piscando" className="h-auto w-full">
+      <defs>
+        <linearGradient id="est-g" x1="20" y1="30" x2="220" y2="180" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#2fbf9f" />
+          <stop offset="0.55" stopColor="#8b7fe8" />
+          <stop offset="1" stopColor="#ff6b5b" />
+        </linearGradient>
+        <radialGradient id="est-lens" cx="42%" cy="38%" r="70%">
+          <stop offset="0" stopColor="#a99cfa" />
+          <stop offset="0.45" stopColor="#4a3fa8" />
+          <stop offset="1" stopColor="#0b0b10" />
+        </radialGradient>
+        <clipPath id="est-clip"><circle cx="120" cy="112" r="27" /></clipPath>
+        <filter id="est-soft"><feGaussianBlur stdDeviation="9" /></filter>
+      </defs>
+      {/* brilho de fundo */}
+      <circle cx="120" cy="112" r="70" fill="url(#est-g)" opacity="0.28" filter="url(#est-soft)" />
+      {/* enquadramento de visor */}
+      <g className="est-focus" stroke="url(#est-g)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M10 30 V12 H28" /><path d="M230 30 V12 H212" /><path d="M10 180 V198 H28" /><path d="M230 180 V198 H212" />
+      </g>
+      {/* corpo */}
+      <rect x="82" y="38" width="62" height="22" rx="8" fill="#14121b" stroke="url(#est-g)" strokeWidth="2" />
+      <rect x="28" y="54" width="184" height="116" rx="22" fill="#0e0e13" stroke="url(#est-g)" strokeWidth="2.5" />
+      {/* lente */}
+      <circle cx="120" cy="112" r="46" fill="#14121b" stroke="url(#est-g)" strokeWidth="3" />
+      <g className="est-spin"><circle cx="120" cy="112" r="38" stroke="url(#est-g)" strokeWidth="2" strokeDasharray="4 7" strokeLinecap="round" opacity="0.9" /></g>
+      <circle cx="120" cy="112" r="27" fill="url(#est-lens)" />
+      <g clipPath="url(#est-clip)"><rect className="est-glare" x="100" y="84" width="14" height="56" fill="#fff" opacity="0.55" /></g>
+      <circle cx="108" cy="102" r="4" fill="#fff" opacity="0.7" />
+      {/* REC */}
+      <circle className="est-rec" cx="186" cy="76" r="5.5" fill="#ff4d4d" />
+      <text x="172" y="79.5" textAnchor="end" fill="#f7f6f2" fontSize="10.5" fontWeight="800" letterSpacing="2" fontFamily="var(--font-jakarta), system-ui, sans-serif">REC</text>
+      {/* flash */}
+      <circle className="est-flash" cx="52" cy="76" r="9" fill="#fff" />
+    </svg>
+  );
+}
 
 function Faixa() {
   const itens = [...FAIXA, ...FAIXA];
@@ -276,9 +328,15 @@ export default function FundadoresPage() {
         </section>
 
         {/* ivva Estúdio: em breve */}
-        <section className="relative mt-12 overflow-hidden rounded-3xl border border-white/[0.12] bg-white/[0.035] p-7 shadow-[inset_0_1px_0_rgba(255,255,255,0.14)] backdrop-blur-2xl sm:p-10">
+        <section className="relative mt-12 overflow-hidden rounded-3xl border border-white/[0.12] bg-[linear-gradient(135deg,rgba(255,107,91,0.1),rgba(139,127,232,0.14)_55%,rgba(47,191,159,0.08))] p-7 shadow-[inset_0_1px_0_rgba(255,255,255,0.14)] backdrop-blur-2xl sm:p-10">
           <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-[radial-gradient(circle,rgba(139,127,232,0.35),transparent_65%)]" />
+          <div className="pointer-events-none absolute right-6 top-6 hidden w-[250px] md:block lg:right-10 lg:w-[290px]">
+            <EstudioCam />
+          </div>
           <div className="relative">
+            <div className="mb-4 w-[150px] md:hidden">
+              <EstudioCam />
+            </div>
             <p className="inline-flex rounded-full border border-[#ff6b5b]/50 bg-[#ff6b5b]/10 px-3.5 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[#ff9b8f]">Em breve</p>
             <h2 className="mt-3 text-[28px] font-extrabold tracking-[-0.02em] sm:text-[36px]">
               ivva{" "}
@@ -286,7 +344,7 @@ export default function FundadoresPage() {
                 Estúdio
               </span>
             </h2>
-            <p className="mt-2 max-w-2xl text-[15px] leading-relaxed text-[#c7c5d1]">
+            <p className="mt-2 max-w-xl text-[15px] leading-relaxed text-[#c7c5d1]">
               Depois de atender, agendar e cobrar, a ivva vai cuidar também de como o seu negócio aparece e cresce nas redes.
             </p>
             <ul className="mt-6 grid gap-3 sm:grid-cols-2">
