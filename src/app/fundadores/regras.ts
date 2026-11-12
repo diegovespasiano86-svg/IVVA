@@ -1,8 +1,8 @@
 // Programa Fundadores da ivva: tudo que a página e a cobrança dizem vem daqui, para nunca divergir.
 export const FUNDADORES = {
-  plano: "profissional",
-  nomePlano: "Profissional",
-  precoMensal: 447,
+  plano: "completo",
+  nomePlano: "Completo",
+  precoMensal: 597,
   /** Último dia para cancelar sem custo. */
   ultimoDiaCancelar: "12/02/2027",
   /** A Stripe cobra a 1ª mensalidade neste instante (meia-noite de Brasília do dia 13/02/2027). */
@@ -15,7 +15,7 @@ export const FUNDADORES = {
 export const MENSAGEM_PAGAMENTO = `Programa Fundadores: R$ 0,00 hoje e até ${FUNDADORES.ultimoDiaCancelar}. Se você não cancelar até ${FUNDADORES.ultimoDiaCancelar}, o cartão será cobrado em ${FUNDADORES.primeiraCobranca} (R$ ${FUNDADORES.precoMensal},00 por mês, plano ${FUNDADORES.nomePlano}) e a cada mês depois disso. Cancele quando quiser em app.ivva.app.br, em Conta.`;
 
 export const REGRAS_INDICACAO_FUNDADORES = [
-  `Cada cliente novo que você indicar e que se tornar pagante vale 1 mensalidade do seu plano (R$ ${FUNDADORES.precoMensal},00 no ${FUNDADORES.nomePlano}), concedida como crédito na sua assinatura.`,
+  `Cada cliente novo que você indicar e que se tornar pagante vale 1 mensalidade do seu plano (R$ ${FUNDADORES.precoMensal},00 no ${FUNDADORES.nomePlano}, ou o valor do plano que você escolher), concedida como crédito na sua assinatura.`,
   `Você pode ganhar até ${FUNDADORES.maxIndicacoes} mensalidades, uma por indicação.`,
   "Vale para quem ainda não tem conta na ivva e assina pelo seu link de indicação, que você encontra no app, ou que você apresenta à ivva por escrito antes de ele assinar.",
   "O indicado vira pagante quando o teste grátis dele termina e a 1ª mensalidade é paga. O crédito é liberado quando esse pagamento é confirmado e a assinatura dele continua ativa depois de 30 dias.",
@@ -31,7 +31,7 @@ export const REGRAS_PROGRAMA = [
   "O cadastro do cartão é obrigatório para ativar o acesso, mas nada é cobrado durante o período gratuito.",
   `Para não ser cobrado, cancele até ${FUNDADORES.ultimoDiaCancelar}, em app.ivva.app.br (Conta) ou pelo WhatsApp de suporte. Sem cancelamento, a 1ª mensalidade de R$ ${FUNDADORES.precoMensal},00 é cobrada em ${FUNDADORES.primeiraCobranca}.`,
   "Depois disso, a mensalidade é cobrada todo mês no mesmo cartão, até você cancelar. O acesso segue ativo até o fim do período já pago.",
-  "O valor do plano Profissional é o de tabela e pode ser reajustado, com aviso por escrito de 30 dias.",
+  "Durante o período gratuito você usa o plano Completo, o mais alto da ivva. Até 12/02/2027 você pode trocar para o plano que fizer mais sentido (Essencial ou Profissional) em app.ivva.app.br, em Conta; sem troca, a assinatura segue no Completo. Os valores são os de tabela e podem ser reajustados, com aviso por escrito de 30 dias.",
   "Vale o Contrato de Prestação de Serviços, os Termos de Uso e a Política de Privacidade da ivva. Fica preservado o direito de arrependimento de 7 dias previsto em lei.",
   "O comparativo com outros sistemas usa páginas públicas pesquisadas em outubro de 2026 (Frontzapp, Zendesk, RD Station e Leadster) e pode mudar.",
   "A ivva é uma solução independente. Meta e WhatsApp são marcas de seus respectivos titulares.",

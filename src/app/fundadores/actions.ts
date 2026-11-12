@@ -29,7 +29,7 @@ export async function iniciarCadastroFundador(_prev: FundadorState, formData: Fo
   if (!aceite) return { erro: "Para continuar, aceite o Contrato, os Termos e a Política de Privacidade.", clientSecret: null };
   if (!aceiteCobranca) return { erro: `Para continuar, confirme que entendeu a cobrança a partir de ${FUNDADORES.primeiraCobranca}.`, clientSecret: null };
 
-  const priceId = process.env.STRIPE_PRICE_PROFISSIONAL;
+  const priceId = process.env.STRIPE_PRICE_COMPLETO;
   const secret = process.env.WHATSAPP_WEBHOOK_INTERNAL_SECRET;
   if (!priceId || !secret) return { erro: "Cadastro indisponível no momento. Tente de novo em instantes.", clientSecret: null };
   const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);

@@ -7,7 +7,7 @@ import { FUNDADORES, REGRAS_INDICACAO_FUNDADORES, REGRAS_PROGRAMA } from "./regr
 
 export const metadata: Metadata = {
   title: "Fundadores da ivva · 3 meses por nossa conta",
-  description: "Convite exclusivo para os primeiros parceiros da ivva: plano Profissional sem custo até 12/02/2027.",
+  description: "Convite exclusivo para os primeiros parceiros da ivva: plano Completo sem custo até 12/02/2027.",
   robots: { index: false, follow: false },
 };
 
@@ -31,19 +31,30 @@ const CSS = `
 
 const FAIXA = [
   "Atende 24h em texto e voz",
-  "Agenda e cobra o sinal",
-  "Vende por você",
+  "Gateway de pagamentos",
+  "Campanhas com um botão",
   "Traz o cliente de volta",
+  "Histórico dos últimos 6 meses",
+  "Agenda e cobra o sinal",
   "Catálogo e estoque",
-  "Preço público e fechado",
   "Aprovada pela Meta",
 ];
 
+// Painel da hero: só o que o produto já faz hoje.
+const PAINEL = [
+  { titulo: "Atende por voz", texto: "Responde em áudio, 24h. Nenhum dos 4 sistemas que comparamos oferece.", cor: "#2fbf9f" },
+  { titulo: "Gateway de pagamentos", texto: "Cobra Pix e cartão no WhatsApp, com Stripe, Asaas ou Mercado Pago.", cor: "#8b7fe8" },
+  { titulo: "Campanhas", texto: "Dispara para a sua base com um botão, com texto e horário que você escolhe.", cor: "#ff6b5b" },
+  { titulo: "Traz o cliente de volta", texto: "Recall e reengajamento automáticos de quem sumiu.", cor: "#2fbf9f" },
+  { titulo: "Histórico de 6 meses", texto: "Faturamento e avaliações mês a mês, nos últimos 6 meses.", cor: "#8b7fe8" },
+  { titulo: "Catálogo e estoque", texto: "Serviços, produtos e estoque no mesmo sistema do atendimento.", cor: "#ff6b5b" },
+];
+
 const LINHA_DO_TEMPO = [
-  { quando: "Hoje", titulo: "Você entra", texto: "Cadastra o cartão (R$ 0,00) e o acesso ao plano Profissional é liberado." },
+  { quando: "Hoje", titulo: "Você entra", texto: "Cadastra o cartão (R$ 0,00) e o acesso ao plano mais completo da ivva é liberado." },
   { quando: "Até 12/02", titulo: "3 meses por nossa conta", texto: "Usa tudo, conta com a nossa equipe e nos diz o que melhorar." },
-  { quando: "12/02/2027", titulo: "Último dia para cancelar", texto: "Não quer continuar? Cancele até esta data e nada é cobrado." },
-  { quando: "13/02/2027", titulo: "Começa a mensalidade", texto: `R$ ${FUNDADORES.precoMensal},00 por mês no cartão. Cada indicação paga vale 1 mensalidade.` },
+  { quando: "12/02/2027", titulo: "Último dia para escolher", texto: "Cancele e nada é cobrado, ou troque para o plano que faz sentido para o seu negócio." },
+  { quando: "13/02/2027", titulo: "Começa a mensalidade", texto: `Sem troca, segue no ${FUNDADORES.nomePlano}: R$ ${FUNDADORES.precoMensal},00 por mês no cartão. Cada indicação paga vale 1 mensalidade.` },
 ];
 
 const DIFERENCIAIS = [
@@ -57,6 +68,7 @@ const INCLUI = [
   "Agenda, cobrança e confirmação automáticas",
   "Sugestões de complemento para vender mais",
   "Retorno de clientes que sumiram",
+  "Administração pelo WhatsApp, sinal antecipado e recibo automático",
   "Suporte direto com o fundador, sem fila",
 ];
 
@@ -85,14 +97,14 @@ export default function FundadoresPage() {
     <main className="relative isolate overflow-hidden pb-0">
       <style>{CSS}</style>
 
-      {/* HERO */}
-      <section className="relative isolate overflow-hidden px-4 pb-20 pt-8">
+      {/* HERO: cabe na primeira tela */}
+      <section className="relative isolate overflow-hidden px-4 pb-10 pt-6">
         <div className="pointer-events-none absolute inset-0 -z-10 bg-[#0b0b10]">
-          <div className="fund-aurora absolute -left-40 top-24 h-[620px] w-[620px] rounded-full bg-[radial-gradient(circle,rgba(47,191,159,0.42),transparent_65%)]" />
-          <div className="fund-aurora absolute -right-32 -top-40 h-[760px] w-[760px] rounded-full bg-[radial-gradient(circle,rgba(139,127,232,0.5),transparent_65%)]" style={{ animationDelay: "-5s" }} />
-          <div className="fund-aurora absolute bottom-[-200px] left-1/3 h-[560px] w-[560px] rounded-full bg-[radial-gradient(circle,rgba(255,107,91,0.3),transparent_65%)]" style={{ animationDelay: "-9s" }} />
+          <div className="fund-aurora absolute -left-40 top-10 h-[560px] w-[560px] rounded-full bg-[radial-gradient(circle,rgba(47,191,159,0.42),transparent_65%)]" />
+          <div className="fund-aurora absolute -right-32 -top-48 h-[700px] w-[700px] rounded-full bg-[radial-gradient(circle,rgba(139,127,232,0.5),transparent_65%)]" style={{ animationDelay: "-5s" }} />
+          <div className="fund-aurora absolute bottom-[-220px] left-1/3 h-[520px] w-[520px] rounded-full bg-[radial-gradient(circle,rgba(255,107,91,0.3),transparent_65%)]" style={{ animationDelay: "-9s" }} />
           {/* a ondinha da ivva se desenhando */}
-          <svg viewBox="0 0 96 100" fill="none" aria-hidden className="absolute -right-24 top-6 h-[820px] w-[820px] opacity-70">
+          <svg viewBox="0 0 96 100" fill="none" aria-hidden className="absolute -right-20 -top-6 h-[700px] w-[700px] opacity-70">
             <defs>
               <linearGradient id="fund-wave" x1="10" y1="20" x2="86" y2="80" gradientUnits="userSpaceOnUse">
                 <stop offset="0" stopColor="#2fbf9f" />
@@ -108,73 +120,56 @@ export default function FundadoresPage() {
         </div>
 
         <div className="relative mx-auto max-w-[1100px]">
-          <div className="mb-12 flex items-center justify-between gap-4">
+          <div className="mb-6 flex items-center justify-between gap-4">
             <IvvaLogo light />
             <a href="/login" className="rounded-full border border-white/15 px-4 py-2 text-[13px] font-semibold text-[#c7c5d1] transition-colors hover:border-white/30 hover:text-[#f7f6f2]">
               Entrar
             </a>
           </div>
 
-          <div className="grid items-center gap-10 lg:grid-cols-[1.1fr_0.9fr]">
+          <div className="grid items-center gap-8 lg:grid-cols-[1fr_1fr]">
             <div>
-              <p className="inline-flex rounded-full border border-[#2fbf9f]/40 bg-[#2fbf9f]/10 px-3.5 py-1 text-[11.5px] font-bold uppercase tracking-[0.14em] text-[#2fbf9f]">
+              <p className="inline-flex rounded-full border border-[#2fbf9f]/40 bg-[#2fbf9f]/10 px-3.5 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[#2fbf9f]">
                 Programa de parceiros fundadores
               </p>
-              <h1 className="mt-5 text-[42px] font-extrabold leading-[1.02] tracking-[-0.035em] text-balance sm:text-[68px]">
+              <h1 className="mt-4 text-[36px] font-extrabold leading-[1.02] tracking-[-0.035em] text-balance sm:text-[54px]">
                 Demorou, mas{" "}
                 <span className={`${GRADIENTE} bg-clip-text italic text-transparent`} style={SERIF}>
                   chegou.
                 </span>
               </h1>
-              <p className="mt-5 max-w-xl text-[18px] leading-relaxed text-[#c7c5d1] text-balance">
-                Não é robô. É a sua empresa, sempre viva. A ivva foi aprovada pela Meta para usar a API oficial do WhatsApp Business, e você foi escolhido para entrar primeiro.
+              <p className="mt-3 max-w-lg text-[16px] leading-relaxed text-[#c7c5d1] text-balance">
+                Não é robô. É a sua empresa, sempre viva. Aprovada pela Meta para usar a API oficial do WhatsApp Business, a ivva abre para você primeiro:{" "}
+                <strong className="text-[#f7f6f2]">plano {FUNDADORES.nomePlano} por nossa conta até {FUNDADORES.ultimoDiaCancelar}</strong>.
               </p>
-              <div className="mt-6 flex flex-wrap gap-2.5">
-                {["3 meses por nossa conta", "Plano Profissional completo", "1 mensalidade por indicação"].map((t) => (
-                  <span key={t} className="rounded-full border border-white/15 bg-white/[0.06] px-3.5 py-1.5 text-[13px] font-semibold text-[#f7f6f2] backdrop-blur-sm">
-                    {t}
-                  </span>
-                ))}
-              </div>
-              <div className="mt-8 flex flex-wrap items-center gap-3">
-                <a href="#entrar" className={`fund-btn ${GRADIENTE} rounded-full px-7 py-3.5 text-[15px] font-semibold text-white shadow-[0_14px_40px_-10px_rgba(139,127,232,0.8)]`}>
+              <div className="mt-5 flex flex-wrap items-center gap-3">
+                <a href="#entrar" className={`fund-btn ${GRADIENTE} rounded-full px-6 py-3 text-[15px] font-semibold text-white shadow-[0_14px_40px_-10px_rgba(139,127,232,0.8)]`}>
                   Quero ser Fundador
                 </a>
-                <a href="#regras" className="rounded-full border border-white/15 px-5 py-3.5 text-[14px] font-semibold text-[#c7c5d1] hover:border-white/30 hover:text-[#f7f6f2]">
+                <a href="#regras" className="rounded-full border border-white/15 px-5 py-3 text-[14px] font-semibold text-[#c7c5d1] hover:border-white/30 hover:text-[#f7f6f2]">
                   Ver as regras
                 </a>
               </div>
-              <div className="mt-7">
+              <div className="mt-4">
                 <MetaSelo />
               </div>
             </div>
 
-            {/* Painel de pitch */}
-            <div className="fund-float relative rounded-[1.75rem] border border-white/15 bg-white/[0.07] p-6 shadow-[0_40px_90px_-30px_rgba(0,0,0,0.7)] backdrop-blur-xl">
-              <p className="text-[11.5px] font-bold uppercase tracking-[0.14em] text-[#a99cfa]">Só a ivva junta tudo isso</p>
-              <ul className="mt-4 space-y-3.5">
-                {DIFERENCIAIS.map((d) => (
-                  <li key={d.titulo} className="flex items-start gap-3.5 rounded-2xl border border-white/10 bg-black/20 p-4">
-                    <span className="mt-1 h-3 w-3 shrink-0 rounded-full" style={{ background: d.cor, boxShadow: `0 0 18px ${d.cor}` }} />
-                    <div>
-                      <p className="text-[15.5px] font-extrabold">{d.titulo}</p>
-                      <p className="mt-0.5 text-[13px] leading-snug text-[#a5a3b0]">{d.texto}</p>
-                    </div>
+            {/* Painel de pitch em vidro */}
+            <div className="fund-float relative overflow-hidden rounded-[1.5rem] border border-white/[0.12] bg-white/[0.035] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_30px_70px_-40px_rgba(0,0,0,0.6)] backdrop-blur-2xl sm:p-5">
+              <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.1),transparent_38%,transparent_70%,rgba(139,127,232,0.1))]" />
+              <p className="relative text-[11px] font-bold uppercase tracking-[0.14em] text-[#a99cfa]">Só a ivva junta tudo isso</p>
+              <ul className="relative mt-3 grid gap-2 sm:grid-cols-2">
+                {PAINEL.map((d) => (
+                  <li key={d.titulo} className="rounded-xl border border-white/[0.09] bg-white/[0.03] p-3">
+                    <p className="flex items-center gap-2 text-[13.5px] font-extrabold">
+                      <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: d.cor, boxShadow: `0 0 12px ${d.cor}` }} />
+                      {d.titulo}
+                    </p>
+                    <p className="mt-1 text-[12px] leading-snug text-[#b4b2c0]">{d.texto}</p>
                   </li>
                 ))}
               </ul>
-              <div className="mt-5 grid grid-cols-3 gap-2.5 text-center">
-                {[
-                  ["24h", "todos os dias"],
-                  ["9", "módulos em um só lugar"],
-                  ["R$ 0", "hoje"],
-                ].map(([n, l]) => (
-                  <div key={n} className="rounded-xl bg-white/[0.06] px-2 py-3">
-                    <p className="text-[22px] font-extrabold leading-none">{n}</p>
-                    <p className="mt-1 text-[11px] leading-tight text-[#a5a3b0]">{l}</p>
-                  </div>
-                ))}
-              </div>
             </div>
           </div>
         </div>
