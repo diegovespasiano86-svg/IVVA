@@ -31,6 +31,7 @@ export async function createCheckoutSession(params: {
   cupom?: string;
   /** Fim do teste grátis em segundos Unix (programa Fundadores). Sem isso vale diasDeTeste(). */
   trialEnd?: number;
+  somenteCartao?: boolean;
   /** Texto curto perto do botão de pagar (data da 1ª cobrança, por exemplo). */
   mensagemPagamento?: string;
 }) {
@@ -47,6 +48,7 @@ export async function createCheckoutSession(params: {
   else body.set("subscription_data[trial_period_days]", String(diasDeTeste()));
   if (params.mensagemPagamento) body.set("custom_text[submit][message]", params.mensagemPagamento.slice(0, 1000));
   if (params.email) body.set("customer_email", params.email);
+  if (params.somenteCartao) body.set("payment_method_types[0]", "card");
   if (params.cupom) body.set("discounts[0][coupon]", params.cupom);
   for (const [k, v] of Object.entries(params.extraMetadata ?? {})) {
     if (v) body.set(`metadata[${k}]`, v.slice(0, 480));

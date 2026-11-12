@@ -66,6 +66,7 @@ export async function iniciarCadastroFundador(_prev: FundadorState, formData: Fo
       extraMetadata: { nome, segmento, telefone: telefone.replace(/\D/g, ""), ciclo: "mensal", programa: "fundadores" },
       returnUrl: `${origin}/bem-vindo?session_id={CHECKOUT_SESSION_ID}`,
       trialEnd: FUNDADORES.trialEnd,
+      somenteCartao: true,
       mensagemPagamento: MENSAGEM_PAGAMENTO,
     });
     await supabase.rpc("lead_avancar", { p_secret: secret, p_email: email, p_status: "pagamento_aberto", p_session_id: session.id });

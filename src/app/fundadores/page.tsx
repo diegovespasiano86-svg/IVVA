@@ -287,7 +287,10 @@ export default function FundadoresPage() {
           <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-7">
             <p className="text-[11.5px] font-bold uppercase tracking-[0.14em] text-[#2fbf9f]">Plano {FUNDADORES.nomePlano}</p>
             <p className="mt-2 text-[44px] font-extrabold leading-none tracking-[-0.03em]">R$ 0,00</p>
-            <p className="mt-1 text-[13px] text-[#a5a3b0]">até {FUNDADORES.ultimoDiaCancelar} · depois R$ {FUNDADORES.precoMensal},00/mês</p>
+            <p className="mt-1 text-[13px] text-[#a5a3b0]">até {FUNDADORES.ultimoDiaCancelar} · depois R$ {FUNDADORES.precoMensal},00/mês no Completo</p>
+            <p className="mt-4 rounded-2xl border border-[#2fbf9f]/40 bg-[#2fbf9f]/10 p-3.5 text-[13.5px] font-semibold leading-snug text-[#e4f6f1]">
+              No fim do período de teste você pode trocar para outros planos, a partir de R$ 297,00 por mês, conforme a necessidade do seu negócio.
+            </p>
             <ul className="mt-5 space-y-2.5 text-[14px] text-[#e4e1ec]">
               {INCLUI.map((t) => (
                 <li key={t} className="flex items-start gap-2.5">
