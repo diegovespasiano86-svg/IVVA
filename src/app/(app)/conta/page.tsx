@@ -39,6 +39,7 @@ const PLANOS = [
       `${formatarNumero(CONVERSAS_POR_PLANO.essencial)} conversas/mês com a IA`,
       "Chatbot no WhatsApp 24h (1 número)",
       "Agenda + CRM com funil de vendas",
+      "1 acesso (o seu)",
       "Dashboard básico",
       "Base de conhecimento pronta pro seu nicho",
     ],
@@ -52,6 +53,7 @@ const PLANOS = [
       `${formatarNumero(CONVERSAS_POR_PLANO.profissional)} conversas/mês com a IA`,
       "Tudo do Essencial",
       "Calendários múltiplos + comissão automática",
+      "2 acessos, cada um com a sua agenda",
       "Central de SAC + avaliações",
       "Reengajamento e recall automático",
       "Fila de espera inteligente",
@@ -68,6 +70,7 @@ const PLANOS = [
     beneficios: [
       `${formatarNumero(CONVERSAS_POR_PLANO.completo)} conversas/mês com a IA`,
       "Tudo do Profissional",
+      "Até 5 acessos, com agendas separadas e controle de administrador ou usuário",
       "Admin do negócio pelo WhatsApp",
       "Sinal antecipado (anti no-show)",
       "Recibo automático por WhatsApp",

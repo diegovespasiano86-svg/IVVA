@@ -28,9 +28,9 @@ function guia(g: Guia): string {
 }
 
 const PLANOS = `# PLANOS E LIMITES
-- Essencial R$ ${PRECO_MENSAL.essencial}/mês: ${CONVERSAS_POR_PLANO.essencial} conversas com a IA por mês, 1 calendário.
-- Profissional R$ ${PRECO_MENSAL.profissional}/mês: ${CONVERSAS_POR_PLANO.profissional} conversas por mês. Libera SAC, avaliações, comissões, lista de espera, reengajamento, áudio e controle de estoque.
-- Completo R$ ${PRECO_MENSAL.completo}/mês: ${CONVERSAS_POR_PLANO.completo} conversas por mês. Libera também comandos do dono, Pix de sinal e recibo.
+- Essencial R$ ${PRECO_MENSAL.essencial}/mês: ${CONVERSAS_POR_PLANO.essencial} conversas com a IA por mês, 1 calendário e 1 acesso (o do dono).
+- Profissional R$ ${PRECO_MENSAL.profissional}/mês: ${CONVERSAS_POR_PLANO.profissional} conversas por mês. Libera SAC, avaliações, comissões, lista de espera, reengajamento, áudio e controle de estoque. Inclui 2 acessos, cada um com a sua agenda.
+- Completo R$ ${PRECO_MENSAL.completo}/mês: ${CONVERSAS_POR_PLANO.completo} conversas por mês. Libera também comandos do dono, Pix de sinal e recibo. Inclui até 5 acessos, com agendas separadas e acesso como administrador ou usuário. Acima de 5 acessos, falar com a ivva pelo WhatsApp de suporte.
 - Teste grátis de 14 dias no cartão, sem fidelidade. Na Black Friday (20 a 30/11) o teste grátis no cartão é de 30 dias.
 - Uma conversa = todas as respostas da IA para o mesmo cliente dentro de 24 horas. O mês renova no dia 1º. Cada conversa vai até ${RESPOSTAS_POR_CONVERSA_MAX} respostas; passou disso, vai para a equipe.
 - Avisos de uso em 80%, 90% e 100%. Pacote avulso: ${PACOTE_AVULSO.conversas} conversas por R$ 59, não expira e é usado depois das do plano. Sem conversas, a IA para e as mensagens passam para a equipe.
