@@ -29,6 +29,10 @@ export async function createCheckoutSession(params: {
   extraMetadata?: Record<string, string>;
   /** Id de um cupom da Stripe a aplicar (ex.: desconto do indicado). */
   cupom?: string;
+  /** Fim do teste grátis em segundos Unix (programa Fundadores). Sem isso vale diasDeTeste(). */
+  trialEnd?: number;
+  /** Texto curto perto do botão de pagar (data da 1ª cobrança, por exemplo). */
+  mensagemPagamento?: string;
 }) {
   const body = new URLSearchParams({
     mode: "subscription",
@@ -36,10 +40,12 @@ export async function createCheckoutSession(params: {
     "line_items[0][price]": params.priceId,
     "line_items[0][quantity]": "1",
     return_url: params.returnUrl,
-    "subscription_data[trial_period_days]": String(diasDeTeste()),
     "metadata[nome_negocio]": params.nomeNegocio,
     "metadata[plano]": params.plano,
   });
+  if (params.trialEnd) body.set("subscription_data[trial_end]", String(params.trialEnd));
+  else body.set("subscription_data[trial_period_days]", String(diasDeTeste()));
+  if (params.mensagemPagamento) body.set("custom_text[submit][message]", params.mensagemPagamento.slice(0, 1000));
   if (params.email) body.set("customer_email", params.email);
   if (params.cupom) body.set("discounts[0][coupon]", params.cupom);
   for (const [k, v] of Object.entries(params.extraMetadata ?? {})) {

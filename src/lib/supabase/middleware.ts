@@ -47,6 +47,7 @@ export async function updateSession(request: NextRequest) {
     pathname === "/" ||
     pathname.startsWith("/login") ||
     pathname.startsWith("/planos") ||
+    pathname.startsWith("/fundadores") ||
     pathname.startsWith("/bem-vindo") ||
     pathname.startsWith("/convite") ||
     pathname.startsWith("/r/") ||
