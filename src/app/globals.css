@@ -1197,3 +1197,8 @@ html[data-density="compact"] main .card table thead th {
 .meta-shine { position: relative; overflow: hidden; }
 .meta-shine::after { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 28%; pointer-events: none; background: linear-gradient(100deg, transparent, rgba(255,255,255,0.28), transparent); animation: meta-shine 4s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .meta-sweep, .meta-halo::before, .meta-shine::after { animation: none; } }
+
+/* IVVA Estúdio no menu: marca em degradê com movimento suave */
+@keyframes ivva-estudio-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+.estudio-logo { animation: ivva-estudio-pulse 3.2s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .estudio-logo { animation: none; } }

@@ -2,6 +2,8 @@ import {
   BarChart3,
   Bot,
   CalendarDays,
+  Clapperboard,
+  PlayCircle,
   Home,
   Megaphone,
   MessageSquare,
@@ -28,6 +30,8 @@ export type NavGroup = {
   icon: LucideIcon;
   /** vai pro rodapé do menu lateral */
   bottom?: boolean;
+  /** ambiente à parte: aparece depois de um traço separador */
+  separado?: boolean;
   items: NavLeaf[];
 };
 
@@ -119,6 +123,27 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/canais", label: "WhatsApp e canais", roles: DONO },
       { href: "/integracoes", label: "Integrações e API", roles: DONO },
+    ],
+  },
+  {
+    id: "estudio",
+    label: "IVVA Estúdio",
+    icon: Clapperboard,
+    separado: true,
+    items: [
+      { href: "/estudio", label: "Vitrine e proposta", roles: DONO },
+      { href: "/estudio/projeto", label: "Faça seu projeto", roles: DONO },
+      { href: "/estudio/relatorios", label: "Meus relatórios", roles: DONO },
+      { href: "/estudio/repositorio", label: "Repositório do projeto", roles: DONO },
+    ],
+  },
+  {
+    id: "videos",
+    label: "Vídeos",
+    icon: PlayCircle,
+    items: [
+      { href: "/ajuda?abrir=boas-vindas", label: "Comece por aqui", roles: AMBOS },
+      { href: "/ajuda", label: "Todos os vídeos e guias", roles: AMBOS },
     ],
   },
   {

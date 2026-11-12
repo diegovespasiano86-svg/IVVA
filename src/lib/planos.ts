@@ -22,7 +22,8 @@ export type Recurso =
   | "resposta_por_audio"
   | "admin_pelo_whatsapp"
   | "sinal_antecipado"
-  | "recibo_automatico";
+  | "recibo_automatico"
+  | "estudio_diagnostico";
 
 // Plano mínimo em que cada recurso passa a existir.
 const RECURSO_PLANO_MINIMO: Record<Recurso, PlanoId> = {
@@ -37,6 +38,7 @@ const RECURSO_PLANO_MINIMO: Record<Recurso, PlanoId> = {
   admin_pelo_whatsapp: "completo",
   sinal_antecipado: "completo",
   recibo_automatico: "completo",
+  estudio_diagnostico: "profissional",
 };
 
 // ---- Limite mensal de conversas atendidas pela IA ------------------------

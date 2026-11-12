@@ -53,7 +53,8 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith("/r/") ||
     pathname.startsWith("/esqueci-senha") ||
     pathname.startsWith("/redefinir-senha") ||
-    pathname.startsWith("/contrato");
+    pathname.startsWith("/contrato") ||
+    pathname.startsWith("/estudio-ivva");
 
   if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone();
