@@ -1,6 +1,6 @@
 import ProximoPasso from "@/components/proximo-passo";
 import { PLANO_LABEL, type PlanoId } from "@/lib/planos";
-import { getFimDoTeste } from "@/lib/stripe";
+import { getFimDoTeste, buscarSessaoPagaPorEmail } from "@/lib/stripe";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import AppShell from "@/components/app-shell";
@@ -35,6 +35,12 @@ export default async function AppLayout({
     .maybeSingle();
 
   if (!perfil) {
+    // Pagou e confirmou o e-mail, mas entrou direto pelo login: termina o cadastro sozinho, com o pagamento dela.
+    let sessaoPaga: string | null = null;
+    try {
+      sessaoPaga = await buscarSessaoPagaPorEmail(user.email ?? "");
+    } catch {}
+    if (sessaoPaga) redirect(`/bem-vindo/ativar?session_id=${encodeURIComponent(sessaoPaga)}`);
     return (
       <main className="flex min-h-screen items-center justify-center px-6 text-center">
         <div className="max-w-[420px]">

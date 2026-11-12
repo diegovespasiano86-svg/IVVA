@@ -415,3 +415,21 @@ export async function aceitarOfertaFicar(subscriptionId: string, porData: boolea
     throw new Error(data?.error?.message ?? "Falha ao manter a assinatura");
   }
 }
+
+// Quem pagou, confirmou o e-mail e entrou pelo login sem passar pelo link de ativação fica com a conta sem negócio.
+// Esta busca acha o pagamento concluído mais recente desse e-mail, para o app terminar o cadastro sozinho.
+export async function buscarSessaoPagaPorEmail(email: string): Promise<string | null> {
+  const e = email.trim().toLowerCase();
+  if (!e) return null;
+  const clientes = await fetch(`${STRIPE_API}/customers?email=${encodeURIComponent(e)}&limit=5`, { headers: stripeHeaders(), cache: "no-store" });
+  if (!clientes.ok) return null;
+  const lista = ((await clientes.json()) as { data?: { id: string }[] }).data ?? [];
+  for (const c of lista) {
+    const r = await fetch(`${STRIPE_API}/checkout/sessions?customer=${encodeURIComponent(c.id)}&limit=5`, { headers: stripeHeaders(), cache: "no-store" });
+    if (!r.ok) continue;
+    const sessoes = ((await r.json()) as { data?: { id: string; status?: string; payment_status?: string }[] }).data ?? [];
+    const ok = sessoes.find((s) => s.status === "complete" && (s.payment_status === "paid" || s.payment_status === "no_payment_required"));
+    if (ok) return ok.id;
+  }
+  return null;
+}
