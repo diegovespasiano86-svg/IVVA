@@ -36,6 +36,11 @@ const CSS = `
 .est-glare { animation: est-glare 4.2s ease-in-out infinite; }
 .est-focus { transform-origin: 120px 100px; animation: est-focus 3.2s ease-in-out infinite; }
 .est-flash { animation: est-flash 6s ease-out infinite; }
+@keyframes fund-border-spin { to { transform: rotate(360deg); } }
+@keyframes fund-spark-run { 0% { stroke-dashoffset: 120; } 100% { stroke-dashoffset: -40; } }
+.fund-border { background: conic-gradient(from 0deg, transparent 0deg, transparent 250deg, rgba(159,214,199,0.9) 300deg, rgba(255,255,255,0.95) 330deg, transparent 360deg); animation: fund-border-spin 7s linear infinite; }
+.fund-spark { stroke-dasharray: 22 100; stroke-dashoffset: 120; filter: drop-shadow(0 0 4px rgba(159,214,199,0.9)); animation: fund-spark-run 3.6s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .fund-border, .fund-spark { animation: none; } }
 @media (prefers-reduced-motion: reduce) { .est-rec, .est-spin, .est-glare, .est-focus, .est-flash { animation: none; } }
 @media (prefers-reduced-motion: reduce) { .fund-draw, .fund-marquee, .fund-aurora, .fund-float, .fund-btn::after { animation: none; } .fund-draw { stroke-dashoffset: 0; } }
 `;
@@ -193,7 +198,7 @@ export default function FundadoresPage() {
               </p>
               <h1 className="mt-4 text-[36px] font-extrabold leading-[1.02] tracking-[-0.035em] text-balance sm:text-[clamp(48px,5.4vw,72px)]">
                 Demorou, mas{" "}
-                <span className={`${GRADIENTE} bg-clip-text italic text-transparent`} style={SERIF}>
+                <span className={`italic text-[#c9c5ea]`} style={SERIF}>
                   chegou.
                 </span>
               </h1>
@@ -241,7 +246,7 @@ export default function FundadoresPage() {
         <section className="mt-20">
           <h2 className="text-[28px] font-extrabold tracking-[-0.02em] sm:text-[36px]">
             Como funciona,{" "}
-            <span className={`${GRADIENTE} bg-clip-text italic text-transparent`} style={SERIF}>
+            <span className={`italic text-[#c9c5ea]`} style={SERIF}>
               sem surpresa
             </span>
           </h2>
@@ -262,7 +267,7 @@ export default function FundadoresPage() {
           <p className="text-[11.5px] font-bold uppercase tracking-[0.14em] text-[#2fbf9f]">Por que a ivva</p>
           <h2 className="mt-2 max-w-3xl text-[28px] font-extrabold leading-tight tracking-[-0.02em] text-balance sm:text-[36px]">
             Os outros entregam uma peça.{" "}
-            <span className={`${GRADIENTE} bg-clip-text italic text-transparent`} style={SERIF}>
+            <span className={`italic text-[#c9c5ea]`} style={SERIF}>
               A ivva entrega o conjunto.
             </span>
           </h2>
@@ -340,7 +345,7 @@ export default function FundadoresPage() {
             <p className="inline-flex rounded-full border border-[#ff6b5b]/50 bg-[#ff6b5b]/10 px-3.5 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[#ff9b8f]">Em breve</p>
             <h2 className="mt-3 text-[28px] font-extrabold tracking-[-0.02em] sm:text-[36px]">
               ivva{" "}
-              <span className={`${GRADIENTE} bg-clip-text italic text-transparent`} style={SERIF}>
+              <span className={`italic text-[#c9c5ea]`} style={SERIF}>
                 Estúdio
               </span>
             </h2>
@@ -367,7 +372,7 @@ export default function FundadoresPage() {
           <div className="mb-8 text-center">
             <h2 className="text-[28px] font-extrabold tracking-[-0.02em] sm:text-[36px]">
               Seu lugar entre os{" "}
-              <span className={`${GRADIENTE} bg-clip-text italic text-transparent`} style={SERIF}>
+              <span className={`italic text-[#c9c5ea]`} style={SERIF}>
                 Fundadores
               </span>
             </h2>
@@ -413,20 +418,33 @@ export default function FundadoresPage() {
           <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(47,191,159,0.14),rgba(139,127,232,0.2)_55%,transparent)]" />
         </div>
         <div className="relative mx-auto flex min-h-[640px] max-w-[1100px] items-end px-4 py-16 lg:items-center lg:justify-end">
-          <div className="w-full max-w-[520px] rounded-3xl border border-white/15 bg-[#0b0b10]/70 p-7 shadow-[0_40px_90px_-30px_rgba(0,0,0,0.8)] backdrop-blur-xl sm:p-9">
-            <p className="text-[11.5px] font-bold uppercase tracking-[0.14em] text-[#2fbf9f]">Uma palavra do fundador</p>
-            <blockquote className="mt-4 text-[17px] leading-relaxed text-[#f7f6f2] sm:text-[18.5px]">
-              <span className={`${GRADIENTE} bg-clip-text italic text-transparent`} style={SERIF}>
-                “Estudei os maiores sistemas de atendimento do Brasil e dos Estados Unidos e ouvi amigos empresários reclamarem da mesma coisa: o chatbot responde, mas não cuida do negócio.
-                Nenhum deles me pareceu completo. Criei a ivva para ser o parceiro do seu negócio: atende, agenda, vende e traz o cliente de volta.
-                Você está entre os primeiros a acreditar nisso, e eu não esqueço quem esteve aqui no começo. Conto com você nessa jornada, rumo a uma parceria de longo prazo.”
-              </span>
-            </blockquote>
-            <div className="mt-5 flex items-center gap-3">
-              <WaveMark size={30} strokeWidth={9} />
-              <div>
-                <p className="text-[14.5px] font-extrabold">Diego Vespasiano</p>
-                <p className="text-[12.5px] text-[#a5a3b0]">Fundador da ivva</p>
+          <div className="relative w-full max-w-[540px] overflow-hidden rounded-3xl p-[1.5px] shadow-[0_40px_90px_-30px_rgba(0,0,0,0.8)]">
+            {/* luz que corre pela borda */}
+            <div className="pointer-events-none absolute left-1/2 top-1/2 aspect-square w-[220%] -translate-x-1/2 -translate-y-1/2">
+              <div className="fund-border h-full w-full" />
+            </div>
+            <div className="relative overflow-hidden rounded-[calc(1.5rem-1.5px)] border border-white/10 bg-[#0b0b10]/55 p-7 backdrop-blur-2xl sm:p-9">
+              <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.09),transparent_40%,transparent_70%,rgba(255,255,255,0.04))]" />
+              <p className="relative text-[11.5px] font-bold uppercase tracking-[0.14em] text-[#9fb5ae]">Uma palavra do fundador</p>
+              <blockquote className="relative mt-4 text-[16.5px] leading-relaxed text-[#ecebf3] sm:text-[18px]">
+                <span className="italic" style={SERIF}>
+                  “Estudei os maiores sistemas de atendimento do Brasil e dos Estados Unidos e ouvi amigos empresários reclamarem da mesma coisa: o chatbot responde, mas não cuida do negócio. Nenhum deles me pareceu completo.
+                  Criei a ivva para ser o parceiro do seu negócio: atende, cobra pelo gateway de pagamentos e ajuda você a vender mais. Em breve, com o ivva Estúdio, ela cuida também do seu posicionamento nas redes.
+                  Vamos acompanhar o ROI juntos, para que a ivva se pague pelo que entrega. É um novo começo, e logo você vai dizer: “por que eu nunca tive isso antes?”
+                  Vamos juntos construir essa história.”
+                </span>
+              </blockquote>
+              {/* gráfico passando */}
+              <svg viewBox="0 0 300 44" fill="none" aria-hidden className="relative mt-5 h-9 w-full">
+                <path d="M0 36 L38 30 L72 33 L110 22 L146 26 L184 14 L222 18 L260 7 L300 3" stroke="rgba(255,255,255,0.14)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M0 36 L38 30 L72 33 L110 22 L146 26 L184 14 L222 18 L260 7 L300 3" stroke="#9fd6c7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" pathLength={100} className="fund-spark" />
+              </svg>
+              <div className="relative mt-4 flex items-center gap-3">
+                <WaveMark size={30} strokeWidth={9} />
+                <div>
+                  <p className="text-[14.5px] font-extrabold">Diego Vespasiano</p>
+                  <p className="text-[12.5px] text-[#a5a3b0]">Fundador da ivva</p>
+                </div>
               </div>
             </div>
           </div>
