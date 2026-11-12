@@ -55,7 +55,7 @@ export default function FundadoresClient() {
   return (
     <div className="mx-auto max-w-[560px] rounded-3xl bg-white keep-light p-7 shadow-[0_40px_90px_-30px_rgba(0,0,0,0.6)]">
       <h2 className="text-[20px] font-extrabold text-[#0e0e13]">Entre para os Fundadores da ivva</h2>
-      <p className="mt-1 text-[13px] text-[#6b6577]">Leva 1 minuto. Em seguida você cadastra o cartão (R$ 0,00 hoje) e o acesso é liberado.</p>
+      <p className="mt-1 text-[13px] text-[#5d5770]">Leva 1 minuto. Em seguida você cadastra o cartão (R$ 0,00 hoje) e o acesso é liberado.</p>
       <form action={action} className="mt-5 flex flex-col gap-3.5">
         <div>
           <label htmlFor="f-nome" className={ROTULO}>Seu nome</label>
@@ -91,7 +91,7 @@ export default function FundadoresClient() {
             o cartão será cobrado em <strong>{FUNDADORES.primeiraCobranca}</strong> (R$ {FUNDADORES.precoMensal},00 por mês, plano {FUNDADORES.nomePlano}).
           </span>
         </label>
-        <label className="flex cursor-pointer items-start gap-2.5 text-[12.5px] leading-snug text-[#6b6577]">
+        <label className="flex cursor-pointer items-start gap-2.5 text-[12.5px] leading-snug text-[#5d5770]">
           <input type="checkbox" name="aceite" required className="mt-0.5 h-4 w-4 accent-[#2fbf9f]" />
           <span>
             Li e aceito o{" "}
