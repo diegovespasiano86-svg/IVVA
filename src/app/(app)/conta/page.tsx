@@ -437,7 +437,7 @@ export default async function ContaPage({
 
       {isDono && (
         <div className="card mt-4 px-5 py-4">
-          <p className="text-[14px] font-extrabold">Seus dados são seus</p>
+          <p className="text-[14px] font-extrabold">A base é sua</p>
           <p className="mt-1 text-[12.5px] text-ink-soft">
             Os clientes, conversas e números do seu negócio pertencem a você. Leve quando quiser, em planilha, sem pedir permissão. Se um dia quiser sair, você também apaga tudo abaixo.
           </p>
