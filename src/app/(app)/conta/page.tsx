@@ -6,6 +6,8 @@ import TermosForm from "./termos-form";
 import { termosDoSegmento, limparTermosPersonalizados } from "@/lib/termos";
 import { getSegmento } from "@/lib/segmentos";
 import ApagarConta from "./apagar-conta";
+import { limiteAcessos, mensagemLimiteAcessos, TEXTO_ACESSOS } from "@/lib/limite-acessos";
+import type { PlanoId } from "@/lib/planos";
 import { revogarConvite } from "./actions";
 import { sincronizarPlanoTenant } from "@/lib/sincronizar-plano";
 import ComprarCreditosButton from "@/components/comprar-creditos-button";
@@ -368,9 +370,20 @@ export default async function ContaPage({
             </div>
             {isDono && (
               <div className="mt-4 border-t border-border pt-4">
-                <p className="mb-3 text-[13px] font-bold">
+                <p className="mb-1 text-[13px] font-bold">
                   Convidar para a equipe
                 </p>
+                {(() => {
+                  const limite = limiteAcessos(tenant?.plano);
+                  const usados = (equipe?.length ?? 0) + (convites?.length ?? 0);
+                  const cheio = usados >= limite;
+                  return (
+                    <p className={`mb-3 text-[12.5px] ${cheio ? "font-semibold text-coral" : "text-ink-soft"}`}>
+                      {usados} de {limite} acessos em uso · {TEXTO_ACESSOS[(tenant?.plano as PlanoId) ?? "essencial"] ?? ""}
+                      {cheio ? ` ${mensagemLimiteAcessos(tenant?.plano)}` : ""}
+                    </p>
+                  );
+                })()}
                 <InviteForm />
 
                 {convites && convites.length > 0 && (

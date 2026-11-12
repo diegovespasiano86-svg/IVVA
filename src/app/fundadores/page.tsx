@@ -91,6 +91,7 @@ const INCLUI = [
   "Agenda, cobrança e confirmação automáticas",
   "Sugestões de complemento para vender mais",
   "Retorno de clientes que sumiram",
+  "Até 5 acessos, com agendas separadas e controle de administrador ou usuário",
   "Administração pelo WhatsApp, sinal antecipado e recibo automático",
   "Suporte direto com o fundador, sem fila",
 ];

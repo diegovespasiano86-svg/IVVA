@@ -22,6 +22,7 @@ const PLANOS = [
     recursos: [
       "Chatbot no WhatsApp 24h (1 número)",
       "1 calendário",
+      "1 acesso (o seu)",
       "CRM com funil de vendas",
       "Dashboard com KPIs básicos",
       "Base de conhecimento pronta pro seu nicho",
@@ -38,6 +39,7 @@ const PLANOS = [
     recursos: [
       "Tudo do Essencial",
       "Calendários múltiplos por profissional",
+      "2 acessos, cada um com a sua agenda",
       "Comissão automática por profissional",
       "SAC e avaliações",
       "Reengajamento e recall automático",
@@ -56,6 +58,7 @@ const PLANOS = [
     descricao: "Operação inteira dentro do WhatsApp.",
     recursos: [
       "Tudo do Profissional",
+      "Até 5 acessos, com agendas separadas e controle de administrador ou usuário",
       "Admin do negócio pelo WhatsApp",
       "Sinal antecipado (anti no-show)",
       "Recibo automático por WhatsApp",

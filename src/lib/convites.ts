@@ -1,4 +1,5 @@
 import { bloqueioNovoProfissional } from "@/lib/limite-profissionais";
+import { bloqueioNovoAcesso } from "@/lib/limite-acessos";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { emailConfigurado, emailConviteProfissional, enviarEmail } from "./email";
 import type { PapelConvite } from "./acessos";
@@ -38,6 +39,12 @@ export async function criarConviteProfissional(params: {
 
   if (!EMAIL_VALIDO.test(email)) {
     return { erro: "Esse e-mail não parece válido.", link: null, emailEnviado: false, emailMotivo: null };
+  }
+
+  // Limite de acessos do plano (1, 2 ou até 5): reenviar convite para o mesmo e-mail não conta de novo.
+  const semAcesso = await bloqueioNovoAcesso(supabase, tenantId, email);
+  if (semAcesso) {
+    return { erro: semAcesso, link: null, emailEnviado: false, emailMotivo: null };
   }
 
   if (atende && !professionalId) {
