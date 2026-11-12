@@ -330,7 +330,7 @@ export default function FundadoresPage() {
         {/* ivva Estúdio: em breve */}
         <section className="relative mt-12 overflow-hidden rounded-3xl border border-white/[0.12] bg-[linear-gradient(135deg,rgba(255,107,91,0.1),rgba(139,127,232,0.14)_55%,rgba(47,191,159,0.08))] p-7 shadow-[inset_0_1px_0_rgba(255,255,255,0.14)] backdrop-blur-2xl sm:p-10">
           <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-[radial-gradient(circle,rgba(139,127,232,0.35),transparent_65%)]" />
-          <div className="pointer-events-none absolute right-6 top-6 hidden w-[250px] md:block lg:right-10 lg:w-[290px]">
+          <div className="pointer-events-none absolute right-6 top-5 hidden w-[200px] md:block lg:right-12 lg:w-[235px]">
             <EstudioCam />
           </div>
           <div className="relative">
@@ -347,7 +347,7 @@ export default function FundadoresPage() {
             <p className="mt-2 max-w-xl text-[15px] leading-relaxed text-[#c7c5d1]">
               Depois de atender, agendar e cobrar, a ivva vai cuidar também de como o seu negócio aparece e cresce nas redes.
             </p>
-            <ul className="mt-6 grid gap-3 sm:grid-cols-2">
+            <ul className="mt-6 grid gap-3 sm:grid-cols-2 md:mt-9">
               {ESTUDIO.map((e) => (
                 <li key={e.titulo} className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
                   <p className="flex items-center gap-2.5 text-[15.5px] font-extrabold">
