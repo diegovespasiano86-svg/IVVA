@@ -9,7 +9,7 @@ import { FUNDADORES } from "./regras";
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? "");
 const INICIAL: FundadorState = { erro: null, clientSecret: null };
 const CAMPO =
-  "w-full rounded-xl border border-[rgba(14,14,19,0.16)] bg-white px-4 py-2.5 text-[14px] text-[#0e0e13] outline-none placeholder:text-[#8a8896] focus:ring-2 focus:ring-[#2fbf9f]";
+  "w-full rounded-xl border border-[rgba(14,14,19,0.16)] bg-white keep-light px-4 py-2.5 text-[14px] text-[#0e0e13] outline-none placeholder:text-[#8a8896] focus:ring-2 focus:ring-[#2fbf9f]";
 const ROTULO = "mb-1 block text-[12.5px] font-bold text-[#0e0e13]";
 
 function Pagamento({ clientSecret }: { clientSecret: string }) {
@@ -45,7 +45,7 @@ export default function FundadoresClient() {
           Último passo: cadastre o cartão. <strong className="text-[#f7f6f2]">Hoje você paga R$ 0,00</strong>; a primeira cobrança só acontece em{" "}
           {FUNDADORES.primeiraCobranca}, e você pode cancelar até {FUNDADORES.ultimoDiaCancelar}.
         </p>
-        <div className="overflow-hidden rounded-3xl bg-white p-2 shadow-[0_40px_90px_-30px_rgba(0,0,0,0.6)]">
+        <div className="overflow-hidden rounded-3xl bg-white keep-light p-2 shadow-[0_40px_90px_-30px_rgba(0,0,0,0.6)]">
           <Pagamento clientSecret={state.clientSecret} />
         </div>
       </div>
@@ -53,7 +53,7 @@ export default function FundadoresClient() {
   }
 
   return (
-    <div className="mx-auto max-w-[560px] rounded-3xl bg-white p-7 shadow-[0_40px_90px_-30px_rgba(0,0,0,0.6)]">
+    <div className="mx-auto max-w-[560px] rounded-3xl bg-white keep-light p-7 shadow-[0_40px_90px_-30px_rgba(0,0,0,0.6)]">
       <h2 className="text-[20px] font-extrabold text-[#0e0e13]">Entre para os Fundadores da ivva</h2>
       <p className="mt-1 text-[13px] text-[#6b6577]">Leva 1 minuto. Em seguida você cadastra o cartão (R$ 0,00 hoje) e o acesso é liberado.</p>
       <form action={action} className="mt-5 flex flex-col gap-3.5">
