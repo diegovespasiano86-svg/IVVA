@@ -106,8 +106,8 @@ export function precoMensal(plano: string | null | undefined): number {
   return PRECO_MENSAL[(plano ?? "essencial") as PlanoId] ?? PRECO_MENSAL.essencial;
 }
 
-// Black Friday 2026: teste grátis de 30 dias (em vez de 14) para quem assina no cartão entre 20/11 e 30/11 (horário de Brasília).
-export const BLACK_FRIDAY = { inicio: Date.parse("2026-11-20T00:00:00-03:00"), fim: Date.parse("2026-12-01T00:00:00-03:00") };
+// Lançamento + Black Friday 2026: teste grátis de 30 dias (em vez de 14) para quem assina no cartão de 13/11 a 30/11 (horário de Brasília).
+export const BLACK_FRIDAY = { inicio: Date.parse("2026-11-13T00:00:00-03:00"), fim: Date.parse("2026-12-01T00:00:00-03:00") };
 export function emBlackFriday(agora = Date.now()): boolean {
   return agora >= BLACK_FRIDAY.inicio && agora < BLACK_FRIDAY.fim;
 }

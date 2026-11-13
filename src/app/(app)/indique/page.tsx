@@ -43,7 +43,7 @@ export default async function IndiquePage() {
   const pagas = (lista ?? []).filter((i) => i.status === "paga");
   const totalCentavos = pagas.reduce((s, i) => s + Number(i.valor_centavos ?? 0), 0);
   const brl = (c: number) => (c / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-  const mensagem = encodeURIComponent(`Oi! Uso a ivva, a atendente de WhatsApp com IA que agenda e vende por mim. Dá para testar 14 dias grátis por este link: ${link ?? ""}`);
+  const mensagem = encodeURIComponent(`Oi! Uso a ivva, a atendente de WhatsApp com IA que agenda e vende por mim. Dá para testar grátis por este link: ${link ?? ""}`);
 
   return (
     <div className="mx-auto max-w-[820px]">
