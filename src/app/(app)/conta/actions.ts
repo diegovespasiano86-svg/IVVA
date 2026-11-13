@@ -153,6 +153,8 @@ export async function conectarWhatsAppEmbedded(params: {
   isCoexistence?: boolean;
   // Endereço da página onde o login foi feito (a Meta compara com o usado na janela ao trocar o código).
   paginaUrl?: string;
+  // redirect_uri que a janela da Meta usou (capturado no navegador).
+  redirectUri?: string;
 }): Promise<{ erro: string | null }> {
   const { code } = params;
   let phoneNumberId = params.phoneNumberId;
@@ -182,7 +184,7 @@ export async function conectarWhatsAppEmbedded(params: {
 
   let accessToken: string;
   try {
-    accessToken = await exchangeEmbeddedSignupCode(code, params.paginaUrl);
+    accessToken = await exchangeEmbeddedSignupCode(code, params.paginaUrl, params.redirectUri);
   } catch (err) {
     return {
       erro:

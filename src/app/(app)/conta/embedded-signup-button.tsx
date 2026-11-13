@@ -87,6 +87,9 @@ export default function EmbeddedSignupButton() {
     erro: null,
   });
   const codeRef = useRef<string | null>(null);
+  // Endereço de retorno que a janela da Meta usou (o SDK usa um endereço interno do Facebook, não o da ivva).
+  // A troca do código pelo token só é aceita com esse mesmo endereço, então ele é capturado na abertura da janela.
+  const redirectUriRef = useRef<string | null>(null);
 
   const appId = process.env.NEXT_PUBLIC_WHATSAPP_APP_ID;
   const configId = process.env.NEXT_PUBLIC_WHATSAPP_CONFIG_ID;
@@ -159,6 +162,7 @@ export default function EmbeddedSignupButton() {
       wabaId: sessao.wabaId,
       isCoexistence: sessao.isCoexistence,
       paginaUrl: window.location.href,
+      redirectUri: redirectUriRef.current ?? undefined,
     });
 
     if (resultado.erro) {
@@ -221,6 +225,23 @@ export default function EmbeddedSignupButton() {
     setStatus("aguardando");
     sessaoRef.current = { phoneNumberId: null, wabaId: null, isCoexistence: false, finalizada: false, erro: null };
     codeRef.current = null;
+    redirectUriRef.current = null;
+
+    // Captura o redirect_uri da janela que o SDK da Meta abre (window.open) e depois devolve o window.open original.
+    const openOriginal = window.open;
+    window.open = function (this: Window, ...args: Parameters<typeof window.open>) {
+      try {
+        const u = new URL(String(args[0] ?? ""), window.location.href);
+        const r = u.searchParams.get("redirect_uri");
+        if (r && !redirectUriRef.current) redirectUriRef.current = r;
+      } catch {
+        // URL estranha: segue sem capturar.
+      }
+      return openOriginal.apply(this, args);
+    } as typeof window.open;
+    setTimeout(() => {
+      window.open = openOriginal;
+    }, 3000);
 
     window.FB.login(
       (response) => {
@@ -250,6 +271,7 @@ export default function EmbeddedSignupButton() {
               wabaId: s.wabaId ?? undefined,
               isCoexistence: s.isCoexistence,
               paginaUrl: window.location.href,
+              redirectUri: redirectUriRef.current ?? undefined,
             }),
             new Promise<{ erro: string }>((resolve) =>
               setTimeout(() => resolve({ erro: "O servidor demorou demais para responder. Recarregue a página e confira se o número já aparece como conectado; se não, tente de novo." }), 55000),

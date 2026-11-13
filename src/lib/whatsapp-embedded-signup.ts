@@ -18,7 +18,11 @@ function graphFetch(input: string, init?: RequestInit): Promise<Response> {
 // assim alguns tipos de login exigem o redirect_uri igual ao da janela. Como uma tentativa recusada pode
 // invalidar o código, a ordem importa: primeiro o formato documentado (sem o parâmetro) e só depois os outros.
 // Cada tentativa fica registrada no erro final, para sabermos exatamente o que a Meta respondeu.
-export async function exchangeEmbeddedSignupCode(code: string, paginaUrl?: string): Promise<string> {
+export async function exchangeEmbeddedSignupCode(
+  code: string,
+  paginaUrl?: string,
+  redirectUriJanela?: string,
+): Promise<string> {
   const appId = process.env.NEXT_PUBLIC_WHATSAPP_APP_ID;
   const appSecret = process.env.WHATSAPP_APP_SECRET;
   if (!appId || !appSecret) {
@@ -31,7 +35,15 @@ export async function exchangeEmbeddedSignupCode(code: string, paginaUrl?: strin
   } catch {
     origem = null;
   }
+  // O SDK do JavaScript abre a janela com um redirect_uri interno do Facebook (xd_arbiter). A Meta só aceita a
+  // troca com esse mesmo endereço: primeiro exato, depois sem o trecho após "#".
+  const daJanela: string[] = [];
+  if (redirectUriJanela) {
+    daJanela.push(redirectUriJanela);
+    daJanela.push(redirectUriJanela.split("#")[0]);
+  }
   const variantes: (string | null)[] = [
+    ...daJanela,
     null, // sem o parâmetro (documentado pela Meta)
     "", // parâmetro vazio
     ...(origem ? [origem + "/", origem, paginaUrl ?? ""] : []),
@@ -53,7 +65,12 @@ export async function exchangeEmbeddedSignupCode(code: string, paginaUrl?: strin
       return data.access_token as string;
     }
     const msg = String(data?.error?.message ?? "sem mensagem");
-    const rotulo = redirectUri === null ? "sem parâmetro" : redirectUri === "" ? "vazio" : redirectUri;
+    const rotulo =
+      redirectUri === null
+        ? "sem parâmetro"
+        : redirectUri === ""
+          ? "vazio"
+          : redirectUri.split("#")[0] + (redirectUri.includes("#") ? "#…" : "");
     tentativas.push(`${rotulo}: ${msg} (código ${data?.error?.code ?? "?"}/${data?.error?.error_subcode ?? "-"})`);
     // Segredo errado não muda com outro formato.
     if (/client secret/i.test(msg)) break;
