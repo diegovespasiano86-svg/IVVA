@@ -109,7 +109,7 @@ export default function SituacaoNumero() {
             ))}
           </ol>
           {s.avisos && (
-            <div className="mt-3 rounded-lg bg-[#fff6e5] px-3.5 py-2.5">
+            <div className="mt-3 rounded-lg border border-amber/30 bg-amber/10 px-3.5 py-2.5">
               <p className="text-[12px] font-extrabold text-amber">Antes de seguir, saiba que:</p>
               <ul className="mt-1 list-disc space-y-1 pl-5 text-[12.5px] leading-snug text-ink">
                 {s.avisos.map((a) => (
