@@ -5,6 +5,7 @@ import ReplyForm from "../reply-form";
 import RascunhoForm from "../rascunho-form";
 import { encerrarConversa, restaurarBot } from "../../actions";
 import { atribuirConversa } from "../../../clientes/segmentacao-actions";
+import AtendimentoRobo from "../../../clientes/atendimento-robo";
 import { CATEGORIA_LABEL, SENTIMENTO_LABEL, type CategoriaResumo, type Sentimento } from "@/lib/resumo-conversas";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -23,7 +24,7 @@ export default async function ConversaDetalhePage({
 
   const { data: conversa } = await supabase
     .from("conversations")
-    .select("id, status, created_at, handoff_motivo, assigned_user_id, contacts(nome, telefone)")
+    .select("id, status, created_at, handoff_motivo, assigned_user_id, contact_id, contacts(nome, telefone, robo_modo, robo_silenciado_ate)")
     .eq("id", id)
     .maybeSingle();
 
@@ -55,6 +56,8 @@ export default async function ConversaDetalhePage({
   const contato = conversa.contacts as unknown as {
     nome: string;
     telefone: string;
+    robo_modo: string | null;
+    robo_silenciado_ate: string | null;
   } | null;
 
   return (
@@ -117,6 +120,12 @@ export default async function ConversaDetalhePage({
             )}
           </div>
         </div>
+
+        {conversa.status !== "encerrada" && contato && (
+          <div className="mb-3">
+            <AtendimentoRobo contactId={conversa.contact_id} modo={contato.robo_modo} silenciadoAte={contato.robo_silenciado_ate} />
+          </div>
+        )}
 
         {conversa.status !== "encerrada" && (equipe ?? []).length > 0 && (
           <form action={atribuirConversa} className="mb-3 flex flex-wrap items-center gap-2">

@@ -64,7 +64,7 @@ export async function responderConversa(
 
   await supabase
     .from("conversations")
-    .update({ status: "humano" })
+    .update({ status: "humano", humano_ultima_em: new Date().toISOString() })
     .eq("id", conversationId);
 
   revalidatePath("/conversas");

@@ -144,3 +144,44 @@ export async function importarContatos(linhas: LinhaImportacao[], autorizado: bo
   revalidatePath("/dashboard");
   return { ok: true, inseridos, jaExistiam, invalidos, duplicadosNoArquivo };
 }
+
+export type ModoRobo = "atende" | "observa" | "ignora";
+
+/**
+ * Define como o robô trata um contato: atende (padrão), só humano (observa ou ignora)
+ * ou silenciado por alguns dias. A leitura/escrita passa pela RLS: contato de outro
+ * negócio não é encontrado.
+ * dias: 0 = sem prazo (vale o modo); >0 = silencia o robô por esse tempo e volta sozinho.
+ */
+export async function definirAtendimentoRobo(contactId: string, modo: ModoRobo, dias: number): Promise<{ ok: boolean; erro?: string }> {
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(contactId)) return { ok: false, erro: "Contato inválido." };
+  if (!["atende", "observa", "ignora"].includes(modo)) return { ok: false, erro: "Modo inválido." };
+  const ctx = await contexto();
+  if (!ctx) return { ok: false, erro: "Sessão expirada. Entre de novo." };
+  const { data: contato } = await ctx.supabase.from("contacts").select("id").eq("id", contactId).maybeSingle();
+  if (!contato) return { ok: false, erro: "Cliente não encontrado." };
+
+  const prazo = Number.isFinite(dias) && dias > 0 ? Math.min(Math.floor(dias), 365) : 0;
+  const ate = prazo > 0 ? new Date(Date.now() + prazo * 86400000).toISOString() : null;
+  const { error } = await ctx.supabase
+    .from("contacts")
+    .update({ robo_modo: modo, robo_silenciado_ate: ate })
+    .eq("id", contactId);
+  if (error) return { ok: false, erro: "Não consegui salvar. Tente de novo." };
+
+  // Voltou a ser atendido pelo robô: devolve as conversas abertas que estavam
+  // paradas só por causa dessa marca (não mexe nas que o robô passou pra humano por outro motivo).
+  if (modo === "atende" && !ate) {
+    await ctx.supabase
+      .from("conversations")
+      .update({ status: "bot", handoff_motivo: null, handoff_em: null })
+      .eq("contact_id", contactId)
+      .eq("status", "humano")
+      .or("handoff_motivo.like.Silenciado até%,handoff_motivo.like.Atendimento só humano%");
+  }
+
+  revalidatePath("/clientes");
+  revalidatePath(`/clientes/${contactId}`);
+  revalidatePath("/conversas");
+  return { ok: true };
+}

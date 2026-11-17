@@ -6,12 +6,13 @@ import { carregarTermos } from "@/lib/termos-servidor";
 import EmptyState from "@/components/empty-state";
 import { ESTILO_ETIQUETA, SEGMENTOS_RFV, formatarTelefone, rotuloSegmento, type CorEtiqueta } from "@/lib/clientes";
 import AdicionarALista from "./adicionar-a-lista";
+import { estadoRobo, rotuloEstadoRobo } from "@/lib/robo-atendimento";
 import { carregarBase, mesAtualSP, mesDe } from "@/lib/clientes-dados";
 import { brl } from "@/lib/relatorios";
 
 const POR_PAGINA = 25;
 
-type Filtro = "todos" | "aniversariantes" | "sem_aceite" | (typeof SEGMENTOS_RFV)[number]["id"];
+type Filtro = "todos" | "aniversariantes" | "sem_aceite" | "so_humano" | (typeof SEGMENTOS_RFV)[number]["id"];
 
 export default async function ClientesPage({ searchParams }: { searchParams: Promise<{ seg?: string; q?: string; p?: string; etq?: string; lista?: string }> }) {
   const sp = await searchParams;
@@ -32,8 +33,9 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
     );
   }
 
-  const [base, { data: etiquetas }, { data: ligEtq }, { data: listas }, { data: membros }] = await Promise.all([
+  const [base, { data: robos }, { data: etiquetas }, { data: ligEtq }, { data: listas }, { data: membros }] = await Promise.all([
     carregarBase(supabase),
+    supabase.from("contacts").select("id, robo_modo, robo_silenciado_ate").or("robo_modo.neq.atende,robo_silenciado_ate.not.is.null").limit(5000),
     supabase.from("labels").select("id, nome, cor").order("nome"),
     supabase.from("contact_labels").select("contact_id, label_id").limit(20000),
     supabase.from("contact_lists").select("id, nome").order("nome"),
@@ -46,9 +48,14 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
   const listaFiltro = listas?.some((l) => l.id === sp.lista) ? sp.lista : undefined;
   const naLista = listaFiltro ? new Set((membros ?? []).filter((m) => m.list_id === listaFiltro).map((m) => m.contact_id)) : null;
 
+  const agoraMs = new Date().getTime();
+  const estadoRoboPor = new Map((robos ?? []).map((r) => [r.id, estadoRobo(r.robo_modo, r.robo_silenciado_ate, agoraMs)]));
+  const soHumano = (id: string) => (estadoRoboPor.get(id)?.tipo ?? "atende") !== "atende";
+
   const mes = mesAtualSP();
   const contagem: Record<string, number> = {
     todos: base.length,
+    so_humano: base.filter((c) => soHumano(c.id)).length,
     aniversariantes: base.filter((c) => mesDe(c.nascimento) === mes).length,
     sem_aceite: base.filter((c) => !c.aceita).length,
   };
@@ -59,6 +66,7 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
     ...SEGMENTOS_RFV.map((s) => ({ id: s.id as Filtro, label: s.label })),
     { id: "aniversariantes", label: "Aniversariantes do mês" },
     { id: "sem_aceite", label: "Não recebem mensagens" },
+    { id: "so_humano", label: "Só humano" },
   ];
   const seg = (filtros.some((f) => f.id === sp.seg) ? sp.seg : "todos") as Filtro;
   const q = (sp.q ?? "").trim().toLowerCase().slice(0, 80);
@@ -67,7 +75,8 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
   const filtrada = base.filter((c) => {
     if (seg === "aniversariantes" && mesDe(c.nascimento) !== mes) return false;
     if (seg === "sem_aceite" && c.aceita) return false;
-    if (seg !== "todos" && seg !== "aniversariantes" && seg !== "sem_aceite" && c.rfv.segmento !== seg) return false;
+    if (seg === "so_humano" && !soHumano(c.id)) return false;
+    if (seg !== "todos" && seg !== "aniversariantes" && seg !== "sem_aceite" && seg !== "so_humano" && c.rfv.segmento !== seg) return false;
     if (etqFiltro && !(etqPorContato.get(c.id) ?? []).includes(etqFiltro)) return false;
     if (naLista && !naLista.has(c.id)) return false;
     if (!q) return true;
@@ -206,6 +215,11 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
                           <span className="min-w-0">
                             <span className="block truncate text-[13.5px] font-bold">{c.nome}</span>
                             <span className="block truncate text-[12px] text-ink-soft">{formatarTelefone(c.telefone)}</span>
+                            {soHumano(c.id) && (
+                              <span className="mt-1 inline-block rounded-full bg-coral/10 px-2 py-0.5 text-[10.5px] font-bold text-coral">
+                                👤 {rotuloEstadoRobo(estadoRoboPor.get(c.id)!)}
+                              </span>
+                            )}
                             {(etqPorContato.get(c.id) ?? []).length > 0 && (
                               <span className="mt-1 flex flex-wrap gap-1">
                                 {(etqPorContato.get(c.id) ?? []).slice(0, 3).map((id) => {

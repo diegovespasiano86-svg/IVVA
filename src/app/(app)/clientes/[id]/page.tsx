@@ -8,6 +8,7 @@ import { brl } from "@/lib/relatorios";
 import { CATEGORIA_LABEL, type CategoriaResumo } from "@/lib/resumo-conversas";
 import { adicionarNotaCliente } from "../actions";
 import EtiquetasListas from "./etiquetas-listas";
+import AtendimentoRobo from "../atendimento-robo";
 
 const FORMA: Record<string, string> = { pix: "Pix", credito: "Crédito", debito: "Débito", dinheiro: "Dinheiro" };
 const AGENDA: Record<string, string> = { agendado: "Agendado", concluido: "Concluído", cancelado: "Cancelado" };
@@ -26,7 +27,7 @@ export default async function ClientePerfilPage({ params }: { params: Promise<{ 
     supabase.from("users").select("role").eq("id", user?.id ?? "").maybeSingle(),
     supabase
       .from("contacts")
-      .select("id, nome, telefone, email, instagram, status_funil, created_at, data_nascimento, como_conheceu, aceita_mensagem_automatica")
+      .select("id, nome, telefone, email, instagram, status_funil, created_at, data_nascimento, como_conheceu, aceita_mensagem_automatica, robo_modo, robo_silenciado_ate")
       .eq("id", id)
       .maybeSingle(),
   ]);
@@ -106,6 +107,16 @@ export default async function ClientePerfilPage({ params }: { params: Promise<{ 
           )}
         </div>
       </section>
+
+      <div className="card mb-5 flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+        <div className="min-w-0">
+          <p className="text-[13px] font-bold">Atendimento do robô</p>
+          <p className="text-[12px] text-ink-soft">
+            Cliente que você atende direto? Marque “Só humano” ou silencie o robô por alguns dias. Quando você responde pelo celular, o robô para sozinho.
+          </p>
+        </div>
+        <AtendimentoRobo contactId={c.id} modo={c.robo_modo} silenciadoAte={c.robo_silenciado_ate} />
+      </div>
 
       <div className="mb-5 grid grid-cols-2 gap-3.5 lg:grid-cols-5">
         {dono && <KpiCard label="Total gasto" value={brl.format(totalGasto)} icon={Wallet} accent />}

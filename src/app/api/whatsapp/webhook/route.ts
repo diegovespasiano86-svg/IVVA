@@ -145,6 +145,8 @@ export async function POST(request: NextRequest) {
       if (change.field === "smb_message_echoes") {
         const phoneNumberIdSync = value?.metadata?.phone_number_id;
         if (phoneNumberIdSync) {
+          // Pausa o robô primeiro (é o que importa em tempo real); depois guarda o registro.
+          await registrarEcoHumano({ supabaseUrl, anonKey, internalSecret, phoneNumberId: phoneNumberIdSync, value: value ?? {} });
           await registrarSyncEvent({
             supabaseUrl,
             anonKey,
@@ -345,6 +347,53 @@ async function processarContatoSync(params: {
     });
     if (error) {
       console.error("[whatsapp webhook] falha ao registrar contato sync", error);
+    }
+  }
+}
+
+type EcoMensagem = {
+  id?: string;
+  to?: string;
+  type?: string;
+  text?: { body?: string };
+};
+
+const ROTULO_MIDIA: Record<string, string> = {
+  image: "[imagem]",
+  audio: "[áudio]",
+  video: "[vídeo]",
+  document: "[documento]",
+  sticker: "[figurinha]",
+};
+
+// O administrador respondeu pelo app do WhatsApp Business (coexistência):
+// registra a mensagem no histórico e passa a conversa para "humano" na hora,
+// pra o robô não falar por cima. Se a função nova ainda não existir no banco,
+// só loga e segue (o evento já foi guardado no registro de sincronização).
+async function registrarEcoHumano(params: {
+  supabaseUrl: string;
+  anonKey: string;
+  internalSecret: string;
+  phoneNumberId: string;
+  value: { message_echoes?: EcoMensagem[]; contacts?: { wa_id?: string; profile?: { name?: string } }[] };
+}) {
+  const { supabaseUrl, anonKey, internalSecret, phoneNumberId, value } = params;
+  const supabase = createClient(supabaseUrl, anonKey);
+  for (const eco of value.message_echoes ?? []) {
+    const waId = eco.to;
+    if (!waId) continue;
+    const texto = eco.text?.body ?? ROTULO_MIDIA[eco.type ?? ""] ?? "";
+    const nome = value.contacts?.find((c) => c.wa_id === waId)?.profile?.name ?? null;
+    const { error } = await supabase.rpc("whatsapp_registrar_echo_humano", {
+      p_secret: internalSecret,
+      p_phone_number_id: phoneNumberId,
+      p_wa_id: waId,
+      p_wa_message_id: eco.id ?? null,
+      p_content: texto,
+      p_contact_name: nome,
+    });
+    if (error) {
+      console.error("[whatsapp webhook] falha ao registrar resposta do administrador pelo celular", error);
     }
   }
 }
