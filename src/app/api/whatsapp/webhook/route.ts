@@ -15,6 +15,7 @@ import { gerarRespostaWhatsApp, type ContextoConversa, type ResultadoIA } from "
 import { gerarRespostaAdmin } from "@/lib/admin-ai";
 import { consumirConversaIA } from "@/lib/uso-ia";
 import { verifyPin } from "@/lib/pin";
+import { ehConfirmacaoEncerramento, textoEncerradaPeloCliente } from "@/lib/robo-humano";
 import { transcreverAudio } from "@/lib/transcricao";
 import { gerarFala } from "@/lib/fala";
 import { parseHistoricoPayload, parseContatoSyncPayload } from "@/lib/whatsapp-historico";
@@ -864,6 +865,33 @@ async function processarMensagem(params: {
   if (resultado.conversation_status !== "bot") return;
 
   const creds = { phoneNumberId: resultado.whatsapp_phone_number_id, token: resultado.whatsapp_access_token };
+
+  // O robô perguntou "posso encerrar nossa conversa?" (relógio de 1 h do atendimento humano).
+  // Cliente confirmou -> encerra com um agradecimento. Qualquer outra coisa -> a conversa segue
+  // normalmente pela IA (novo assunto, dúvida, pedido de ajuda de humano...).
+  const { data: respEnc } = await supabase.rpc("robo_humano_resposta_cliente", {
+    p_secret: internalSecret,
+    p_conversation_id: resultado.conversation_id,
+    p_confirma: ehConfirmacaoEncerramento(content),
+  });
+  const enc = respEnc as { pendente?: boolean; confirma?: boolean } | null;
+  if (enc?.pendente && enc.confirma) {
+    const texto = textoEncerradaPeloCliente(resultado.contact_nome);
+    let waIdEnc: string | null = null;
+    try {
+      const r = await sendWhatsAppText(creds, waId, texto);
+      waIdEnc = r?.messages?.[0]?.id ?? null;
+    } catch (err) {
+      console.error("[whatsapp webhook] falha ao agradecer o encerramento", err);
+    }
+    await supabase.rpc("robo_humano_aplicar", {
+      p_secret: internalSecret,
+      p_conversation_id: resultado.conversation_id,
+      p_acao: "confirmar_encerrar",
+      p_dados: { texto, wa_message_id: waIdEnc },
+    });
+    return;
+  }
 
   // Atalho determinístico pro botão "Confirmar" do lembrete (cron de
   // lembretes) — não precisa passar pela IA, é só marcar e responder.
