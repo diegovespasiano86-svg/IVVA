@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, BookOpen, Bot, CalendarCheck, Check, MessageCircle, PlayCircle, Users } from "lucide-react";
+import { ArrowRight, BookOpen, Bot, CalendarCheck, CalendarClock, Check, MessageCircle, PlayCircle, Users } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import type { Termos } from "@/lib/termos";
 import BoasVindasModal from "@/components/ajuda/boas-vindas-modal";
@@ -18,13 +18,14 @@ type Passo = {
 export async function carregarPassos(termos: Termos): Promise<Passo[]> {
   const supabase = await createClient();
 
-  const [{ data: conta }, { count: conhecimento }, { count: profissionais }, { data: botCfg }, { count: agendamentos }] =
+  const [{ data: conta }, { count: conhecimento }, { count: profissionais }, { data: botCfg }, { count: agendamentos }, { data: tenantHorario }] =
     await Promise.all([
       supabase.from("whatsapp_accounts").select("status").maybeSingle(),
       supabase.from("knowledge_base").select("id", { count: "exact", head: true }),
       supabase.from("professionals").select("id", { count: "exact", head: true }),
       supabase.from("bot_settings").select("updated_at").maybeSingle(),
       supabase.from("appointments").select("id", { count: "exact", head: true }),
+      supabase.from("tenants").select("horarios_semana").maybeSingle(),
     ]);
 
   const passos: Passo[] = [
@@ -50,6 +51,14 @@ export async function carregarPassos(termos: Termos): Promise<Passo[]> {
       href: "/calendario",
       feito: (profissionais ?? 0) > 0,
       icon: Users,
+      guia: "agenda",
+    },
+    {
+      titulo: "Definir o horário da agenda",
+      texto: "Os dias e horários em que você atende, um por um. O robô só oferece vagas dentro deles.",
+      href: "/calendario",
+      feito: !!tenantHorario?.horarios_semana,
+      icon: CalendarClock,
       guia: "agenda",
     },
     {
@@ -101,7 +110,7 @@ export default async function PrimeirosPassos({ termos }: { termos: Termos }) {
           <span className="text-[12px] font-bold text-ink-soft">{Math.round((feitos / passos.length) * 100)}%</span>
         </div>
       </header>
-      <ul className="grid gap-px bg-border md:grid-cols-5">
+      <ul className="grid gap-px bg-border md:grid-cols-3 lg:grid-cols-6">
         {passos.map((p) => {
           const Icon = p.icon;
           const destaque = p === proximo;
