@@ -156,11 +156,8 @@ function montarSystemPrompt(ctx: ContextoConversa) {
 
   const linhasAgenda = [
     `Agora é ${agora} (horário de Brasília).`,
-    ctx.horarioTexto
-      ? `Funcionamento (agenda): ${ctx.horarioTexto}.`
-      : ctx.horarioAbertura && ctx.horarioFechamento
-      ? `Funcionamento: ${ctx.horarioAbertura.slice(0, 5)} às ${ctx.horarioFechamento.slice(0, 5)}.`
-      : "",
+    // Horário só entra no prompt se o próprio negócio cadastrou. O padrão técnico do banco (09h–19h) nunca é dito ao cliente final.
+    ctx.horarioTexto ? `Funcionamento (agenda deste negócio): ${ctx.horarioTexto}.` : "",
     listaProfissionais ? `Profissionais desse negócio:\n${listaProfissionais}` : "",
     `Quando o cliente quiser marcar, remarcar ou cancelar um horário, siga sempre esta ordem:`,
     `1. Chame consultar_disponibilidade pra ver horários realmente livres — nunca invente ou suponha um horário.`,
