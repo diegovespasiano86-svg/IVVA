@@ -417,6 +417,15 @@ const FERRAMENTAS_SOMENTE_LEITURA = new Set([
   "consultar_avisos_ativos",
 ]);
 
+/** Data/hora sem fuso vira horário de Brasília (-03:00). Sem isso o banco lê como UTC e a busca começa 3h antes do pedido. */
+function normalizarAPartirDe(valor: unknown): string | null {
+  if (typeof valor !== "string" || !valor.trim()) return null;
+  let v = valor.trim().replace(" ", "T");
+  if (/^\d{4}-\d{2}-\d{2}$/.test(v)) v += "T00:00:00";
+  if (!/(Z|[+-]\d{2}:?\d{2})$/i.test(v)) v += "-03:00";
+  return Number.isNaN(new Date(v).getTime()) ? null : v;
+}
+
 async function executarFerramenta(
   nome: string,
   input: Record<string, unknown>,
@@ -481,7 +490,7 @@ async function executarFerramenta(
       p_tenant_id: ctx.tenantId,
       p_duracao_minutos: input.duracao_minutos ?? 30,
       p_professional_id: input.profissional_id ?? null,
-      p_a_partir_de: input.a_partir_de ?? null,
+      p_a_partir_de: normalizarAPartirDe(input.a_partir_de),
     });
     if (error) return { resultado: JSON.stringify({ erro: error.message }), handoff: false };
     const slots = (data as { slots?: Slot[] } | null)?.slots ?? [];

@@ -4,6 +4,7 @@ import { CalendarDays } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { criarAgendamento } from "./actions";
 import CalendarView, { type EventoAgenda } from "./calendar-view";
+import GoogleAgendaAtalho from "./google-agenda-atalho";
 import ProfissionaisCard, { type ProfissionalItem, type ConvitePendenteItem } from "./profissionais-card";
 import { obterEscopo, filtroContatosDoProfissional } from "@/lib/escopo-profissional";
 import { temRecurso } from "@/lib/planos";
@@ -101,6 +102,8 @@ export default async function CalendarioPage() {
   return (
     <div>
       <PageHeader icon={CalendarDays} title="Calendário" subtitle={`Agenda de todos os ${termos.profissionais.toLowerCase()} — inclui o que o robô marca sozinho pelo WhatsApp.`} />
+
+      <GoogleAgendaAtalho />
 
       {souDono && (
         <ProfissionaisCard
