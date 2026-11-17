@@ -41,7 +41,7 @@ export default function AtendimentoRobo({
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex flex-wrap items-center gap-2">
-        <Dica lado="baixo" alinhar="inicio" texto="Quem está atendendo este cliente agora: o robô, só você (humano) ou o robô silenciado até uma data.">
+        <Dica lado="baixo" alinhar="inicio" texto="Quem atende este cliente agora.">
           <span className={`badge ${estado.tipo === "atende" ? "badge-success" : "badge-warn"}`}>
             <Icone size={12} /> {rotuloEstadoRobo(estado)}
           </span>
@@ -52,7 +52,7 @@ export default function AtendimentoRobo({
         <Dica
           lado="baixo"
           alinhar="inicio"
-          texto="Escolha quem atende este cliente. “Só humano”: o robô não responde, você atende. “Silenciar”: o robô fica quieto por 1, 7 ou 30 dias e volta sozinho quando o tempo acabar."
+          texto="Só você atende, ou silencie o robô por 1, 7 ou 30 dias."
         >
           <select
             id={`robo-${contactId}`}

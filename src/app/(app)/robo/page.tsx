@@ -113,7 +113,7 @@ export default async function RoboPage() {
             </p>
           </div>
         </div>
-        <Dica lado="baixo" texto="Abre o simulador: você conversa com o robô como se fosse um cliente, corrige o que ele errar, e ele aprende com a sua correção.">
+        <Dica lado="baixo" texto="Teste o robô como cliente e corrija o que ele errar.">
           <Link href="/robo/simulador" className="btn btn-primary btn-md">
             Começar a calibrar
           </Link>

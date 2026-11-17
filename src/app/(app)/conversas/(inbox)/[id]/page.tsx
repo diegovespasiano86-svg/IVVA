@@ -100,7 +100,7 @@ export default async function ConversaDetalhePage({
             {conversa.status === "humano" && (
               <form action={restaurarBot}>
                 <input type="hidden" name="conversation_id" value={conversa.id} />
-                <Dica lado="baixo" alinhar="fim" texto="Devolve esta conversa para o robô. Ele volta a responder o cliente sozinho, a partir da próxima mensagem.">
+                <Dica lado="baixo" alinhar="fim" texto="Devolve a conversa ao robô.">
                   <button
                     type="submit"
                     className="btn btn-secondary btn-sm"
@@ -113,7 +113,7 @@ export default async function ConversaDetalhePage({
             {conversa.status !== "encerrada" && (
               <form action={encerrarConversa}>
                 <input type="hidden" name="conversation_id" value={conversa.id} />
-                <Dica lado="baixo" alinhar="fim" texto="Encerra esta conversa e a tira da fila de atendimento. Use quando o assunto com o cliente já foi resolvido.">
+                <Dica lado="baixo" alinhar="fim" texto="Encerra e tira da fila de atendimento.">
                   <button
                     type="submit"
                     className="btn btn-ghost btn-sm"
@@ -142,7 +142,7 @@ export default async function ConversaDetalhePage({
                 <option key={u.id} value={u.id}>{u.nome}</option>
               ))}
             </select>
-            <Dica lado="baixo" alinhar="inicio" texto="Define quem da equipe cuida desta conversa. A pessoa escolhida vê o cliente na aba Minhas.">
+            <Dica lado="baixo" alinhar="inicio" texto="Define quem da equipe cuida desta conversa.">
               <button type="submit" className="btn btn-secondary btn-sm">Atribuir</button>
             </Dica>
           </form>

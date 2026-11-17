@@ -1202,3 +1202,18 @@ html[data-density="compact"] main .card table thead th {
 @keyframes ivva-estudio-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
 .estudio-logo { animation: ivva-estudio-pulse 3.2s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .estudio-logo { animation: none; } }
+
+/* ---------- dica ao passar o mouse (componente Dica) ----------
+   Balão pequeno. Claro: fundo escuro da marca com texto creme. O escuro está em tema.css. */
+.dica-balao {
+  padding: 5px 9px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: var(--ink);
+  color: var(--bg);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.35;
+  text-align: left;
+  box-shadow: 0 6px 16px -6px rgba(20, 18, 27, 0.45);
+}

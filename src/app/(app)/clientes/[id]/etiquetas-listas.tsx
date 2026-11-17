@@ -49,7 +49,7 @@ export default function EtiquetasListas({
     <section className="card px-5 py-4">
       <h2 className="mb-3 text-[14px] font-extrabold">Etiquetas e listas</h2>
 
-      <Dica lado="baixo" alinhar="inicio" className="mb-2" texto="Etiqueta é um marcador sobre o cliente (ex.: VIP, Retorno, Indicação). Serve para filtrar e para enviar campanhas só para quem tem aquela etiqueta.">
+      <Dica lado="baixo" alinhar="inicio" className="mb-2" texto="Marcadores do cliente. Servem para filtrar e escolher quem recebe cada campanha.">
         <p className="cursor-help text-[11.5px] font-bold uppercase tracking-wide text-ink-faint">Etiquetas ⓘ</p>
       </Dica>
       {etiquetas.length === 0 ? (
@@ -67,8 +67,8 @@ export default function EtiquetasListas({
                 alinhar="inicio"
                 texto={
                   ativa
-                    ? `Este cliente tem a etiqueta "${e.nome}". Clique para tirar. Etiquetas organizam seus clientes e ajudam a escolher quem recebe cada campanha.`
-                    : `Clique para marcar este cliente com a etiqueta "${e.nome}". Etiquetas organizam seus clientes e ajudam a escolher quem recebe cada campanha.`
+                    ? `Etiqueta "${e.nome}" aplicada. Clique para tirar.`
+                    : `Clique para aplicar a etiqueta "${e.nome}".`
                 }
               >
                 <button
@@ -86,7 +86,7 @@ export default function EtiquetasListas({
         </div>
       )}
 
-      <Dica lado="baixo" alinhar="inicio" className="mb-2" texto="Lista é um grupo de clientes que você monta (ex.: Clientes de sábado). Serve para mandar uma campanha para todo o grupo de uma vez.">
+      <Dica lado="baixo" alinhar="inicio" className="mb-2" texto="Grupos de clientes para enviar uma campanha de uma vez.">
         <p className="cursor-help text-[11.5px] font-bold uppercase tracking-wide text-ink-faint">Listas ⓘ</p>
       </Dica>
       {listas.length === 0 ? (

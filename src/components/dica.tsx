@@ -3,9 +3,10 @@ import type { ReactNode } from "react";
 /**
  * Dica ao passar o mouse (ou focar com o teclado) explicando para que serve um botão.
  * Só CSS: funciona em Server Components, não atrapalha clique nem arrastar.
- * `lado="baixo"` abre a dica para baixo (use perto do topo da tela ou de áreas com rolagem).
- * `alinhar` escolhe de que lado do botão a dica cresce: "inicio" (para a direita, bom para
- * itens à esquerda), "fim" (para a esquerda, bom para itens na borda direita) ou "centro".
+ * A aparência (claro/escuro) vem da classe `.dica-balao` em globals.css e tema.css.
+ * Mantenha o texto curto (uma frase): o balão é pequeno de propósito.
+ * `lado="baixo"` abre a dica para baixo. `alinhar` escolhe de que lado do botão ela cresce:
+ * "inicio" (para a direita), "fim" (para a esquerda) ou "centro".
  */
 export function Dica({
   texto,
@@ -27,8 +28,8 @@ export function Dica({
       {children}
       <span
         role="tooltip"
-        className={`pointer-events-none absolute z-50 w-max max-w-[230px] rounded-[9px] bg-ink-deep px-3 py-2 text-left text-[11.5px] font-medium leading-snug text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover/dica:opacity-100 group-focus-within/dica:opacity-100 ${horizontal} ${
-          lado === "cima" ? "bottom-full mb-2" : "top-full mt-2"
+        className={`dica-balao pointer-events-none absolute z-50 w-max max-w-[210px] opacity-0 transition-opacity duration-150 group-hover/dica:opacity-100 group-focus-within/dica:opacity-100 ${horizontal} ${
+          lado === "cima" ? "bottom-full mb-1.5" : "top-full mt-1.5"
         }`}
       >
         {texto}
