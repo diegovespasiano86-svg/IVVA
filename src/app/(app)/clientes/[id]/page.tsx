@@ -94,7 +94,7 @@ export default async function ClientePerfilPage({ params }: { params: Promise<{ 
             <div>
               <h1 className="no-accent flex items-center gap-1.5 text-[24px] font-extrabold leading-tight text-white">
                 {c.nome}
-                <EstrelaFavorito contactId={c.id} ativaInicial={Boolean(c.favorito)} tom="herdar" />
+                <EstrelaFavorito key={String(Boolean(c.favorito))} contactId={c.id} ativaInicial={Boolean(c.favorito)} tom="herdar" />
               </h1>
               <div className="mt-1.5 flex flex-wrap items-center gap-2">
                 <span className={`badge ${seg.badge}`}>{seg.label}</span>

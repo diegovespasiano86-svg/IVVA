@@ -4,8 +4,8 @@ import { useState, useTransition } from "react";
 import { alternarFavorito } from "@/app/(app)/crm/actions";
 import { Dica } from "@/components/dica";
 
-// Estrela dourada de favorito. Mesmo visual e mesma regra do CRM: grava em contacts.favorito,
-// então marcar aqui vale também no funil (e o contrário). `tom="herdar"` usa a cor do texto ao redor (cabeçalhos que mudam de cor com o tema).
+// Estrela dourada = atalho do "Só humano" (mesma regra do CRM): marcar desliga o robô para o cliente,
+// tirar devolve ao robô; vale em todas as telas porque grava no mesmo cadastro. `tom="herdar"` usa a cor do texto ao redor (cabeçalhos que mudam de cor com o tema).
 export default function EstrelaFavorito({
   contactId,
   ativaInicial,
@@ -26,7 +26,9 @@ export default function EstrelaFavorito({
     const novo = !ativa;
     setAtiva(novo);
     startTransition(() => {
-      alternarFavorito(contactId, novo);
+      alternarFavorito(contactId, novo).then((r) => {
+        if (!r?.ok) setAtiva(!novo); // não salvou: desfaz a estrela na tela
+      });
     });
   }
 
@@ -34,7 +36,11 @@ export default function EstrelaFavorito({
     <Dica
       lado={lado}
       alinhar={alinhar}
-      texto={ativa ? "Favorito. Clique para tirar a estrela." : "Marcar como favorito. Sobe para o topo da lista."}
+      texto={
+        ativa
+          ? "Só humano ligado. Tire a estrela para o robô voltar."
+          : "Favorito liga o Só humano: o robô não responde este cliente."
+      }
     >
       <button
         type="button"

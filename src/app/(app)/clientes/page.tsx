@@ -218,7 +218,7 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
                       <td>
                         <div className="flex items-start gap-1.5">
                         <span className="mt-1.5">
-                          <EstrelaFavorito contactId={c.id} ativaInicial={favoritos.has(c.id)} />
+                          <EstrelaFavorito key={String(favoritos.has(c.id))} contactId={c.id} ativaInicial={favoritos.has(c.id)} />
                         </span>
                         <Link href={`/clientes/${c.id}`} className="flex min-w-0 flex-1 items-center gap-3">
                           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#ece9fc] text-[12.5px] font-extrabold text-purple">{c.nome.slice(0, 2).toUpperCase()}</span>

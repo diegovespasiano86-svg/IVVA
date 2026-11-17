@@ -99,7 +99,12 @@ export default function CrmBoard({
     setContatos((prev) => prev.map((c) => (c.id === contactId ? { ...c, favorito } : c)));
     setSelecionado((s) => (s && s.id === contactId ? { ...s, favorito } : s));
     startTransition(() => {
-      alternarFavorito(contactId, favorito);
+      alternarFavorito(contactId, favorito).then((r) => {
+        if (r?.ok) return;
+        // não salvou (sem permissão ou erro): desfaz a estrela na tela
+        setContatos((prev) => prev.map((c) => (c.id === contactId ? { ...c, favorito: !favorito } : c)));
+        setSelecionado((s) => (s && s.id === contactId ? { ...s, favorito: !favorito } : s));
+      });
     });
   }
 
@@ -306,8 +311,8 @@ function Estrela({
       lado={lado}
       texto={
         ativa
-          ? "Favorito. Clique para tirar a estrela."
-          : "Marcar como favorito. Sobe para o topo da fase."
+          ? "Só humano ligado. Tire a estrela para o robô voltar."
+          : "Favorito liga o Só humano: o robô não responde este cliente."
       }
     >
       <button

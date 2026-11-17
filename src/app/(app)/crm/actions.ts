@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { contatoNoEscopo, type Escopo } from "@/lib/escopo-profissional";
+import { definirAtendimentoRobo } from "../clientes/actions";
 
 async function contexto() {
   const supabase = await createClient();
@@ -67,16 +68,29 @@ export async function criarContato(formData: FormData) {
   revalidatePath("/dashboard");
 }
 
-// Estrela dourada: marca/desmarca o contato como favorito (sobe para o topo da fase).
-export async function alternarFavorito(contactId: string, favorito: boolean) {
+// Estrela dourada = atalho do "Só humano": enquanto o cliente tiver a estrela, o robô não responde e só
+// a equipe atende (mesmo mecanismo do botão Só humano, robo_modo = observa). Tirar a estrela devolve ao robô.
+// Também sobe o cliente para o topo da lista e da fase.
+export async function alternarFavorito(contactId: string, favorito: boolean): Promise<{ ok: boolean }> {
   const ctx = await contexto();
-  if (!ctx) return;
-  if (!(await podeMexerNoContato(ctx, contactId))) return;
+  if (!ctx) return { ok: false };
+  if (!(await podeMexerNoContato(ctx, contactId))) return { ok: false };
 
-  await ctx.supabase.from("contacts").update({ favorito }).eq("id", contactId);
+  if (favorito) {
+    const r = await definirAtendimentoRobo(contactId, "observa", 0);
+    if (!r.ok) return { ok: false };
+    const { error } = await ctx.supabase.from("contacts").update({ favorito: true }).eq("id", contactId);
+    if (error) return { ok: false };
+  } else {
+    // "atende" também apaga a estrela e devolve ao robô as conversas paradas só por causa do "só humano".
+    const r = await definirAtendimentoRobo(contactId, "atende", 0);
+    if (!r.ok) return { ok: false };
+  }
   revalidatePath("/crm");
   revalidatePath("/clientes");
   revalidatePath(`/clientes/${contactId}`);
+  revalidatePath("/conversas");
+  return { ok: true };
 }
 
 export async function moverContato(contactId: string, novoEstagio: string) {

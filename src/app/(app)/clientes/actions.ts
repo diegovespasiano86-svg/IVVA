@@ -165,7 +165,9 @@ export async function definirAtendimentoRobo(contactId: string, modo: ModoRobo, 
   const ate = prazo > 0 ? new Date(Date.now() + prazo * 86400000).toISOString() : null;
   const { error } = await ctx.supabase
     .from("contacts")
-    .update({ robo_modo: modo, robo_silenciado_ate: ate })
+    // A estrela dourada significa "sempre só humano": se o robô volta a atender (ou é só silenciado por
+    // alguns dias), a estrela sai junto para as duas marcas nunca se contradizerem.
+    .update({ robo_modo: modo, robo_silenciado_ate: ate, ...(modo === "atende" ? { favorito: false } : {}) })
     .eq("id", contactId);
   if (error) return { ok: false, erro: "Não consegui salvar. Tente de novo." };
 
@@ -183,5 +185,6 @@ export async function definirAtendimentoRobo(contactId: string, modo: ModoRobo, 
   revalidatePath("/clientes");
   revalidatePath(`/clientes/${contactId}`);
   revalidatePath("/conversas");
+  revalidatePath("/crm");
   return { ok: true };
 }
