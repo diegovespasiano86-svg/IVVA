@@ -500,3 +500,11 @@ html:not([data-theme="dark"]) .modo-tema-chave i {
   box-shadow: 0 1px 4px rgba(20, 18, 27, 0.22);
 }
 html:not([data-theme="dark"]) .modo-tema-chave button:focus-visible { outline-color: var(--purple); }
+
+/* dica ao passar o mouse no modo escuro: superfície azul-noite com borda sutil (nada de balão claro estourando) */
+html[data-theme="dark"] .dica-balao {
+  background: var(--surface-soft);
+  color: var(--ink);
+  border-color: var(--border);
+  box-shadow: var(--shadow-3);
+}

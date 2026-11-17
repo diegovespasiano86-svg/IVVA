@@ -306,8 +306,8 @@ function Estrela({
       lado={lado}
       texto={
         ativa
-          ? "Cliente favorito. Clique para tirar a estrela. Os favoritos ficam no topo de cada fase."
-          : "Marcar como favorito: destaque os clientes mais importantes. Eles sobem para o topo da fase."
+          ? "Favorito. Clique para tirar a estrela."
+          : "Marcar como favorito. Sobe para o topo da fase."
       }
     >
       <button
