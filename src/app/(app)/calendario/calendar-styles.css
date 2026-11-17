@@ -194,3 +194,47 @@ html body .rbc-current-time-indicator {
 @media (prefers-reduced-motion: reduce) {
   html body .rbc-event { animation: none; }
 }
+
+/* ===== modo escuro: linhas finas no tom da base (nada de branco da biblioteca) =====
+   Duas tonalidades só: hora cheia e divisórias (um pouco mais visíveis) e meia hora (quase transparente). */
+html[data-theme="dark"] body {
+  --cal-linha: rgba(150, 170, 255, 0.1);
+  --cal-linha-suave: rgba(150, 170, 255, 0.045);
+}
+html[data-theme="dark"] body :is(
+  .rbc-month-row + .rbc-month-row,
+  .rbc-day-bg + .rbc-day-bg,
+  .rbc-header,
+  .rbc-header + .rbc-header,
+  .rbc-timeslot-group,
+  .rbc-time-header-content,
+  .rbc-time-header.rbc-overflowing,
+  .rbc-time-header > .rbc-row,
+  .rbc-time-header-content > .rbc-row,
+  .rbc-time-content,
+  .rbc-time-content > * + * > *,
+  .rbc-time-gutter,
+  .rbc-time-view .rbc-allday-cell,
+  .rbc-time-view .rbc-allday-cell + .rbc-allday-cell,
+  .rbc-agenda-view table.rbc-agenda-table,
+  .rbc-agenda-view table.rbc-agenda-table tbody > tr > td + td,
+  .rbc-agenda-view table.rbc-agenda-table tbody > tr + tr,
+  .rbc-agenda-view table.rbc-agenda-table thead > tr > th
+) {
+  border-color: var(--cal-linha);
+}
+/* meia hora: quase transparente; a primeira de cada hora não repete a linha da hora cheia */
+html[data-theme="dark"] body .rbc-day-slot .rbc-time-slot {
+  border-top-color: var(--cal-linha-suave);
+}
+html[data-theme="dark"] body .rbc-day-slot .rbc-timeslot-group > .rbc-time-slot:first-child {
+  border-top-color: transparent;
+}
+/* coluna de horas e cartão de "mais" também seguem a base escura */
+html[data-theme="dark"] body .rbc-time-gutter {
+  background: transparent;
+}
+html[data-theme="dark"] body .rbc-overlay {
+  background: var(--surface);
+  border-color: var(--border);
+}
