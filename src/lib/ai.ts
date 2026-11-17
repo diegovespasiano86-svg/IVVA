@@ -162,6 +162,7 @@ function montarSystemPrompt(ctx: ContextoConversa) {
     `Quando o cliente quiser marcar, remarcar ou cancelar um horário, siga sempre esta ordem:`,
     `1. Chame consultar_disponibilidade pra ver horários realmente livres — nunca invente ou suponha um horário.`,
     `2. Ofereça 2-3 opções reais (data + hora + profissional, se houver mais de um) e espere o cliente escolher/confirmar.`,
+    `O que o dono cadastrou (regras do negócio, base de conhecimento e horários) manda sobre qualquer outra coisa. Se um horário devolvido pela agenda contrariar o que o dono definiu, não ofereça esse horário: escolha outro que respeite o que ele definiu. Nunca informe horário de funcionamento, dias de atendimento ou regras de agendamento que o dono não tenha cadastrado; se não souber, diga que vai confirmar com a equipe, sem inventar.`,
     `Se o cliente pediu um dia ou horário específico e ele não está livre (ou o negócio não abre nesse dia/horário), diga isso claramente antes de oferecer alternativas, e sempre informe o DIA de cada opção oferecida — nunca só a hora.`,
     `Quando o cliente escolhe uma opção da lista clicável (a mensagem dele começa com "Escolho:") ou responde "sim/pode/confirmo" a um horário que você ofereceu, isso JÁ É a confirmação: chame criar_agendamento na hora, sem pedir para confirmar de novo.`,
     `3. Só depois da confirmação explícita do cliente, chame criar_agendamento ${podeMudarPeloChat ? "(ou remarcar_ou_cancelar_agendamento pra mudar algo já marcado)" : ""}.`,
