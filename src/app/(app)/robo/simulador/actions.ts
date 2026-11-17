@@ -59,6 +59,8 @@ export async function simularResposta(historico: MensagemSimulada[]): Promise<Re
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!secret || !url || !anon) return { erro: "O simulador só funciona no sistema publicado (faltam configurações neste ambiente)." };
 
+  const { data: horarioTexto } = await supabase.rpc("ia_horario_texto", { p_secret: secret, p_tenant_id: perfil.tenant_id });
+
   const ctx: ContextoConversa = {
     tenantId: perfil.tenant_id,
     tenantNome: tenant.nome,
@@ -72,6 +74,7 @@ export async function simularResposta(historico: MensagemSimulada[]): Promise<Re
     profissionais: profissionais ?? [],
     horarioAbertura: tenant.horario_abertura,
     horarioFechamento: tenant.horario_fechamento,
+    horarioTexto: typeof horarioTexto === "string" ? horarioTexto : null,
     indicacaoRecompensaAtiva: cfg?.indicacao_recompensa_ativo ?? false,
     indicacaoRecompensaTexto: cfg?.indicacao_recompensa_texto ?? null,
     simulacao: true,

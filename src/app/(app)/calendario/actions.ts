@@ -156,16 +156,19 @@ export async function atualizarAgendamento(
   return { erro: null };
 }
 
-/** O dono define o horário da agenda: é dele que o robô e o calendário tiram os horários livres. */
+/** O dono define o horário da agenda dia a dia: é dele que o robô e o calendário tiram os horários livres. */
 export async function salvarHorarioAgenda(formData: FormData) {
   const hhmm = /^([01]\d|2[0-3]):[0-5]\d$/;
-  const abre = String(formData.get("abertura") ?? "");
-  const fecha = String(formData.get("fechamento") ?? "");
-  const dias = formData
-    .getAll("dias")
-    .map((d) => Number(d))
-    .filter((d) => Number.isInteger(d) && d >= 1 && d <= 7);
-  if (!hhmm.test(abre) || !hhmm.test(fecha) || fecha <= abre || dias.length === 0) return;
+  const semana: Record<string, { abre: string; fecha: string }> = {};
+  for (let d = 1; d <= 7; d++) {
+    if (formData.get(`dia_${d}`) !== "on") continue;
+    const abre = String(formData.get(`abre_${d}`) ?? "");
+    const fecha = String(formData.get(`fecha_${d}`) ?? "");
+    if (!hhmm.test(abre) || !hhmm.test(fecha) || fecha <= abre) return;
+    semana[String(d)] = { abre, fecha };
+  }
+  const dias = Object.keys(semana).map(Number);
+  if (dias.length === 0) return;
 
   const supabase = await createClient();
   const {
@@ -175,9 +178,16 @@ export async function salvarHorarioAgenda(formData: FormData) {
   const { data: perfil } = await supabase.from("users").select("tenant_id, role").eq("id", user.id).maybeSingle();
   if (!perfil || perfil.role !== "dono") return;
 
+  const abertas = Object.values(semana);
   await supabase
     .from("tenants")
-    .update({ horario_abertura: `${abre}:00`, horario_fechamento: `${fecha}:00`, dias_funcionamento: [...new Set(dias)].sort() })
+    .update({
+      horarios_semana: semana,
+      // Campos antigos acompanham (menor abertura / maior fechamento) para telas e rotinas que ainda os leem.
+      horario_abertura: `${abertas.map((h) => h.abre).sort()[0]}:00`,
+      horario_fechamento: `${abertas.map((h) => h.fecha).sort().reverse()[0]}:00`,
+      dias_funcionamento: dias.sort(),
+    })
     .eq("id", perfil.tenant_id);
 
   revalidatePath("/calendario");

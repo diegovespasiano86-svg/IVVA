@@ -56,6 +56,8 @@ export type ContextoConversa = {
   profissionais: Profissional[];
   horarioAbertura: string | null;
   horarioFechamento: string | null;
+  /** Horário dia a dia (ex.: "seg 11:00 às 16:00; ... dom fechado"), quando o dono cadastrou por dia. */
+  horarioTexto?: string | null;
   indicacaoRecompensaAtiva: boolean;
   indicacaoRecompensaTexto: string | null;
   /** Resumo gerado por IA do histórico antigo de WhatsApp desse contato
@@ -154,7 +156,9 @@ function montarSystemPrompt(ctx: ContextoConversa) {
 
   const linhasAgenda = [
     `Agora é ${agora} (horário de Brasília).`,
-    ctx.horarioAbertura && ctx.horarioFechamento
+    ctx.horarioTexto
+      ? `Funcionamento (agenda): ${ctx.horarioTexto}.`
+      : ctx.horarioAbertura && ctx.horarioFechamento
       ? `Funcionamento: ${ctx.horarioAbertura.slice(0, 5)} às ${ctx.horarioFechamento.slice(0, 5)}.`
       : "",
     listaProfissionais ? `Profissionais desse negócio:\n${listaProfissionais}` : "",

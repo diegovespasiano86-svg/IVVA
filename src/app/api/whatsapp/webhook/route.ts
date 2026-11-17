@@ -915,6 +915,8 @@ async function processarMensagem(params: {
     return;
   }
 
+  const { data: horarioTexto } = await supabase.rpc("ia_horario_texto", { p_secret: internalSecret, p_tenant_id: resultado.tenant_id });
+
   const ctx: ContextoConversa = {
     tenantId: resultado.tenant_id,
     tenantNome: resultado.tenant_nome,
@@ -927,6 +929,7 @@ async function processarMensagem(params: {
     profissionais: resultado.profissionais ?? [],
     horarioAbertura: resultado.horario_abertura,
     horarioFechamento: resultado.horario_fechamento,
+    horarioTexto: typeof horarioTexto === "string" ? horarioTexto : null,
     indicacaoRecompensaAtiva: resultado.indicacao_recompensa_ativo,
     indicacaoRecompensaTexto: resultado.indicacao_recompensa_texto,
     historicoAntigoResumo: resultado.historico_antigo_resumo,

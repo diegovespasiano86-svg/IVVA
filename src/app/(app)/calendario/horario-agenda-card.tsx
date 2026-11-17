@@ -1,53 +1,55 @@
 import { salvarHorarioAgenda } from "./actions";
 
 const DIAS = [
-  [1, "Seg"],
-  [2, "Ter"],
-  [3, "Qua"],
-  [4, "Qui"],
-  [5, "Sex"],
-  [6, "Sáb"],
-  [7, "Dom"],
+  [1, "Segunda"],
+  [2, "Terça"],
+  [3, "Quarta"],
+  [4, "Quinta"],
+  [5, "Sexta"],
+  [6, "Sábado"],
+  [7, "Domingo"],
 ] as const;
 
-/** Horário que vale para a agenda: o robô só oferece vagas dentro dele. Quem define é o dono do negócio. */
-export default function HorarioAgendaCard({ abertura, fechamento, dias }: { abertura: string; fechamento: string; dias: number[] }) {
+export type HorariosSemana = Record<string, { abre: string; fecha: string }>;
+
+function resumo(h: HorariosSemana): string {
+  const aberto = DIAS.filter(([n]) => h[String(n)]);
+  if (aberto.length === 0) return "fechado";
+  return aberto.map(([n, nome]) => `${nome.slice(0, 3)} ${h[String(n)].abre}–${h[String(n)].fecha}`).join(" · ");
+}
+
+/** Horário que vale para a agenda, dia a dia: o robô só oferece vagas dentro dele. Quem define é o dono do negócio. */
+export default function HorarioAgendaCard({ horarios }: { horarios: HorariosSemana }) {
   return (
     <details className="card group mb-4">
       <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 [&::-webkit-details-marker]:hidden">
-        <span className="text-[13.5px] font-extrabold">
-          Horário da agenda{" "}
-          <span className="font-normal text-ink-soft">
-            · {abertura.slice(0, 5)} às {fechamento.slice(0, 5)}
-          </span>
+        <span className="min-w-0 text-[13.5px] font-extrabold">
+          Horário da agenda <span className="font-normal text-ink-soft">· {resumo(horarios)}</span>
         </span>
-        <span className="text-[12.5px] font-semibold text-ink-soft">
+        <span className="shrink-0 text-[12.5px] font-semibold text-ink-soft">
           <span className="group-open:hidden">Ajustar</span>
           <span className="hidden group-open:inline">Fechar</span>
         </span>
       </summary>
       <div className="border-t border-border px-4 py-4">
         <p className="mb-3 text-[12.5px] text-ink-soft">
-          O robô só oferece vagas nesses dias e horários. Se o robô falar outro horário, confira também as regras em Robô.
+          Marque os dias em que você atende e o horário de cada um. O robô só oferece vagas dentro disso.
         </p>
-        <form action={salvarHorarioAgenda} className="flex flex-wrap items-end gap-3">
-          <div>
-            <label htmlFor="abertura" className="!mb-1">Abre às</label>
-            <input id="abertura" name="abertura" type="time" required defaultValue={abertura.slice(0, 5)} className="input" />
-          </div>
-          <div>
-            <label htmlFor="fechamento" className="!mb-1">Fecha às</label>
-            <input id="fechamento" name="fechamento" type="time" required defaultValue={fechamento.slice(0, 5)} className="input" />
-          </div>
-          <fieldset className="flex flex-wrap gap-3 text-[13px]">
-            <legend className="!mb-1 text-[12.5px] font-semibold">Dias</legend>
-            {DIAS.map(([n, nome]) => (
-              <label key={n} className="flex items-center gap-1.5 !mb-0">
-                <input type="checkbox" name="dias" value={n} defaultChecked={dias.includes(n)} /> {nome}
-              </label>
-            ))}
-          </fieldset>
-          <button type="submit" className="btn btn-primary btn-md">Salvar</button>
+        <form action={salvarHorarioAgenda} className="flex flex-col gap-2">
+          {DIAS.map(([n, nome]) => {
+            const h = horarios[String(n)];
+            return (
+              <div key={n} className="flex flex-wrap items-center gap-2 text-[13px]">
+                <label className="flex w-[100px] items-center gap-2 !mb-0">
+                  <input type="checkbox" name={`dia_${n}`} defaultChecked={Boolean(h)} /> {nome}
+                </label>
+                <input type="time" name={`abre_${n}`} defaultValue={h?.abre ?? "09:00"} className="input w-[110px]" aria-label={`${nome}: abre às`} />
+                <span className="text-ink-soft">às</span>
+                <input type="time" name={`fecha_${n}`} defaultValue={h?.fecha ?? "18:00"} className="input w-[110px]" aria-label={`${nome}: fecha às`} />
+              </div>
+            );
+          })}
+          <button type="submit" className="btn btn-primary btn-md mt-2 w-fit">Salvar horários</button>
         </form>
       </div>
     </details>

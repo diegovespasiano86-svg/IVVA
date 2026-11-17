@@ -4,7 +4,7 @@ import { CalendarDays } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { criarAgendamento } from "./actions";
 import CalendarView, { type EventoAgenda } from "./calendar-view";
-import HorarioAgendaCard from "./horario-agenda-card";
+import HorarioAgendaCard, { type HorariosSemana } from "./horario-agenda-card";
 import GoogleAgendaAtalho from "./google-agenda-atalho";
 import ProfissionaisCard, { type ProfissionalItem, type ConvitePendenteItem } from "./profissionais-card";
 import { obterEscopo, filtroContatosDoProfissional } from "@/lib/escopo-profissional";
@@ -61,7 +61,7 @@ export default async function CalendarioPage() {
             .gt("expires_at", new Date().toISOString())
             .order("created_at", { ascending: false })
         : Promise.resolve({ data: [] as { id: string; nome: string; email: string; role: string }[] }),
-      supabase.from("tenants").select("plano, horario_abertura, horario_fechamento, dias_funcionamento").maybeSingle(),
+      supabase.from("tenants").select("plano, horario_abertura, horario_fechamento, dias_funcionamento, horarios_semana").maybeSingle(),
     ]);
 
   const donoProfissionalId = (usuariosEquipe ?? []).find((u) => u.id === escopo?.userId)?.professional_id ?? null;
@@ -108,9 +108,15 @@ export default async function CalendarioPage() {
 
       {souDono && (
         <HorarioAgendaCard
-          abertura={tenantPlano?.horario_abertura ?? "09:00:00"}
-          fechamento={tenantPlano?.horario_fechamento ?? "19:00:00"}
-          dias={tenantPlano?.dias_funcionamento ?? [1, 2, 3, 4, 5, 6]}
+          horarios={
+            (tenantPlano?.horarios_semana as HorariosSemana | null) ??
+            Object.fromEntries(
+              (tenantPlano?.dias_funcionamento ?? [1, 2, 3, 4, 5, 6]).map((d: number) => [
+                String(d),
+                { abre: (tenantPlano?.horario_abertura ?? "09:00:00").slice(0, 5), fecha: (tenantPlano?.horario_fechamento ?? "19:00:00").slice(0, 5) },
+              ]),
+            )
+          }
         />
       )}
 
