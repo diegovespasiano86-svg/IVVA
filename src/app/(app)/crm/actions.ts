@@ -75,6 +75,8 @@ export async function alternarFavorito(contactId: string, favorito: boolean) {
 
   await ctx.supabase.from("contacts").update({ favorito }).eq("id", contactId);
   revalidatePath("/crm");
+  revalidatePath("/clientes");
+  revalidatePath(`/clientes/${contactId}`);
 }
 
 export async function moverContato(contactId: string, novoEstagio: string) {

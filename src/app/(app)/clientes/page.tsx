@@ -6,6 +6,7 @@ import { carregarTermos } from "@/lib/termos-servidor";
 import EmptyState from "@/components/empty-state";
 import { ESTILO_ETIQUETA, SEGMENTOS_RFV, formatarTelefone, rotuloSegmento, type CorEtiqueta } from "@/lib/clientes";
 import AdicionarALista from "./adicionar-a-lista";
+import EstrelaFavorito from "@/components/estrela-favorito";
 import { estadoRobo, rotuloEstadoRobo } from "@/lib/robo-atendimento";
 import { carregarBase, mesAtualSP, mesDe } from "@/lib/clientes-dados";
 import { brl } from "@/lib/relatorios";
@@ -33,8 +34,9 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
     );
   }
 
-  const [base, { data: robos }, { data: etiquetas }, { data: ligEtq }, { data: listas }, { data: membros }] = await Promise.all([
+  const [base, { data: favs }, { data: robos }, { data: etiquetas }, { data: ligEtq }, { data: listas }, { data: membros }] = await Promise.all([
     carregarBase(supabase),
+    supabase.from("contacts").select("id").eq("favorito", true).limit(5000),
     supabase.from("contacts").select("id, robo_modo, robo_silenciado_ate").or("robo_modo.neq.atende,robo_silenciado_ate.not.is.null").limit(5000),
     supabase.from("labels").select("id, nome, cor").order("nome"),
     supabase.from("contact_labels").select("contact_id, label_id").limit(20000),
@@ -82,6 +84,10 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
     if (!q) return true;
     return c.nome.toLowerCase().includes(q) || (c.email ?? "").toLowerCase().includes(q) || (qDigitos.length >= 3 && c.telefone.replace(/\D/g, "").includes(qDigitos));
   });
+
+  // Favoritos (estrela dourada) sobem para o topo, antes de paginar; dentro de cada grupo a ordem não muda.
+  const favoritos = new Set((favs ?? []).map((f) => f.id));
+  filtrada.sort((a, b) => Number(favoritos.has(b.id)) - Number(favoritos.has(a.id)));
 
   const pagina = Math.max(1, Number(sp.p) || 1);
   const totalPaginas = Math.max(1, Math.ceil(filtrada.length / POR_PAGINA));
@@ -210,7 +216,11 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
                   return (
                     <tr key={c.id} className="cursor-pointer">
                       <td>
-                        <Link href={`/clientes/${c.id}`} className="flex items-center gap-3">
+                        <div className="flex items-start gap-1.5">
+                        <span className="mt-1.5">
+                          <EstrelaFavorito contactId={c.id} ativaInicial={favoritos.has(c.id)} />
+                        </span>
+                        <Link href={`/clientes/${c.id}`} className="flex min-w-0 flex-1 items-center gap-3">
                           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#ece9fc] text-[12.5px] font-extrabold text-purple">{c.nome.slice(0, 2).toUpperCase()}</span>
                           <span className="min-w-0">
                             <span className="block truncate text-[13.5px] font-bold">{c.nome}</span>
@@ -235,6 +245,7 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
                             )}
                           </span>
                         </Link>
+                        </div>
                       </td>
                       <td>
                         <span className={`badge ${s.badge}`}>{s.label}</span>

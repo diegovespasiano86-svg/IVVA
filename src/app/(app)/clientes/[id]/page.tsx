@@ -9,6 +9,7 @@ import { CATEGORIA_LABEL, type CategoriaResumo } from "@/lib/resumo-conversas";
 import { adicionarNotaCliente } from "../actions";
 import EtiquetasListas from "./etiquetas-listas";
 import AtendimentoRobo from "../atendimento-robo";
+import EstrelaFavorito from "@/components/estrela-favorito";
 
 const FORMA: Record<string, string> = { pix: "Pix", credito: "Crédito", debito: "Débito", dinheiro: "Dinheiro" };
 const AGENDA: Record<string, string> = { agendado: "Agendado", concluido: "Concluído", cancelado: "Cancelado" };
@@ -27,7 +28,7 @@ export default async function ClientePerfilPage({ params }: { params: Promise<{ 
     supabase.from("users").select("role").eq("id", user?.id ?? "").maybeSingle(),
     supabase
       .from("contacts")
-      .select("id, nome, telefone, email, instagram, status_funil, created_at, data_nascimento, como_conheceu, aceita_mensagem_automatica, robo_modo, robo_silenciado_ate")
+      .select("id, nome, telefone, email, instagram, status_funil, created_at, data_nascimento, como_conheceu, aceita_mensagem_automatica, robo_modo, robo_silenciado_ate, favorito")
       .eq("id", id)
       .maybeSingle(),
   ]);
@@ -91,7 +92,10 @@ export default async function ClientePerfilPage({ params }: { params: Promise<{ 
           <div className="flex items-center gap-4">
             <span className="flex h-16 w-16 items-center justify-center rounded-full bg-white/15 text-[22px] font-extrabold text-white backdrop-blur">{c.nome.slice(0, 2).toUpperCase()}</span>
             <div>
-              <h1 className="no-accent text-[24px] font-extrabold leading-tight text-white">{c.nome}</h1>
+              <h1 className="no-accent flex items-center gap-1.5 text-[24px] font-extrabold leading-tight text-white">
+                {c.nome}
+                <EstrelaFavorito contactId={c.id} ativaInicial={Boolean(c.favorito)} tom="herdar" />
+              </h1>
               <div className="mt-1.5 flex flex-wrap items-center gap-2">
                 <span className={`badge ${seg.badge}`}>{seg.label}</span>
                 {recente?.interesse ? <span className="badge badge-neutral" title={`Interesse ${recente.interesse} de 5, pela última conversa`}>{"🔥".repeat(recente.interesse)}</span> : null}
