@@ -67,6 +67,16 @@ export async function criarContato(formData: FormData) {
   revalidatePath("/dashboard");
 }
 
+// Estrela dourada: marca/desmarca o contato como favorito (sobe para o topo da fase).
+export async function alternarFavorito(contactId: string, favorito: boolean) {
+  const ctx = await contexto();
+  if (!ctx) return;
+  if (!(await podeMexerNoContato(ctx, contactId))) return;
+
+  await ctx.supabase.from("contacts").update({ favorito }).eq("id", contactId);
+  revalidatePath("/crm");
+}
+
 export async function moverContato(contactId: string, novoEstagio: string) {
   const ctx = await contexto();
   if (!ctx) return;

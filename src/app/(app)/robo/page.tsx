@@ -6,6 +6,7 @@ import AssistantForm from "./assistant-form";
 import LinkPublico from "./link-publico";
 import BotSettingsForm from "./bot-settings-form";
 import { temRecurso } from "@/lib/planos";
+import { Dica } from "@/components/dica";
 
 export default async function RoboPage() {
   const supabase = await createClient();
@@ -112,9 +113,11 @@ export default async function RoboPage() {
             </p>
           </div>
         </div>
-        <Link href="/robo/simulador" className="btn btn-primary btn-md">
-          Começar a calibrar
-        </Link>
+        <Dica lado="baixo" texto="Abre o simulador: você conversa com o robô como se fosse um cliente, corrige o que ele errar, e ele aprende com a sua correção.">
+          <Link href="/robo/simulador" className="btn btn-primary btn-md">
+            Começar a calibrar
+          </Link>
+        </Dica>
       </div>
 
       <LinkPublico />

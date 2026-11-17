@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { Bot, BellOff, UserRound } from "lucide-react";
 import { definirAtendimentoRobo, type ModoRobo } from "./actions";
 import { estadoRobo, rotuloEstadoRobo } from "@/lib/robo-atendimento";
+import { Dica } from "@/components/dica";
 
 type Opcao = { id: string; label: string; modo: ModoRobo; dias: number; dica: string };
 
@@ -40,29 +41,37 @@ export default function AtendimentoRobo({
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex flex-wrap items-center gap-2">
-        <span className={`badge ${estado.tipo === "atende" ? "badge-success" : "badge-warn"}`}>
-          <Icone size={12} /> {rotuloEstadoRobo(estado)}
-        </span>
+        <Dica lado="baixo" alinhar="inicio" texto="Quem está atendendo este cliente agora: o robô, só você (humano) ou o robô silenciado até uma data.">
+          <span className={`badge ${estado.tipo === "atende" ? "badge-success" : "badge-warn"}`}>
+            <Icone size={12} /> {rotuloEstadoRobo(estado)}
+          </span>
+        </Dica>
         <label htmlFor={`robo-${contactId}`} className="sr-only">
           Atendimento do robô
         </label>
-        <select
-          id={`robo-${contactId}`}
-          className="select !h-9 !w-auto min-w-[170px]"
-          disabled={pendente}
-          value=""
-          onChange={(e) => {
-            const op = OPCOES.find((o) => o.id === e.target.value);
-            if (op) escolher(op);
-          }}
+        <Dica
+          lado="baixo"
+          alinhar="inicio"
+          texto="Escolha quem atende este cliente. “Só humano”: o robô não responde, você atende. “Silenciar”: o robô fica quieto por 1, 7 ou 30 dias e volta sozinho quando o tempo acabar."
         >
-          <option value="">Mudar atendimento…</option>
-          {OPCOES.map((o) => (
-            <option key={o.id} value={o.id} title={o.dica}>
-              {o.label}
-            </option>
-          ))}
-        </select>
+          <select
+            id={`robo-${contactId}`}
+            className="select !h-9 !w-auto min-w-[170px]"
+            disabled={pendente}
+            value=""
+            onChange={(e) => {
+              const op = OPCOES.find((o) => o.id === e.target.value);
+              if (op) escolher(op);
+            }}
+          >
+            <option value="">Mudar atendimento…</option>
+            {OPCOES.map((o) => (
+              <option key={o.id} value={o.id} title={o.dica}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </Dica>
       </div>
       {erro && <p className="text-[12px] text-coral">{erro}</p>}
     </div>

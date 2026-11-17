@@ -12,10 +12,13 @@ import {
   listarTarefasContato,
   excluirContatoLgpd,
   moverContato,
+  alternarFavorito,
 } from "./actions";
+import { Dica } from "@/components/dica";
 
 export type Contato = {
   id: string;
+  favorito?: boolean;
   nome: string;
   telefone: string;
   tags: string[] | null;
@@ -85,8 +88,20 @@ export default function CrmBoard({
       lista.push(c);
       mapa.set(c.status_funil, lista);
     }
+    // Favoritos primeiro (a ordem original se mantém dentro de cada grupo).
+    for (const lista of mapa.values()) {
+      lista.sort((a, b) => Number(Boolean(b.favorito)) - Number(Boolean(a.favorito)));
+    }
     return mapa;
   }, [estagios, contatos]);
+
+  function alternarEstrela(contactId: string, favorito: boolean) {
+    setContatos((prev) => prev.map((c) => (c.id === contactId ? { ...c, favorito } : c)));
+    setSelecionado((s) => (s && s.id === contactId ? { ...s, favorito } : s));
+    startTransition(() => {
+      alternarFavorito(contactId, favorito);
+    });
+  }
 
   function moverParaEstagio(contactId: string, novoEstagio: string) {
     setContatos((prev) =>
@@ -140,7 +155,12 @@ export default function CrmBoard({
               <tbody>
                 {contatos.map((c) => (
                   <tr key={c.id} onClick={() => setSelecionado(c)} className="cursor-pointer hover:bg-surface-soft/60">
-                    <td className="font-bold">{c.nome}</td>
+                    <td className="font-bold">
+                      <span className="inline-flex items-center gap-1.5">
+                        <Estrela ativa={Boolean(c.favorito)} onAlternar={() => alternarEstrela(c.id, !c.favorito)} lado="baixo" />
+                        {c.nome}
+                      </span>
+                    </td>
                     <td>{formatTelefone(c.telefone)}</td>
                     <td>{c.email || "—"}</td>
                     <td>{c.data_nascimento ? c.data_nascimento.split("-").reverse().slice(0, 2).join("/") : "—"}</td>
@@ -216,7 +236,13 @@ export default function CrmBoard({
                         arrastando === contato.id ? "opacity-40" : ""
                       }`}
                     >
-                      <p className="text-[13.5px] font-bold">{contato.nome}</p>
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-[13.5px] font-bold">{contato.nome}</p>
+                        <Estrela
+                          ativa={Boolean(contato.favorito)}
+                          onAlternar={() => alternarEstrela(contato.id, !contato.favorito)}
+                        />
+                      </div>
                       <p className="mt-0.5 text-[12px] text-ink-faint">
                         {formatTelefone(contato.telefone)}
                       </p>
@@ -262,6 +288,51 @@ export default function CrmBoard({
         />
       )}
     </>
+  );
+}
+
+// Estrela dourada de favorito. A dica explica para que serve a cada passada do mouse.
+function Estrela({
+  ativa,
+  onAlternar,
+  lado = "baixo",
+}: {
+  ativa: boolean;
+  onAlternar: () => void;
+  lado?: "cima" | "baixo";
+}) {
+  return (
+    <Dica
+      lado={lado}
+      texto={
+        ativa
+          ? "Cliente favorito. Clique para tirar a estrela. Os favoritos ficam no topo de cada fase."
+          : "Marcar como favorito: destaque os clientes mais importantes. Eles sobem para o topo da fase."
+      }
+    >
+      <button
+        type="button"
+        aria-label={ativa ? "Tirar dos favoritos" : "Marcar como favorito"}
+        aria-pressed={ativa}
+        draggable={false}
+        onClick={(e) => {
+          e.stopPropagation();
+          onAlternar();
+        }}
+        className="-mr-1 -mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-md transition-transform hover:scale-110 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-purple"
+      >
+        <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true">
+          <path
+            d="m12 2.6 2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.4l-5.8 3.1 1.1-6.5L2.6 9.4l6.5-.9L12 2.6Z"
+            fill={ativa ? "#E8A317" : "none"}
+            stroke={ativa ? "#E8A317" : "currentColor"}
+            strokeWidth="1.7"
+            strokeLinejoin="round"
+            className={ativa ? "" : "text-ink-faint"}
+          />
+        </svg>
+      </button>
+    </Dica>
   );
 }
 
