@@ -6,6 +6,7 @@ import RascunhoForm from "../rascunho-form";
 import { encerrarConversa, restaurarBot } from "../../actions";
 import { atribuirConversa } from "../../../clientes/segmentacao-actions";
 import AtendimentoRobo from "../../../clientes/atendimento-robo";
+import { Dica } from "@/components/dica";
 import { CATEGORIA_LABEL, SENTIMENTO_LABEL, type CategoriaResumo, type Sentimento } from "@/lib/resumo-conversas";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -99,23 +100,27 @@ export default async function ConversaDetalhePage({
             {conversa.status === "humano" && (
               <form action={restaurarBot}>
                 <input type="hidden" name="conversation_id" value={conversa.id} />
-                <button
-                  type="submit"
-                  className="btn btn-secondary btn-sm"
-                >
-                  Restaurar bot
-                </button>
+                <Dica lado="baixo" alinhar="fim" texto="Devolve esta conversa para o robô. Ele volta a responder o cliente sozinho, a partir da próxima mensagem.">
+                  <button
+                    type="submit"
+                    className="btn btn-secondary btn-sm"
+                  >
+                    Restaurar bot
+                  </button>
+                </Dica>
               </form>
             )}
             {conversa.status !== "encerrada" && (
               <form action={encerrarConversa}>
                 <input type="hidden" name="conversation_id" value={conversa.id} />
-                <button
-                  type="submit"
-                  className="btn btn-ghost btn-sm"
-                >
-                  Encerrar
-                </button>
+                <Dica lado="baixo" alinhar="fim" texto="Encerra esta conversa e a tira da fila de atendimento. Use quando o assunto com o cliente já foi resolvido.">
+                  <button
+                    type="submit"
+                    className="btn btn-ghost btn-sm"
+                  >
+                    Encerrar
+                  </button>
+                </Dica>
               </form>
             )}
           </div>
@@ -137,7 +142,9 @@ export default async function ConversaDetalhePage({
                 <option key={u.id} value={u.id}>{u.nome}</option>
               ))}
             </select>
-            <button type="submit" className="btn btn-secondary btn-sm">Atribuir</button>
+            <Dica lado="baixo" alinhar="inicio" texto="Define quem da equipe cuida desta conversa. A pessoa escolhida vê o cliente na aba Minhas.">
+              <button type="submit" className="btn btn-secondary btn-sm">Atribuir</button>
+            </Dica>
           </form>
         )}
 

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Check } from "lucide-react";
 import { ESTILO_ETIQUETA, type CorEtiqueta } from "@/lib/clientes";
 import { alternarEtiqueta, alternarLista } from "../segmentacao-actions";
+import { Dica } from "@/components/dica";
 
 type Opcao = { id: string; nome: string; cor?: string };
 
@@ -48,7 +49,9 @@ export default function EtiquetasListas({
     <section className="card px-5 py-4">
       <h2 className="mb-3 text-[14px] font-extrabold">Etiquetas e listas</h2>
 
-      <p className="mb-2 text-[11.5px] font-bold uppercase tracking-wide text-ink-faint">Etiquetas</p>
+      <Dica lado="baixo" alinhar="inicio" className="mb-2" texto="Etiqueta é um marcador sobre o cliente (ex.: VIP, Retorno, Indicação). Serve para filtrar e para enviar campanhas só para quem tem aquela etiqueta.">
+        <p className="cursor-help text-[11.5px] font-bold uppercase tracking-wide text-ink-faint">Etiquetas ⓘ</p>
+      </Dica>
       {etiquetas.length === 0 ? (
         <p className="mb-4 text-[12.5px] text-ink-soft">
           Nenhuma etiqueta criada. <Link href="/clientes/etiquetas" className="font-bold text-purple hover:underline">Criar etiquetas</Link>
@@ -59,22 +62,33 @@ export default function EtiquetasListas({
             const ativa = etq.has(e.id);
             const estilo = ESTILO_ETIQUETA[(e.cor as CorEtiqueta) in ESTILO_ETIQUETA ? (e.cor as CorEtiqueta) : "cinza"];
             return (
-              <button
+              <Dica
                 key={e.id}
-                type="button"
-                aria-pressed={ativa}
-                onClick={() => trocar("etq", e.id)}
-                className={`flex items-center gap-1 rounded-full px-3 py-1 text-[12px] font-bold transition-all ${ativa ? estilo : "bg-surface text-ink-faint ring-1 ring-border hover:text-ink"}`}
+                alinhar="inicio"
+                texto={
+                  ativa
+                    ? `Este cliente tem a etiqueta "${e.nome}". Clique para tirar. Etiquetas organizam seus clientes e ajudam a escolher quem recebe cada campanha.`
+                    : `Clique para marcar este cliente com a etiqueta "${e.nome}". Etiquetas organizam seus clientes e ajudam a escolher quem recebe cada campanha.`
+                }
               >
-                {ativa && <Check size={12} strokeWidth={3} />}
-                {e.nome}
-              </button>
+                <button
+                  type="button"
+                  aria-pressed={ativa}
+                  onClick={() => trocar("etq", e.id)}
+                  className={`flex items-center gap-1 rounded-full px-3 py-1 text-[12px] font-bold transition-all ${ativa ? estilo : "bg-surface text-ink-faint ring-1 ring-border hover:text-ink"}`}
+                >
+                  {ativa && <Check size={12} strokeWidth={3} />}
+                  {e.nome}
+                </button>
+              </Dica>
             );
           })}
         </div>
       )}
 
-      <p className="mb-2 text-[11.5px] font-bold uppercase tracking-wide text-ink-faint">Listas</p>
+      <Dica lado="baixo" alinhar="inicio" className="mb-2" texto="Lista é um grupo de clientes que você monta (ex.: Clientes de sábado). Serve para mandar uma campanha para todo o grupo de uma vez.">
+        <p className="cursor-help text-[11.5px] font-bold uppercase tracking-wide text-ink-faint">Listas ⓘ</p>
+      </Dica>
       {listas.length === 0 ? (
         <p className="text-[12.5px] text-ink-soft">
           Nenhuma lista criada. <Link href="/clientes/listas" className="font-bold text-purple hover:underline">Criar listas</Link>
