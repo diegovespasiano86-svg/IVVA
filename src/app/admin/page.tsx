@@ -5,6 +5,7 @@ import { resolverChamado } from "./actions";
 import { limiteConversas } from "@/lib/planos";
 import { linkWhatsapp } from "@/lib/rescue";
 import RescuePainel from "./rescue-painel";
+import ListaEsperaPainel from "./lista-espera-painel";
 
 const PLANO_LABEL: Record<string, string> = {
   essencial: "Essencial",
@@ -206,6 +207,8 @@ export default async function AdminPage() {
             </div>
           </div>
         )}
+
+        <ListaEsperaPainel supabase={supabase} />
 
         <RescuePainel supabase={supabase} />
 

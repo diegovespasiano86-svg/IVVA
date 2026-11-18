@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-// Lista VIP da Black Friday: o formulário de ivva.app.br/black-friday grava aqui (o site não tem servidor).
+// Lista VIP da Black Friday e lista de espera dos 60 dias: os formulários de ivva.app.br gravam aqui (o site não tem servidor).
 // Sem login; aceita só a origem do site. O campo "empresa" é isca para robô (gente de verdade não vê).
 const ORIGENS = new Set(["https://ivva.app.br", "https://www.ivva.app.br", "http://localhost:3000", "http://localhost:3011"]);
+
+// Campanhas aceitas. A lista de espera dos 60 dias exige WhatsApp, porque o time chama por lá.
+const CAMPANHAS = new Set(["black-friday-2026", "lista-60-dias"]);
 
 function cors(origem: string | null) {
   const h: Record<string, string> = { "Access-Control-Allow-Methods": "POST, OPTIONS", "Access-Control-Allow-Headers": "content-type", Vary: "Origin" };
@@ -28,12 +31,13 @@ export async function POST(req: Request) {
   const texto = (k: string, max: number) => (typeof c[k] === "string" ? (c[k] as string).trim().slice(0, max) : "");
   if (texto("empresa", 80)) return responder({ ok: true });
 
+  const campanha = CAMPANHAS.has(texto("campanha", 40)) ? texto("campanha", 40) : "black-friday-2026";
   const nome = texto("nome", 80);
   const email = texto("email", 120).toLowerCase();
   const telefone = texto("telefone", 20);
   if (!nome) return responder({ erro: "Diga como podemos te chamar." }, 400);
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return responder({ erro: "Confira o e-mail." }, 400);
-  if (telefone && telefone.replace(/\D/g, "").length < 10) return responder({ erro: "Informe o WhatsApp com DDD." }, 400);
+  if ((telefone || campanha === "lista-60-dias") && telefone.replace(/\D/g, "").length < 10) return responder({ erro: "Informe o WhatsApp com DDD." }, 400);
 
   const origem: Record<string, string> = {};
   const bruto = (c.origem ?? {}) as Record<string, unknown>;
@@ -46,7 +50,7 @@ export async function POST(req: Request) {
   const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
   const { error } = await supabase.rpc("lista_vip_inscrever", {
     p_secret: secret,
-    p_campanha: "black-friday-2026",
+    p_campanha: campanha,
     p_nome: nome,
     p_email: email,
     p_telefone: telefone || null,
