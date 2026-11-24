@@ -27,7 +27,8 @@ export const ETAPAS_DIAGNOSTICO: Etapa[] = [
     subtitulo: "Para a ivva falar a língua do seu negócio desde o primeiro dia.",
     perguntas: [
       { id: "cidade", rotulo: "Cidade e estado", tipo: "texto", placeholder: "Ex.: Belo Horizonte/MG", obrigatoria: true },
-      { id: "instagram", rotulo: "Instagram ou site", tipo: "texto", placeholder: "@seunegocio" },
+      { id: "instagram", rotulo: "Instagram do negócio", tipo: "texto", placeholder: "@seunegocio" },
+      { id: "site", rotulo: "Site (se não tiver, é só deixar em branco)", tipo: "texto", placeholder: "www.seunegocio.com.br" },
       { id: "tempo", rotulo: "Há quanto tempo o negócio existe?", tipo: "opcao", opcoes: ["Menos de 1 ano", "1 a 3 anos", "3 a 10 anos", "Mais de 10 anos"], obrigatoria: true },
       { id: "equipe", rotulo: "Quantas pessoas trabalham com você?", tipo: "opcao", opcoes: ["Só eu", "2 a 3", "4 a 10", "11 a 30", "Mais de 30"], obrigatoria: true },
       { id: "faturamento", rotulo: "Faturamento médio por mês", tipo: "opcao", opcoes: ["Até R$ 10 mil", "R$ 10 a 30 mil", "R$ 30 a 100 mil", "R$ 100 a 300 mil", "Mais de R$ 300 mil", "Prefiro não dizer"], obrigatoria: true },
@@ -131,7 +132,7 @@ O que a ivva oferece (use só isto, não invente recursos nem preços):
 Devolva SOMENTE um objeto JSON válido, sem texto antes ou depois, neste formato:
 {"resumo":"3 a 4 frases sobre quem é o negócio, tamanho, momento e o que quer","potencial":"alto|medio|baixo","maturidade":{"nota":1-10,"explicacao":"1 frase sobre o quanto o atendimento já é organizado"},"dores":[{"dor":"...","solucao":"como a ivva resolve, concreto","recurso":"nome do recurso"}],"plano_recomendado":{"plano":"Essencial|Profissional|Completo","motivo":"por que, ligado às respostas"},"oportunidades":[{"oferta":"o que oferecer a mais (plano acima, anual, créditos, Estúdio...)","motivo":"gatilho nas respostas"}],"implantacao":{"semana_1":["..."],"dias_8_30":["..."],"dias_31_60":["..."]},"roteiro_reuniao":{"abrir_com":"frase para abrir a reunião usando algo que ele disse","perguntas":["perguntas para aprofundar"],"mostrar":["telas ou recursos para mostrar, na ordem das prioridades dele"]},"riscos":["risco de cancelar ou de não usar e como evitar"],"mensagem_whatsapp":"mensagem curta e calorosa, assinada pelo Diego, convidando para a reunião de implantação de 30 min e citando 1 objetivo dele"}
 
-Regras: português do Brasil, direto, sem jargão. Siga a ordem de prioridades que ele escolheu. "potencial" considera faturamento, equipe, volume de mensagens e encaixe com planos maiores. Nunca invente dados que não estão nas respostas; se faltar informação, diga o que perguntar na reunião.`;
+Se o negócio não tem site, ou nem Instagram, trate isso como oportunidade (presença digital, Estúdio da ivva) e não como falha. Regras: português do Brasil, direto, sem jargão. Siga a ordem de prioridades que ele escolheu. "potencial" considera faturamento, equipe, volume de mensagens e encaixe com planos maiores. Nunca invente dados que não estão nas respostas; se faltar informação, diga o que perguntar na reunião.`;
 
 /** Gera o relatório com o modelo barato (Haiku). Lança erro se a IA falhar ou devolver algo fora do formato. */
 export async function gerarRelatorioDiagnostico(dados: {
