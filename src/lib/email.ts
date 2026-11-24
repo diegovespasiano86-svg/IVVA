@@ -4,7 +4,7 @@
 import { ACESSOS, type PapelConvite } from "./acessos";
 
 const RESEND_API = "https://api.resend.com/emails";
-const REMETENTE = "ivva <nao-responda@ivva.app.br>";
+const REMETENTE = "ivva <contato@ivva.app.br>";
 const RESPONDER_PARA = "contato@ivva.app.br";
 
 export function emailConfigurado(): boolean {
