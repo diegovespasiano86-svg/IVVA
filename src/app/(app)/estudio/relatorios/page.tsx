@@ -2,7 +2,7 @@ import Link from "next/link";
 import { FileText, Download, Clock } from "lucide-react";
 import PageHeader from "@/components/page-header";
 import { createClient } from "@/lib/supabase/server";
-import { ETAPA_CLIENTE, dataBR, type ArquivoEstudio, type PedidoEstudio } from "@/lib/estudio-ops";
+import { AGENDA_ESTUDIO, ETAPA_CLIENTE, dataBR, type ArquivoEstudio, type PedidoEstudio } from "@/lib/estudio-ops";
 
 const SECOES = [
   ["Raio-x dos concorrentes", "Quem posta o quê, com que resultado."],
@@ -61,6 +61,11 @@ export default async function RelatoriosPage() {
                         <Download size={14} /> {a.nome}
                       </a>
                     ))}
+                    {pronto && (
+                      <a href={AGENDA_ESTUDIO} target="_blank" rel="noopener" className="btn btn-secondary btn-md">
+                        Marcar conversa de 25 min
+                      </a>
+                    )}
                   </div>
                 )}
               </article>

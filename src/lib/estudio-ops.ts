@@ -40,6 +40,9 @@ export const PASTA_LABEL: Record<string, string> = Object.fromEntries(PASTAS.map
 
 export const LIMITE_ARQUIVO_MB = 50;
 
+/** Página de agendamento do Google (conversa de 25 min, seg. a sex., 10h às 20h). */
+export const AGENDA_ESTUDIO = "https://calendar.app.google/GB1PkL4KdrudNkPC6";
+
 export type PedidoEstudio = {
   id: string;
   criado_em: string;

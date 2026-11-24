@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { FORMATOS } from "@/lib/estudio-dados";
+import { AGENDA_ESTUDIO } from "@/lib/estudio-ops";
 
 const PERIODOS = ["Manhã", "Tarde", "Noite"];
 
@@ -60,11 +61,12 @@ export default function ProjetoForm({ temCredito, jaUsou }: { temCredito: boolea
           {diag
             ? "O time já está com o seu pedido. Em até 3 dias úteis o relatório fica pronto em Meus relatórios e avisamos você no WhatsApp."
             : feito.ja_usado
-              ? "O diagnóstico deste ciclo já foi usado, então registramos como pedido de conversa. O Diego chama você no WhatsApp para combinar."
-              : "O Diego chama você no WhatsApp para combinar a conversa de 25 minutos e montar a proposta."}
+              ? "O diagnóstico deste ciclo já foi usado, então registramos como pedido de conversa. Escolha o melhor horário da conversa de 25 minutos ou aguarde o Diego chamar no WhatsApp."
+              : "Escolha o melhor horário da conversa de 25 minutos para montarmos a proposta, ou aguarde o Diego chamar no WhatsApp."}
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
-          <Link href="/estudio/relatorios" className="btn btn-primary btn-md">Acompanhar em Meus relatórios</Link>
+          <a href={AGENDA_ESTUDIO} target="_blank" rel="noopener" className="btn btn-primary btn-md">Escolher horário da conversa</a>
+          <Link href="/estudio/relatorios" className="btn btn-secondary btn-md">Acompanhar em Meus relatórios</Link>
         </div>
       </div>
     );

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { enviarEmail } from "@/lib/email";
-import { ETAPAS } from "@/lib/estudio-ops";
+import { AGENDA_ESTUDIO, ETAPAS } from "@/lib/estudio-ops";
 
 async function admin() {
   const supabase = await createClient();
@@ -62,8 +62,8 @@ export async function liberarPedido(id: string) {
     const r = await enviarEmail({
       para: p.email,
       assunto: "Seu diagnóstico do IVVA Estúdio está pronto",
-      texto: `${nome}, o seu diagnóstico ficou pronto. Abra em app.ivva.app.br/estudio/relatorios. Se quiser, responda este e-mail para marcar a conversa de 25 minutos com o time.`,
-      html: `<div style="font-family:Arial,sans-serif;font-size:15px;line-height:1.6;color:#221D2C"><p>${nome},</p><p>O seu <b>diagnóstico do IVVA Estúdio</b> ficou pronto${p.negocio ? ` para <b>${p.negocio.replace(/</g, "")}</b>` : ""}.</p><p><a href="https://app.ivva.app.br/estudio/relatorios" style="display:inline-block;background:#5B48D6;color:#fff;padding:12px 20px;border-radius:99px;text-decoration:none;font-weight:bold">Abrir meu relatório</a></p><p>Quer passar o relatório com a gente? Responda este e-mail e marcamos a conversa de 25 minutos.</p><p style="color:#665F72;font-size:13px">Time do IVVA Estúdio · um produto do Decifrando IA</p></div>`,
+      texto: `${nome}, o seu diagnóstico ficou pronto. Abra em app.ivva.app.br/estudio/relatorios. Marque a conversa de 25 minutos com o time: ${AGENDA_ESTUDIO}`,
+      html: `<div style="font-family:Arial,sans-serif;font-size:15px;line-height:1.6;color:#221D2C"><p>${nome},</p><p>O seu <b>diagnóstico do IVVA Estúdio</b> ficou pronto${p.negocio ? ` para <b>${p.negocio.replace(/</g, "")}</b>` : ""}.</p><p><a href="https://app.ivva.app.br/estudio/relatorios" style="display:inline-block;background:#5B48D6;color:#fff;padding:12px 20px;border-radius:99px;text-decoration:none;font-weight:bold">Abrir meu relatório</a></p><p>Quer passar o relatório com a gente? <a href="${AGENDA_ESTUDIO}" style="color:#5B48D6;font-weight:bold">Escolha o horário da conversa de 25 minutos</a> (Google Meet).</p><p style="color:#665F72;font-size:13px">Time do IVVA Estúdio · um produto do Decifrando IA</p></div>`,
     });
     avisado = r.ok;
   }
