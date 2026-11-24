@@ -70,7 +70,9 @@ export async function POST(req: Request) {
   const instagram = texto("instagram", 80);
   const concorrentes = texto("concorrentes", 300);
   const periodo = texto("periodo", 40);
-  const { data: id, error } = await anon.rpc("estudio_pedido_registrar", {
+  const objetivo = texto("objetivo", 600);
+  const formatos = texto("formatos", 120);
+  const { data: reg, error } = await anon.rpc("estudio_pedido_registrar", {
     p_secret: secret,
     p_tipo: tipo,
     p_origem: user ? "app" : utm.utm_source ? "campanha" : "landing_publica",
@@ -86,25 +88,32 @@ export async function POST(req: Request) {
     p_concorrentes: concorrentes || null,
     p_periodo: periodo || null,
     p_utm: utm,
+    p_objetivo: objetivo || null,
+    p_formatos: formatos || null,
   });
   if (error) {
     console.error("[estudio/pedido]", error.message);
     return responder({ erro: "Não conseguimos registrar agora. Tente de novo em instantes." }, 500);
   }
 
+  const r = (reg ?? {}) as { id?: string; tipo?: string; ja_usado?: boolean };
+  const tipoFinal = r.tipo ?? tipo;
+
   // Aviso ao time (não trava o pedido se o e-mail falhar).
   const linhas = [
-    `Tipo: ${tipo === "diagnostico" ? "DIAGNÓSTICO (incluso no plano, prazo 3 dias úteis)" : "Conversa / proposta"}`,
+    `Tipo: ${tipoFinal === "diagnostico" ? "DIAGNÓSTICO (incluso no plano, prazo 3 dias úteis)" : r.ja_usado ? "Conversa (o diagnóstico deste ciclo já foi usado)" : "Conversa / proposta"}`,
     `Quem: ${nome || "-"} · ${negocio || "-"}`,
     `Plano: ${plano ?? "não cliente"}`,
     `WhatsApp: ${telefone || "-"} · E-mail: ${email || "-"}`,
     `Instagram: ${instagram || "-"}`,
     `Concorrentes: ${concorrentes || "-"}`,
+    `Objetivo: ${objetivo || "-"}`,
+    `Formatos: ${formatos || "-"}`,
     `Melhor período para a conversa: ${periodo || "-"}`,
     ...Object.entries(respostas).map(([k, v]) => `${k}: ${v}`),
-    `Pedido: ${id}`,
+    `Painel: https://app.ivva.app.br/admin/estudio`,
   ];
-  const assunto = `[Estúdio] ${tipo === "diagnostico" ? "Diagnóstico" : "Conversa"}: ${negocio || nome || "novo pedido"}`;
+  const assunto = `[Estúdio] ${tipoFinal === "diagnostico" ? "Diagnóstico" : "Conversa"}: ${negocio || nome || "novo pedido"}`;
   await enviarEmail({
     para: AVISO_PARA,
     assunto,
@@ -112,5 +121,5 @@ export async function POST(req: Request) {
     html: `<div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.6"><h2 style="margin:0 0 12px">${esc(assunto)}</h2><ul style="padding-left:18px">${linhas.map((l) => `<li>${esc(l)}</li>`).join("")}</ul></div>`,
   }).catch(() => null);
 
-  return responder({ ok: true, tipo });
+  return responder({ ok: true, tipo: tipoFinal, ja_usado: Boolean(r.ja_usado) });
 }

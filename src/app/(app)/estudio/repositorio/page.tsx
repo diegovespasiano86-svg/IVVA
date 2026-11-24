@@ -1,50 +1,67 @@
 import Link from "next/link";
-import { CalendarDays, FileText, FolderOpen, Film, Upload, Package } from "lucide-react";
+import { FolderOpen, FileText, Upload, Film, CalendarDays, Package } from "lucide-react";
 import PageHeader from "@/components/page-header";
+import { createClient } from "@/lib/supabase/server";
+import { acessoEstudio } from "@/lib/estudio";
+import { PASTAS, dataBR, type ArquivoEstudio } from "@/lib/estudio-ops";
+import EnviarArquivo from "./enviar-arquivo";
 
-const PASTAS = [
-  { icon: FileText, nome: "Roteiros", desc: "Roteiros com direção de fala, pausas e entonação.", exemplo: ["Roteiro 01 - Reel de apresentação.pdf", "Roteiro 02 - Carrossel de dúvidas.pdf"] },
-  { icon: Upload, nome: "Seus vídeos enviados", desc: "Os arquivos que você grava e envia para a ivva editar.", exemplo: ["REEL-01_bruto.mp4", "REEL-02_bruto.mp4"] },
-  { icon: Film, nome: "Vídeos editados", desc: "O material pronto, para baixar e publicar.", exemplo: ["REEL-01_final.mp4", "CAPA-REEL-01.jpg"] },
-  { icon: CalendarDays, nome: "Cronograma de postagens", desc: "O que publicar, quando e em qual formato.", exemplo: ["Cronograma de novembro.pdf"] },
-  { icon: Package, nome: "Outros materiais", desc: "Logo, paleta, briefing, relatórios e tudo o mais do projeto.", exemplo: ["Briefing do projeto.pdf"] },
-];
+const ICONES: Record<string, typeof FileText> = { relatorio: FileText, roteiros: FileText, videos_editados: Film, cronograma: CalendarDays, outros: Package, enviados: Upload };
 
-/** Repositório do projeto contratado: a ivva anexa o material produzido e o cliente consulta e envia os arquivos dele. */
-export default function RepositorioPage() {
+function tamanho(b: number | null) {
+  if (!b) return "";
+  return b > 1048576 ? `${(b / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(b / 1024))} KB`;
+}
+
+/** Repositório do Estúdio: tudo o que o time entregou e o que o cliente enviou, por pasta. */
+export default async function RepositorioPage() {
+  const supabase = await createClient();
+  const a = await acessoEstudio();
+  const { data } = await supabase.from("estudio_arquivos").select("*").order("criado_em", { ascending: false }).limit(500);
+  const arquivos = (data ?? []) as ArquivoEstudio[];
+
   return (
     <div className="mx-auto max-w-[980px]">
-      <PageHeader
-        icon={FolderOpen}
-        title="Repositório do projeto"
-        subtitle="Todo o material do seu projeto em um só lugar: roteiros, vídeos, cronogramas e arquivos."
-        actions={<span className="rounded-full bg-purple/10 px-3 py-1 text-[11px] font-extrabold uppercase tracking-wide text-purple">Prévia (MVP)</span>}
-      />
-      <section className="card mb-4 flex flex-wrap items-center gap-4 px-5 py-4">
-        <div className="min-w-0 flex-1">
-          <p className="text-[14px] font-extrabold">Você ainda não tem um projeto contratado</p>
-          <p className="text-[13px] text-ink-soft">Quando a ivva fechar o projeto com você, esta área é liberada e a equipe anexa o material aqui.</p>
-        </div>
-        <Link href="/estudio" className="btn btn-primary btn-md">Pedir proposta</Link>
-      </section>
-      <p className="mb-2 text-[13px] font-extrabold uppercase tracking-wide text-ink-faint">Como vai ficar (exemplo)</p>
-      <div className="grid gap-3 sm:grid-cols-2">
-        {PASTAS.map((p) => (
-          <div key={p.nome} className="card px-5 py-4">
-            <div className="flex items-center gap-2.5">
-              <p.icon size={18} className="text-purple" />
-              <p className="text-[14px] font-extrabold">{p.nome}</p>
-            </div>
-            <p className="mt-1 text-[12.5px] text-ink-soft">{p.desc}</p>
-            <ul className="mt-2.5 space-y-1">
-              {p.exemplo.map((f) => (
-                <li key={f} className="truncate rounded-lg bg-surface-soft px-3 py-1.5 text-[12.5px] text-ink-faint">{f}</li>
-              ))}
-            </ul>
+      <PageHeader icon={FolderOpen} title="Repositório do projeto" subtitle="Roteiros, vídeos, cronogramas e arquivos do seu projeto em um só lugar." />
+      {arquivos.length === 0 && (
+        <section className="card mb-4 flex flex-wrap items-center gap-4 px-5 py-4">
+          <div className="min-w-0 flex-1">
+            <p className="text-[14px] font-extrabold">Ainda não há arquivos</p>
+            <p className="text-[13px] text-ink-soft">O time anexa aqui tudo o que produzir para você. Você também pode enviar os seus vídeos gravados.</p>
           </div>
-        ))}
+          <Link href="/estudio" className="btn btn-secondary btn-md">Conhecer o Estúdio</Link>
+        </section>
+      )}
+      <div className="grid gap-3 sm:grid-cols-2">
+        {PASTAS.map((p) => {
+          const Icone = ICONES[p.id];
+          const itens = arquivos.filter((x) => x.pasta === p.id);
+          return (
+            <div key={p.id} className="card px-5 py-4 transition hover:-translate-y-1 hover:shadow-lg">
+              <div className="flex items-center gap-2.5">
+                <Icone size={18} className="text-purple" />
+                <p className="text-[14px] font-extrabold">{p.label}</p>
+                <span className="ml-auto text-[12px] text-ink-faint">{itens.length}</span>
+              </div>
+              {itens.length === 0 ? (
+                <p className="mt-2 text-[12.5px] text-ink-faint">Nada aqui ainda.</p>
+              ) : (
+                <ul className="mt-2.5 space-y-1">
+                  {itens.map((f) => (
+                    <li key={f.id}>
+                      <a href={`/estudio/arquivo/${f.id}`} target="_blank" rel="noopener" className="flex items-center justify-between gap-2 rounded-lg bg-surface-soft px-3 py-1.5 text-[12.5px] hover:bg-purple/10">
+                        <span className="truncate font-semibold">{f.nome}</span>
+                        <span className="shrink-0 text-ink-faint">{tamanho(f.tamanho)} · {dataBR(f.criado_em)}</span>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {p.id === "enviados" && a.tenantId && <EnviarArquivo tenantId={a.tenantId} />}
+            </div>
+          );
+        })}
       </div>
-      <p className="mt-3 text-[12px] text-ink-faint">Nomes de arquivo ilustrativos. Nesta prévia nada é enviado nem guardado.</p>
     </div>
   );
 }
