@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { linkWhatsapp } from "@/lib/rescue";
 import AutoRefresh from "@/components/auto-refresh";
+import { enviarConvite } from "./actions";
 
 // Quadro de implantação: do lead da lista /60-dias até o cliente implantado. Card pulsando = relatório novo para ler.
 
@@ -91,6 +92,13 @@ export default async function QuadroImplantacao() {
                   <p className="text-[12px] text-ink-faint">
                     {l.segmento ?? "Segmento não informado"} · entrou {dataCurta(l.created_at)}
                   </p>
+                  <form action={enviarConvite} className="mt-2">
+                    <input type="hidden" name="lead" value={l.id} />
+                    <button type="submit" className="btn btn-primary btn-md">
+                      {l.acesso_enviado_em ? "Reenviar convite por e-mail" : "Enviar convite por e-mail"}
+                    </button>
+                    {l.acesso_enviado_em && <span className="ml-2 text-[11.5px] text-ink-faint">enviado {dataCurta(l.acesso_enviado_em)}</span>}
+                  </form>
                   {zap && (
                     <a href={zap} target="_blank" rel="noreferrer" className="mt-2 inline-block text-[12.5px] font-semibold text-teal hover:underline">
                       Chamar no WhatsApp

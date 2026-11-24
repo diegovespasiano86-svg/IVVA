@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { gerarESalvarRelatorio } from "@/lib/diagnostico-servidor";
+import { emailParabensLista60, enviarEmail } from "@/lib/email";
 
 // Ações do painel de implantação. Todas as funções do banco conferem is_platform_admin.
 
@@ -52,4 +53,22 @@ export async function refazerRelatorio(formData: FormData) {
   if (error) return;
   await gerarESalvarRelatorio(tenant);
   atualizar(tenant);
+}
+
+/** Envia o e-mail oficial de parabéns (com o link do convite) a um lead da lista, como contato@ivva.app.br. */
+export async function enviarConvite(formData: FormData) {
+  const lead = String(formData.get("lead") ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(lead)) return;
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("admin_implantacao_quadro");
+  const l = (data as { leads?: { id: string; nome: string; email: string }[] } | null)?.leads?.find((x) => x.id === lead);
+  if (!l) return;
+  const e = emailParabensLista60({ nome: l.nome });
+  const r = await enviarEmail({ para: l.email, assunto: e.assunto, html: e.html, texto: e.texto });
+  if (!r.ok) {
+    console.error("[implantacao] convite", r.motivo);
+    return;
+  }
+  await supabase.rpc("admin_lista_marcar_enviado", { p_lead: lead });
+  revalidatePath("/admin/clientes");
 }
