@@ -544,7 +544,7 @@ export function emailParabensLista60(params: { nome: string | null }) {
       "60 dias grátis: hoje R$ 0",
       "Cancele quando quiser, sem multa e sem custo",
       "Time de implantação te ajudando a deixar tudo pronto",
-      "Vagas limitadas da IVVA BLACK, até 30/11",
+      "Vagas limitadas da IVVA BLACK, até 31/12: você só paga em 2027",
     ],
     botao: { rotulo: "Concluir cadastro e ter acesso", link: `${URL_APP}/planos?convite=black60&utm_source=email&utm_medium=lista60&utm_campaign=ivva-black` },
     prazo: "Convite pessoal, válido para o e-mail ou WhatsApp cadastrado na lista da IVVA BLACK.",
