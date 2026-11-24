@@ -27,8 +27,8 @@ export const ETAPAS_DIAGNOSTICO: Etapa[] = [
     subtitulo: "Para a ivva falar a língua do seu negócio desde o primeiro dia.",
     perguntas: [
       { id: "cidade", rotulo: "Cidade e estado", tipo: "texto", placeholder: "Ex.: Belo Horizonte/MG", obrigatoria: true },
-      { id: "instagram", rotulo: "Instagram do negócio", tipo: "texto", placeholder: "@seunegocio" },
-      { id: "site", rotulo: "Site (se não tiver, é só deixar em branco)", tipo: "texto", placeholder: "www.seunegocio.com.br" },
+      { id: "instagram", rotulo: "Instagram do negócio", tipo: "texto", placeholder: "@seunegocio (se não tiver, escreva: não tenho)" },
+      { id: "site", rotulo: "Site (preencha o Instagram, o site ou os dois)", tipo: "texto", placeholder: "www.seunegocio.com.br" },
       { id: "tempo", rotulo: "Há quanto tempo o negócio existe?", tipo: "opcao", opcoes: ["Menos de 1 ano", "1 a 3 anos", "3 a 10 anos", "Mais de 10 anos"], obrigatoria: true },
       { id: "equipe", rotulo: "Quantas pessoas trabalham com você?", tipo: "opcao", opcoes: ["Só eu", "2 a 3", "4 a 10", "11 a 30", "Mais de 30"], obrigatoria: true },
       { id: "faturamento", rotulo: "Faturamento médio por mês", tipo: "opcao", opcoes: ["Até R$ 10 mil", "R$ 10 a 30 mil", "R$ 30 a 100 mil", "R$ 100 a 300 mil", "Mais de R$ 300 mil", "Prefiro não dizer"], obrigatoria: true },
@@ -95,6 +95,11 @@ export type Respostas = Record<string, string | string[]>;
 
 /** Confere as obrigatórias de uma etapa. Devolve a mensagem do 1º erro ou null. */
 export function erroDaEtapa(etapa: Etapa, r: Respostas): string | null {
+  // Presença digital: pelo menos um entre Instagram e site (quem não tem nenhum escreve "não tenho").
+  const temIg = etapa.perguntas.some((p) => p.id === "instagram");
+  if (temIg && !String(r.instagram ?? "").trim() && !String(r.site ?? "").trim()) {
+    return "Informe o Instagram, o site ou os dois do seu negócio.";
+  }
   for (const p of etapa.perguntas) {
     if (!p.obrigatoria) continue;
     const v = r[p.id];
