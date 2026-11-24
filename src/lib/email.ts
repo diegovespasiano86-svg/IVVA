@@ -79,7 +79,7 @@ export function emailConviteProfissional(params: { nome: string; negocio: string
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:32px 16px"><tr><td align="center">
 <table role="presentation" width="100%" style="max-width:480px;background:#ffffff;border-radius:16px;padding:32px">
 <tr><td>
-<p style="margin:0 0 4px;font-size:13px;font-weight:700;letter-spacing:.04em;color:#6d5be0">ivva</p>
+<img src="${URL_APP}/email/logo-header.png" width="416" alt="ivva" style="display:block;width:100%;max-width:416px;height:auto;border:0;border-radius:12px;margin:0 0 20px">
 <h1 style="margin:0 0 12px;font-size:22px;line-height:1.25">Você foi convidado(a) para a equipe de ${negocio}</h1>
 <p style="margin:0 0 16px;font-size:15px;line-height:1.5">Olá, ${nome}! ${negocio} convidou você para acessar a ivva, o sistema de atendimento e agenda da equipe.</p>
 <p style="margin:0 0 24px"><a href="${link}" style="display:inline-block;background:#6d5be0;color:#ffffff;text-decoration:none;font-weight:700;font-size:15px;padding:13px 22px;border-radius:10px">Criar minha senha e entrar</a></p>
@@ -102,7 +102,7 @@ function moldura(titulo: string, corpoHtml: string): string {
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:32px 16px"><tr><td align="center">
 <table role="presentation" width="100%" style="max-width:480px;background:#ffffff;border-radius:16px;padding:32px">
 <tr><td>
-<p style="margin:0 0 4px;font-size:13px;font-weight:700;letter-spacing:.04em;color:#6d5be0">ivva</p>
+<img src="${URL_APP}/email/logo-header.png" width="416" alt="ivva" style="display:block;width:100%;max-width:416px;height:auto;border:0;border-radius:12px;margin:0 0 20px">
 <h1 style="margin:0 0 12px;font-size:22px;line-height:1.25">${esc(titulo)}</h1>
 ${corpoHtml}
 </td></tr></table></td></tr></table></body></html>`;
@@ -292,7 +292,7 @@ function emailCampanha(c: CampanhaEmail, bannerBase = URL_APP) {
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent">${esc(c.previa)}</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:24px 12px"><tr><td align="center">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:18px;overflow:hidden">
-${c.banner ? `<tr><td style="padding:0"><a href="${esc(c.botao.link)}" style="display:block"><img src="${esc(`${bannerBase}/email/${c.banner}`)}" width="600" alt="${esc(c.bannerAlt)}" style="display:block;width:100%;max-width:600px;height:auto;border:0"></a></td></tr>` : `<tr><td style="padding:28px 36px 0;background:#0e0e13"><p style="margin:0 0 6px;font-size:13px;font-weight:700;letter-spacing:2px;color:#2fbf9f">IVVA BLACK</p><p style="margin:0 0 24px;font-size:26px;font-weight:800;line-height:1.2;color:#ffffff">${esc(c.bannerAlt)}</p></td></tr>`}
+${c.banner ? `<tr><td style="padding:0"><a href="${esc(c.botao.link)}" style="display:block"><img src="${esc(`${bannerBase}/email/${c.banner}`)}" width="600" alt="${esc(c.bannerAlt)}" style="display:block;width:100%;max-width:600px;height:auto;border:0"></a></td></tr>` : `<tr><td style="padding:0"><img src="${esc(`${bannerBase}/email/logo-header.png`)}" width="600" alt="ivva" style="display:block;width:100%;max-width:600px;height:auto;border:0"></td></tr><tr><td style="padding:22px 36px 0;background:#0e0e13"><p style="margin:0 0 6px;font-size:13px;font-weight:700;letter-spacing:2px;color:#2fbf9f">IVVA BLACK</p><p style="margin:0 0 26px;font-size:26px;font-weight:800;line-height:1.2;color:#ffffff">${esc(c.bannerAlt)}</p></td></tr>`}
 <tr><td style="padding:32px 36px 8px">
 <h1 style="margin:0 0 14px;font-size:24px;line-height:1.25;color:#0e0e13">${esc(c.titulo)}</h1>
 <p style="margin:0 0 14px;font-size:15px;line-height:1.55">${esc(c.ola)}</p>
