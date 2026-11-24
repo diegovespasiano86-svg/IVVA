@@ -354,7 +354,6 @@ function ContactDrawer({
   onMover: (novoEstagio: string) => void;
   onExcluido: () => void;
 }) {
-  const router = useRouter();
   const [notas, setNotas] = useState<Nota[] | null>(null);
   const [salvando, setSalvando] = useState(false);
   const [enviandoNota, setEnviandoNota] = useState(false);
@@ -399,9 +398,13 @@ function ContactDrawer({
 
   async function salvarContato(formData: FormData) {
     setSalvando(true);
-    await atualizarContato(formData);
-    setSalvando(false);
-    router.refresh();
+    try {
+      await atualizarContato(formData);
+    } finally {
+      setSalvando(false);
+    }
+    // Salvou: fecha a janela. A própria ação já revalida o /crm, então o card atualiza sozinho.
+    onFechar();
   }
 
   return (
