@@ -243,7 +243,7 @@ export type CampanhaEmail = {
   assunto: string;
   /** Texto de pré-visualização que aparece ao lado do assunto na caixa de entrada. */
   previa: string;
-  /** Arquivo do banner em public/email/ (1200 de largura, mostrado a 600). */
+  /** Arquivo do banner em public/email/ (1200 de largura, mostrado a 600). Vazio = faixa escura só com texto (bannerAlt). */
   banner: string;
   bannerAlt: string;
   titulo: string;
@@ -292,7 +292,7 @@ function emailCampanha(c: CampanhaEmail, bannerBase = URL_APP) {
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent">${esc(c.previa)}</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:24px 12px"><tr><td align="center">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:18px;overflow:hidden">
-<tr><td style="padding:0"><a href="${esc(c.botao.link)}" style="display:block"><img src="${esc(`${bannerBase}/email/${c.banner}`)}" width="600" alt="${esc(c.bannerAlt)}" style="display:block;width:100%;max-width:600px;height:auto;border:0"></a></td></tr>
+${c.banner ? `<tr><td style="padding:0"><a href="${esc(c.botao.link)}" style="display:block"><img src="${esc(`${bannerBase}/email/${c.banner}`)}" width="600" alt="${esc(c.bannerAlt)}" style="display:block;width:100%;max-width:600px;height:auto;border:0"></a></td></tr>` : `<tr><td style="padding:28px 36px 0;background:#0e0e13"><p style="margin:0 0 6px;font-size:13px;font-weight:700;letter-spacing:2px;color:#2fbf9f">IVVA BLACK</p><p style="margin:0 0 24px;font-size:26px;font-weight:800;line-height:1.2;color:#ffffff">${esc(c.bannerAlt)}</p></td></tr>`}
 <tr><td style="padding:32px 36px 8px">
 <h1 style="margin:0 0 14px;font-size:24px;line-height:1.25;color:#0e0e13">${esc(c.titulo)}</h1>
 <p style="margin:0 0 14px;font-size:15px;line-height:1.55">${esc(c.ola)}</p>
@@ -523,4 +523,30 @@ export function emailTesteAcabando(params: { nome: string | null; negocio: strin
       nota(`Trocar de plano ou cancelar, sem multa, em <a href="${linkAssinatura}" style="color:#6d5be0">Minha assinatura</a>. Dúvidas? WhatsApp (11) 92740-9320.`),
   );
   return { assunto, html, texto };
+}
+
+/** IVVA BLACK: enviado na hora em que a pessoa entra na lista /60-dias, com o convite para cadastrar o cartão. */
+export function emailParabensLista60(params: { nome: string | null }) {
+  const primeiroNome = (params.nome ?? "").trim().split(/\s+/)[0] || "";
+  return emailCampanha({
+    assunto: "PARABÉNS! Sua vaga na IVVA BLACK está garantida 🎉",
+    previa: "Conclua o cadastro e tenha acesso ao sistema: 60 dias grátis, hoje R$ 0.",
+    banner: "",
+    bannerAlt: "Seus 60 dias grátis estão garantidos",
+    titulo: "Parabéns! Sua vaga está garantida",
+    ola: primeiroNome ? `Olá, ${primeiroNome}!` : "Olá!",
+    paragrafos: [
+      "Você garantiu uma das vagas da <strong>IVVA BLACK</strong>: <strong>60 dias grátis</strong> com a atendente de IA que responde, agenda e vende no WhatsApp do seu negócio, de dia e de noite.",
+      "Para ter acesso, falta só <strong>concluir o cadastro</strong>: escolha o plano e cadastre o cartão. Hoje você paga <strong>R$ 0</strong>, e a primeira cobrança só acontece daqui a 60 dias. Use <strong>este mesmo e-mail</strong> ou o mesmo WhatsApp da lista, que é assim que o sistema reconhece o seu convite.",
+      "Ao entrar, você responde um diagnóstico rápido do seu negócio (uns 4 minutos). Apesar do sistema ter vídeos que explicam tudo, <strong>nosso time de implantação vai entrar em contato</strong> para te apoiar na implantação, já sabendo do que você precisa.",
+    ],
+    itens: [
+      "60 dias grátis: hoje R$ 0",
+      "Cancele quando quiser, sem multa e sem custo",
+      "Time de implantação te ajudando a deixar tudo pronto",
+      "Vagas limitadas da IVVA BLACK, até 30/11",
+    ],
+    botao: { rotulo: "Concluir cadastro e ter acesso", link: `${URL_APP}/planos?convite=black60&utm_source=email&utm_medium=lista60&utm_campaign=ivva-black` },
+    prazo: "Convite pessoal, válido para o e-mail ou WhatsApp cadastrado na lista da IVVA BLACK.",
+  });
 }

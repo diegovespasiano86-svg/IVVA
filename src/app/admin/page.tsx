@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { sinalConcorrente, type SinalConcorrente } from "@/lib/concorrentes";
 import { createClient } from "@/lib/supabase/server";
@@ -160,12 +161,20 @@ export default async function AdminPage() {
               Controle de todas as empresas — visão só sua.
             </p>
           </div>
-          <a
-            href="/dashboard"
-            className="rounded-[10px] border border-border px-3.5 py-2 text-[12.5px] font-semibold text-ink-soft hover:bg-surface-soft"
-          >
-            Voltar pro app
-          </a>
+          <div className="flex gap-2">
+            <Link
+              href="/admin/clientes"
+              className="rounded-[10px] bg-purple px-3.5 py-2 text-[12.5px] font-semibold text-white hover:opacity-90"
+            >
+              Implantação de clientes
+            </Link>
+            <a
+              href="/dashboard"
+              className="rounded-[10px] border border-border px-3.5 py-2 text-[12.5px] font-semibold text-ink-soft hover:bg-surface-soft"
+            >
+              Voltar pro app
+            </a>
+          </div>
         </div>
 
         <div className="mb-5 grid grid-cols-3 gap-3.5">

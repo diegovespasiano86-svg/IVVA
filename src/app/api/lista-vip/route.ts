@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { emailParabensLista60, enviarEmail } from "@/lib/email";
 
 // Lista VIP da Black Friday e lista de espera dos 60 dias: os formulários de ivva.app.br gravam aqui (o site não tem servidor).
 // Sem login; aceita só a origem do site. O campo "empresa" é isca para robô (gente de verdade não vê).
@@ -61,6 +62,13 @@ export async function POST(req: Request) {
   if (error) {
     console.error("[lista-vip]", error.message);
     return responder({ erro: "Não conseguimos registrar agora. Tente de novo em instantes." }, 500);
+  }
+  // Lista dos 60 dias: e-mail de parabéns com o convite na hora (depois da resposta, sem atrasar o formulário).
+  if (campanha === "lista-60-dias") {
+    after(async () => {
+      const e = emailParabensLista60({ nome });
+      await enviarEmail({ para: email, assunto: e.assunto, html: e.html, texto: e.texto });
+    });
   }
   return responder({ ok: true });
 }

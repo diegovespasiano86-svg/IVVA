@@ -12,6 +12,8 @@ import { obterResumoUso, reconciliarCreditos, type ResumoUso } from "@/lib/uso-i
 import type { Role } from "@/lib/nav";
 import { termosDoNegocio } from "@/lib/termos";
 import { logout } from "./actions";
+import DiagnosticoObrigatorio from "@/components/diagnostico-obrigatorio";
+import type { Respostas } from "@/lib/diagnostico";
 
 export default async function AppLayout({
   children,
@@ -162,6 +164,19 @@ export default async function AppLayout({
     console.error("[layout] falha ao ler tarefas do CRM", err);
   }
 
+  // Diagnóstico obrigatório do 1º acesso (negócios criados a partir de 24/11/2026): só o dono responde.
+  // Falha aqui nunca derruba a tela nem bloqueia o acesso.
+  type DiagnosticoMeu = { obrigatorio: boolean; respostas: Respostas; etapa: number };
+  let diagnostico = null as DiagnosticoMeu | null;
+  if (role === "dono") {
+    try {
+      const { data } = await supabase.rpc("diagnostico_meu");
+      if (data && (data as { obrigatorio?: boolean }).obrigatorio) diagnostico = data as DiagnosticoMeu;
+    } catch (err) {
+      console.error("[layout] falha ao ler o diagnóstico", err);
+    }
+  }
+
   const alertHrefs = [
     ...(chamadosAbertos > 0 ? ["/conta"] : []),
     ...(aguardandoHumano > 0 ? ["/conversas"] : []),
@@ -228,7 +243,15 @@ export default async function AppLayout({
           </Alert>
         )}
         {children}
-        {role === "dono" && <ProximoPasso termos={termos} />}
+        {role === "dono" && !diagnostico && <ProximoPasso termos={termos} />}
+        {diagnostico && (
+          <DiagnosticoObrigatorio
+            nome={perfil.nome ?? ""}
+            negocio={tenantNome}
+            respostasIniciais={diagnostico.respostas ?? {}}
+            etapaInicial={diagnostico.etapa ?? 0}
+          />
+        )}
     </AppShell>
   );
 }
