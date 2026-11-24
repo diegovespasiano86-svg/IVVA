@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { loadStripe, type StripeEmbeddedCheckout } from "@stripe/stripe-js";
 import { iniciarCadastro, iniciarCadastroPix, situacaoPix, type CadastroPixState, type CadastroState } from "./actions";
 import { SEGMENTOS } from "@/lib/segmentos";
-import { diasDeTeste } from "@/lib/planos";
+import { CONVITE_60, diasDeTeste } from "@/lib/planos";
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? "");
 
@@ -38,7 +38,7 @@ type PixPronto = { ref: string; copiaECola: string; imagem: string; valor: numbe
 
 // Cartão do plano: só escolhe o plano. Os dados do cliente são pedidos na etapa seguinte (CadastroPanel),
 // ANTES do pagamento, para que quem desistir no meio fique registrado.
-function CardForm({ destaque, onEscolher, onEscolherPix }: { destaque?: boolean; onEscolher: () => void; onEscolherPix?: () => void }) {
+function CardForm({ destaque, dias, onEscolher, onEscolherPix }: { destaque?: boolean; dias: number; onEscolher: () => void; onEscolherPix?: () => void }) {
   return (
     <div className="mt-6 flex flex-col gap-2">
       <button
@@ -53,7 +53,7 @@ function CardForm({ destaque, onEscolher, onEscolherPix }: { destaque?: boolean;
         Assinar
       </button>
       <p className={`text-center text-[11.5px] ${destaque ? "text-[#a5a3b0]" : "text-[#8a8896]"}`}>
-        {diasDeTeste()} dias grátis. Cancele quando quiser.
+        {dias} dias grátis. Cancele quando quiser.
       </p>
       {onEscolherPix && (
         <button
@@ -131,6 +131,7 @@ function CadastroPanel({
   anual,
   refCodigo,
   pix,
+  convite60,
   onClientSecret,
   onPix,
   onVoltar,
@@ -139,6 +140,7 @@ function CadastroPanel({
   anual: boolean;
   refCodigo: string;
   pix: boolean;
+  convite60: boolean;
   onClientSecret: (clientSecret: string) => void;
   onPix: (p: PixPronto) => void;
   onVoltar: () => void;
@@ -149,6 +151,7 @@ function CadastroPanel({
   const formAction = pix ? formActionPix : formActionCartao;
   const pending = pix ? pendingPix : pendingCartao;
   const [origem] = useState(lerOrigem);
+  const dias = convite60 ? CONVITE_60.dias : diasDeTeste();
   const [v, setV] = useState({ nome: "", email: "", telefone: "", nome_negocio: "", segmento: "", cpf_cnpj: "", aceite: false, whatsapp: false });
   const set = (k: keyof typeof v) => (e: { target: { value: string; checked?: boolean; type?: string } }) =>
     setV((x) => ({ ...x, [k]: k === "aceite" || k === "whatsapp" ? Boolean(e.target.checked) : e.target.value }));
@@ -166,7 +169,7 @@ function CadastroPanel({
       <p className="mb-4 text-center text-[13px] text-[#a5a3b0]">
         Assinando <strong className="text-[#f7f6f2]">{plano.nome}</strong> ·{" "}
         {anual ? `R$ ${fmt(totalAnual(plano))}/ano (2 meses grátis)` : `R$ ${plano.preco}/mês`} ·{" "}
-        {pix ? "pagamento no Pix, acesso na hora" : `${diasDeTeste()} dias grátis`}
+        {pix ? "pagamento no Pix, acesso na hora" : `${dias} dias grátis${convite60 ? " (convite IVVA BLACK)" : ""}`}
       </p>
       {PRESENTES[presenteDaOrigem(origem)] && (
         <p className="-mt-2 mb-4 rounded-xl bg-[#2fbf9f]/10 px-3 py-2 text-center text-[12.5px] font-semibold text-[#2fbf9f]">🎁 {PRESENTES[presenteDaOrigem(origem)]}</p>
@@ -181,13 +184,16 @@ function CadastroPanel({
         <p className="mt-1 text-[13px] text-[#6b6577]">
           {pix
             ? "Leva 1 minuto. Em seguida aparece o Pix do primeiro mês; pagou, o acesso é liberado na hora."
-            : `Leva 1 minuto. Em seguida vem o pagamento, com ${diasDeTeste()} dias grátis.`}
+            : convite60
+              ? "Leva 1 minuto. Use o mesmo e-mail ou WhatsApp do seu cadastro na lista da IVVA BLACK. Em seguida vem o cartão: hoje é R$ 0 e são 60 dias grátis."
+              : `Leva 1 minuto. Em seguida vem o pagamento, com ${dias} dias grátis.`}
         </p>
 
         <form action={formAction} className="mt-5 flex flex-col gap-3.5">
           <input type="hidden" name="plano" value={plano.key} />
           <input type="hidden" name="ciclo" value={anual ? "anual" : "mensal"} />
           <input type="hidden" name="ref" value={refCodigo} />
+          {convite60 && !pix && <input type="hidden" name="convite" value={CONVITE_60.codigo} />}
           <input type="hidden" name="origem" value={origem} />
           <div>
             <label htmlFor="cad-nome" className={ROTULO}>Seu nome</label>
@@ -359,7 +365,15 @@ function EmbeddedPanel({ clientSecret }: { clientSecret: string }) {
   return <div ref={containerRef} />;
 }
 
-export default function PlanosClient({ planos, pixDisponivel = false }: { planos: Plano[]; pixDisponivel?: boolean }) {
+export default function PlanosClient({
+  planos,
+  pixDisponivel = false,
+  convite60 = false,
+}: {
+  planos: Plano[];
+  pixDisponivel?: boolean;
+  convite60?: boolean;
+}) {
   const [checkout, setCheckout] = useState<{ clientSecret: string; plano: Plano } | null>(null);
   const [escolhido, setEscolhido] = useState<Plano | null>(null);
   const [comPix, setComPix] = useState(false);
@@ -427,6 +441,7 @@ export default function PlanosClient({ planos, pixDisponivel = false }: { planos
         anual={anual}
         refCodigo={refCodigo}
         pix={comPix}
+        convite60={convite60}
         onClientSecret={(clientSecret) => setCheckout({ clientSecret, plano: escolhido })}
         onPix={(pix) => setPixPronto({ pix, plano: escolhido })}
         onVoltar={() => setEscolhido(null)}
@@ -557,6 +572,7 @@ export default function PlanosClient({ planos, pixDisponivel = false }: { planos
 
             <CardForm
               destaque={p.destaque}
+              dias={convite60 ? CONVITE_60.dias : diasDeTeste()}
               onEscolher={() => {
                 setComPix(false);
                 setEscolhido(p);

@@ -5,7 +5,7 @@ import { origemDoApp } from "@/lib/origem";
 import { createClient } from "@supabase/supabase-js";
 import { createCheckoutSession, garantirCupomBfAnual, garantirCupomIndicado, garantirCupomSaida } from "@/lib/stripe";
 import { getSegmento } from "@/lib/segmentos";
-import { emBlackFriday, PRECO_MENSAL, type PlanoId } from "@/lib/planos";
+import { CONVITE_60, emBlackFriday, fimDoConvite60, PRECO_MENSAL, type PlanoId } from "@/lib/planos";
 import {
   cobrancaPaga,
   cpfCnpjValido,
@@ -49,6 +49,7 @@ export async function iniciarCadastro(_prev: CadastroState, formData: FormData):
   const segmento = String(formData.get("segmento") ?? "").trim();
   const aceite = formData.get("aceite") === "on";
   const anual = String(formData.get("ciclo") ?? "") === "anual";
+  const convite60 = String(formData.get("convite") ?? "") === CONVITE_60.codigo;
 
   if (nome.length < 2) return { erro: "Informe o seu nome.", clientSecret: null };
   if (!EMAIL_RE.test(email)) return { erro: "Confira o e-mail: parece incompleto.", clientSecret: null };
@@ -139,6 +140,26 @@ export async function iniciarCadastro(_prev: CadastroState, formData: FormData):
     }
   }
 
+  // Convite IVVA BLACK: quem está na lista /60-dias (mesmo e-mail ou WhatsApp) ganha 60 dias grátis contados de hoje.
+  let trialEnd: number | undefined;
+  let mensagemPagamento: string | undefined;
+  if (convite60) {
+    const { data: naLista, error: erroLista } = await supabase.rpc("lista60_confere", { p_secret: secret, p_email: email, p_telefone: telefone });
+    if (erroLista) {
+      console.error("[cadastro] lista60_confere falhou", erroLista.message);
+      return { erro: "Não consegui conferir o seu convite agora. Tente de novo em instantes.", clientSecret: null };
+    }
+    if (!naLista) {
+      return {
+        erro: "Este convite de 60 dias é para quem entrou na lista da IVVA BLACK. Use o mesmo e-mail ou WhatsApp que você cadastrou em ivva.app.br/60-dias.",
+        clientSecret: null,
+      };
+    }
+    trialEnd = fimDoConvite60();
+    const data = new Date(trialEnd * 1000).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
+    mensagemPagamento = `IVVA BLACK: 60 dias grátis. Hoje você paga R$ 0 e a primeira cobrança é em ${data}. Cancelando antes, nada é cobrado.`;
+  }
+
   // Em produção o retorno da Stripe é sempre o endereço oficial do app.
   const origin = await origemDoApp();
 
@@ -149,7 +170,15 @@ export async function iniciarCadastro(_prev: CadastroState, formData: FormData):
       nomeNegocio,
       cupom,
       email,
-      extraMetadata: { nome, segmento, telefone: telefone.replace(/\D/g, ""), ciclo: anual ? "anual" : "mensal" },
+      trialEnd,
+      mensagemPagamento,
+      extraMetadata: {
+        nome,
+        segmento,
+        telefone: telefone.replace(/\D/g, ""),
+        ciclo: anual ? "anual" : "mensal",
+        ...(convite60 ? { programa: "ivva-black-60" } : {}),
+      },
       returnUrl: `${origin}/bem-vindo?session_id={CHECKOUT_SESSION_ID}`,
     });
     await supabase.rpc("lead_avancar", { p_secret: secret, p_email: email, p_status: "pagamento_aberto", p_session_id: session.id });

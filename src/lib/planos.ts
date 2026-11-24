@@ -114,3 +114,12 @@ export function emBlackFriday(agora = Date.now()): boolean {
 export function diasDeTeste(agora = Date.now()): number {
   return emBlackFriday(agora) ? 30 : 14;
 }
+
+// Convite IVVA BLACK (lista /60-dias do site): link app.ivva.app.br/planos?convite=black60, mandado depois do bate-papo.
+// Só vale para quem está na lista (conferido no servidor pelo e-mail ou WhatsApp). 60 dias grátis contados do dia em que assina.
+export const CONVITE_60 = { codigo: "black60", dias: 60 } as const;
+/** Fim do teste do convite (segundos Unix): 60 dias a partir de agora, no fim do dia (horário de Brasília). */
+export function fimDoConvite60(agora = Date.now()): number {
+  const dia = new Date(agora + CONVITE_60.dias * 24 * 60 * 60 * 1000).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+  return Math.floor(Date.parse(`${dia}T23:59:00-03:00`) / 1000);
+}

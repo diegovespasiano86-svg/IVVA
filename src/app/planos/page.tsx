@@ -4,7 +4,7 @@ import IvvaLogo from "./logo";
 import PlanosClient from "./planos-client";
 import DemoViva from "./demo-viva";
 import { pixAssinaturaConfigurada, pixAssinaturaLiberada } from "@/lib/asaas-ivva";
-import { POLITICA_CANCELAMENTO, diasDeTeste } from "@/lib/planos";
+import { CONVITE_60, POLITICA_CANCELAMENTO, diasDeTeste, fimDoConvite60 } from "@/lib/planos";
 import {
   CONVERSAS_POR_PLANO,
   PACOTE_AVULSO,
@@ -67,8 +67,12 @@ const PLANOS = [
   },
 ];
 
-export default async function PlanosPage(props: { searchParams: Promise<{ pix?: string }> }) {
-  const { pix } = await props.searchParams;
+export default async function PlanosPage(props: { searchParams: Promise<{ pix?: string; convite?: string }> }) {
+  const { pix, convite } = await props.searchParams;
+  // Convite IVVA BLACK (lista /60-dias): mostra 60 dias em vez dos dias normais. A conferência da lista é no servidor, ao assinar.
+  const convite60 = convite === CONVITE_60.codigo;
+  const dias = convite60 ? CONVITE_60.dias : diasDeTeste();
+  const primeiraCobranca = new Date(fimDoConvite60() * 1000).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
   // Assinar no Pix: aparece para todos com ASAAS_IVVA_LIBERADO=1; antes disso, só em /planos?pix=teste.
   const pixVisivel = pixAssinaturaLiberada() || (pixAssinaturaConfigurada() && pix === "teste");
 
@@ -88,6 +92,17 @@ export default async function PlanosPage(props: { searchParams: Promise<{ pix?: 
         </div>
 
         <div className="mb-12 text-center">
+          {convite60 && (
+            <div className="mx-auto mb-6 max-w-[640px] rounded-2xl border border-[#2fbf9f]/40 bg-[#2fbf9f]/10 px-5 py-4 text-left">
+              <p className="text-[12px] font-bold uppercase tracking-[0.12em] text-[#2fbf9f]">Convite IVVA BLACK</p>
+              <p className="mt-1 text-[16px] font-extrabold text-[#f7f6f2]">Seus 60 dias grátis estão garantidos 🎉</p>
+              <p className="mt-1 text-[13.5px] leading-relaxed text-[#c7c5d1]">
+                Escolha o plano e cadastre o cartão: hoje você paga <strong className="text-[#f7f6f2]">R$ 0</strong>, e a
+                primeira cobrança só acontece em <strong className="text-[#f7f6f2]">{primeiraCobranca}</strong>. Cancelando
+                antes, nada é cobrado. Use o mesmo e-mail ou WhatsApp do seu cadastro na lista.
+              </p>
+            </div>
+          )}
           <h1 className="text-[30px] font-extrabold tracking-[-0.02em] text-balance sm:text-[36px]">
             Escolha o{" "}
             <span
@@ -99,14 +114,14 @@ export default async function PlanosPage(props: { searchParams: Promise<{ pix?: 
             do seu negócio
           </h1>
           <p className="mt-3 text-[15px] text-[#a5a3b0]">
-            Preço público, sem &ldquo;fale com vendas&rdquo;. {diasDeTeste()} dias grátis no cartão
-            {pixVisivel ? " ou assinatura direto no Pix" : ""}, cancela quando quiser.
+            Preço público, sem &ldquo;fale com vendas&rdquo;. {dias} dias grátis no cartão
+            {pixVisivel && !convite60 ? " ou assinatura direto no Pix" : ""}, cancela quando quiser.
           </p>
         </div>
 
         <DemoViva />
 
-        <PlanosClient planos={PLANOS} pixDisponivel={pixVisivel} />
+        <PlanosClient planos={PLANOS} pixDisponivel={pixVisivel && !convite60} convite60={convite60} />
 
         <p className="mx-auto mt-8 max-w-[720px] text-center text-[12.5px] leading-relaxed text-[#8a8896]">
           Conversa = todas as respostas da IA para um mesmo cliente seu em até 24 horas (em média{" "}
