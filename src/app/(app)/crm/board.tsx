@@ -358,13 +358,11 @@ function ContactDrawer({
   const [salvando, setSalvando] = useState(false);
   const [enviandoNota, setEnviandoNota] = useState(false);
   const [confirmandoExclusao, setConfirmandoExclusao] = useState(false);
-  const [textoConfirmacao, setTextoConfirmacao] = useState("");
   const [excluindo, setExcluindo] = useState(false);
   const [erroExclusao, setErroExclusao] = useState<string | null>(null);
   const carregando = notas === null;
 
   async function confirmarExclusao() {
-    if (textoConfirmacao.trim() !== contato.nome.trim()) return;
     setExcluindo(true);
     setErroExclusao(null);
     const formData = new FormData();
@@ -585,56 +583,68 @@ function ContactDrawer({
             Não pode ser desfeito.
           </p>
 
-          {!confirmandoExclusao ? (
-            <button
-              type="button"
-              onClick={() => setConfirmandoExclusao(true)}
-              className="rounded-[10px] border border-coral/40 px-3.5 py-2 text-[12.5px] font-semibold text-coral hover:bg-coral/5"
-            >
-              Apagar contato
-            </button>
-          ) : (
-            <div className="rounded-[12px] border border-coral/30 bg-coral/5 px-4 py-4">
-              <label htmlFor="confirmacao_exclusao" className="!text-coral">
-                Pra confirmar, digite o nome do contato ({contato.nome})
-              </label>
-              <input
-                id="confirmacao_exclusao"
-                value={textoConfirmacao}
-                onChange={(e) => setTextoConfirmacao(e.target.value)}
-                autoFocus
-                className="w-full rounded-[10px] border border-coral/40 bg-surface px-3 py-2 text-[13px]"
-              />
-              {erroExclusao && (
-                <p role="alert" className="mt-2 text-[12.5px] font-semibold text-coral">
-                  {erroExclusao}
-                </p>
-              )}
-              <div className="mt-3 flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setConfirmandoExclusao(false);
-                    setTextoConfirmacao("");
-                    setErroExclusao(null);
-                  }}
-                  className="rounded-[10px] border border-border px-3.5 py-2 text-[12.5px] font-semibold text-ink-soft"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="button"
-                  onClick={confirmarExclusao}
-                  disabled={textoConfirmacao.trim() !== contato.nome.trim() || excluindo}
-                  className="btn bg-coral px-3.5 py-2 text-[12.5px] text-white disabled:opacity-40"
-                >
-                  {excluindo ? "Apagando…" : "Apagar definitivamente"}
-                </button>
-              </div>
-            </div>
-          )}
+          <button
+            type="button"
+            onClick={() => {
+              setErroExclusao(null);
+              setConfirmandoExclusao(true);
+            }}
+            className="rounded-[10px] border border-coral/40 px-3.5 py-2 text-[12.5px] font-semibold text-coral hover:bg-coral/5"
+          >
+            Apagar contato
+          </button>
         </div>
       </div>
+
+      {confirmandoExclusao && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-ink/50 px-4"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (!excluindo) setConfirmandoExclusao(false);
+          }}
+        >
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="titulo_exclusao"
+            className="w-full max-w-[400px] rounded-[18px] bg-surface px-6 py-6 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 id="titulo_exclusao" className="font-display text-[18px] font-extrabold">
+              Apagar {contato.nome}?
+            </h3>
+            <p className="mt-2 text-[13.5px] leading-relaxed text-ink-soft">
+              Ao apagar, você remove <strong>todo o histórico</strong> deste contato: dados pessoais, conversas,
+              agendamentos, anotações e avaliações. Isso não pode ser desfeito.
+            </p>
+            {erroExclusao && (
+              <p role="alert" className="mt-3 text-[12.5px] font-semibold text-coral">
+                {erroExclusao}
+              </p>
+            )}
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                disabled={excluindo}
+                onClick={() => setConfirmandoExclusao(false)}
+                className="rounded-[10px] border border-border px-4 py-2 text-[13px] font-semibold text-ink-soft disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={excluindo}
+                onClick={confirmarExclusao}
+                autoFocus
+                className="btn bg-coral px-4 py-2 text-[13px] text-white disabled:opacity-60"
+              >
+                {excluindo ? "Apagando…" : "Sim, apagar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
