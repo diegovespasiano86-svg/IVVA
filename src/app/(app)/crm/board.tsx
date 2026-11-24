@@ -20,6 +20,7 @@ export type Contato = {
   id: string;
   favorito?: boolean;
   nome: string;
+  empresa?: string | null;
   telefone: string;
   tags: string[] | null;
   status_funil: string;
@@ -29,6 +30,12 @@ export type Contato = {
   como_conheceu: string | null;
   created_at: string;
 };
+
+/** Empresa abreviada para o card (máx. 15 caracteres). */
+function empresaCurta(empresa: string | null | undefined): string {
+  const e = (empresa ?? "").trim();
+  return e.length > 15 ? `${e.slice(0, 15).trimEnd()}…` : e;
+}
 
 export type Estagio = { id: string; key: string; label: string };
 
@@ -163,7 +170,14 @@ export default function CrmBoard({
                     <td className="font-bold">
                       <span className="inline-flex items-center gap-1.5">
                         <Estrela ativa={Boolean(c.favorito)} onAlternar={() => alternarEstrela(c.id, !c.favorito)} lado="baixo" />
-                        {c.nome}
+                        <span>
+                          {c.nome}
+                          {c.empresa?.trim() && (
+                            <span className="block text-[12px] font-normal italic text-ink-soft" title={c.empresa}>
+                              {empresaCurta(c.empresa)}
+                            </span>
+                          )}
+                        </span>
                       </span>
                     </td>
                     <td>{formatTelefone(c.telefone)}</td>
@@ -242,7 +256,14 @@ export default function CrmBoard({
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <p className="text-[13.5px] font-bold">{contato.nome}</p>
+                        <div className="min-w-0">
+                          <p className="text-[13.5px] font-bold">{contato.nome}</p>
+                          {contato.empresa?.trim() && (
+                            <p className="text-[12px] italic text-ink-soft" title={contato.empresa}>
+                              {empresaCurta(contato.empresa)}
+                            </p>
+                          )}
+                        </div>
                         <Estrela
                           ativa={Boolean(contato.favorito)}
                           onAlternar={() => alternarEstrela(contato.id, !contato.favorito)}
@@ -412,9 +433,10 @@ function ContactDrawer({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-start justify-between">
-          <h2 className="font-display text-[19px] font-extrabold">
-            {contato.nome}
-          </h2>
+          <div>
+            <h2 className="font-display text-[19px] font-extrabold">{contato.nome}</h2>
+            {contato.empresa?.trim() && <p className="text-[13px] italic text-ink-soft">{contato.empresa}</p>}
+          </div>
           <button
             onClick={onFechar}
             className="rounded-full px-2 py-1 text-[13px] text-ink-faint hover:bg-surface-soft"
@@ -453,6 +475,16 @@ function ContactDrawer({
               id="nome"
               name="nome"
               defaultValue={contato.nome}
+              className="input"
+            />
+          </div>
+          <div>
+            <label htmlFor="empresa">Empresa</label>
+            <input
+              id="empresa"
+              name="empresa"
+              placeholder="Onde a pessoa trabalha ou o nome do negócio dela"
+              defaultValue={contato.empresa ?? ""}
               className="input"
             />
           </div>

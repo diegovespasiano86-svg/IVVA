@@ -188,6 +188,7 @@ export async function atualizarContato(formData: FormData) {
   if (!(await podeMexerNoContato(ctx, contactId))) return;
 
   const nome = String(formData.get("nome") ?? "").trim();
+  const empresa = String(formData.get("empresa") ?? "").trim();
   const telefone = String(formData.get("telefone") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
   const dataNascimento = String(formData.get("data_nascimento") ?? "").trim();
@@ -198,6 +199,7 @@ export async function atualizarContato(formData: FormData) {
     .from("contacts")
     .update({
       nome: nome || undefined,
+      empresa: empresa || null,
       telefone: telefone || undefined,
       email: email || null,
       data_nascimento: dataNascimento || null,

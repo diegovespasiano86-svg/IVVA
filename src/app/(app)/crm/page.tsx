@@ -64,7 +64,7 @@ export default async function CrmPage({
   let consultaContatos = supabase
     .from("contacts")
     .select(
-      "id, nome, telefone, tags, status_funil, email, data_nascimento, estado_civil, como_conheceu, created_at, favorito",
+      "id, nome, empresa, telefone, tags, status_funil, email, data_nascimento, estado_civil, como_conheceu, created_at, favorito",
     )
     .order("created_at", { ascending: false });
   if (!souDono) {
