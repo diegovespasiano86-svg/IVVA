@@ -27,6 +27,7 @@ type BotSettings = {
   indicacao_recompensa_ativo: boolean;
   indicacao_recompensa_texto: string | null;
   responder_audio_ativo: boolean;
+  usa_empresa?: boolean;
 } | null;
 
 export default function BotSettingsForm({
@@ -128,6 +129,21 @@ export default function BotSettingsForm({
             </p>
           </div>
           </FeatureLock>
+
+          <div className="border-t border-teal/20 pt-4">
+            <label className="mb-2 flex items-center gap-2 text-[12.5px] font-semibold">
+              <input className="toggle"
+                type="checkbox"
+                name="usa_empresa"
+                defaultChecked={s?.usa_empresa ?? false}
+              />
+              Atendo empresas (B2B)
+            </label>
+            <p className="text-[11.5px] text-ink-faint">
+              Ligue se parte dos seus clientes são empresas. O robô passa a perguntar a empresa da pessoa, e o CRM mostra o campo
+              Empresa em itálico abaixo do nome. Se você atende só pessoas físicas, deixe desligado: nada disso aparece.
+            </p>
+          </div>
 
           <div className="border-t border-teal/20 pt-4">
             <label className="mb-2 flex items-center gap-2 text-[12.5px] font-semibold">

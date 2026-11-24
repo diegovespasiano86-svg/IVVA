@@ -199,7 +199,7 @@ export async function atualizarContato(formData: FormData) {
     .from("contacts")
     .update({
       nome: nome || undefined,
-      empresa: empresa || null,
+      ...(formData.has("empresa") ? { empresa: empresa || null } : {}),
       telefone: telefone || undefined,
       email: email || null,
       data_nascimento: dataNascimento || null,

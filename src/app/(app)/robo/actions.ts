@@ -112,6 +112,7 @@ export async function atualizarBotSettings(
     recuperar_conversa_ativo: formData.get("recuperar_conversa_ativo") === "on",
     recuperar_conversa_primeiro_toque_min:
       Number(formData.get("recuperar_conversa_primeiro_toque_min") ?? 45) || 45,
+    usa_empresa: formData.get("usa_empresa") === "on",
     indicacao_recompensa_ativo: formData.get("indicacao_recompensa_ativo") === "on",
     indicacao_recompensa_texto:
       String(formData.get("indicacao_recompensa_texto") ?? "").trim() || null,

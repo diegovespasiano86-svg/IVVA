@@ -75,9 +75,11 @@ function formatData(iso: string) {
 export default function CrmBoard({
   estagios,
   contatosIniciais,
+  usaEmpresa = false,
 }: {
   estagios: Estagio[];
   contatosIniciais: Contato[];
+  usaEmpresa?: boolean;
 }) {
   const router = useRouter();
   const [contatos, setContatos] = useState(contatosIniciais);
@@ -299,6 +301,7 @@ export default function CrmBoard({
           key={selecionado.id}
           contato={selecionado}
           estagios={estagios}
+          usaEmpresa={usaEmpresa}
           onFechar={() => setSelecionado(null)}
           onMover={(novoEstagio) => {
             moverParaEstagio(selecionado.id, novoEstagio);
@@ -368,7 +371,9 @@ function ContactDrawer({
   onFechar,
   onMover,
   onExcluido,
+  usaEmpresa,
 }: {
+  usaEmpresa: boolean;
   contato: Contato;
   estagios: Estagio[];
   onFechar: () => void;
@@ -478,16 +483,18 @@ function ContactDrawer({
               className="input"
             />
           </div>
-          <div>
-            <label htmlFor="empresa">Empresa</label>
-            <input
-              id="empresa"
-              name="empresa"
-              placeholder="Onde a pessoa trabalha ou o nome do negócio dela"
-              defaultValue={contato.empresa ?? ""}
-              className="input"
-            />
-          </div>
+          {usaEmpresa && (
+            <div>
+              <label htmlFor="empresa">Empresa</label>
+              <input
+                id="empresa"
+                name="empresa"
+                placeholder="Onde a pessoa trabalha ou o nome do negócio dela"
+                defaultValue={contato.empresa ?? ""}
+                className="input"
+              />
+            </div>
+          )}
           <div>
             <label htmlFor="telefone">Telefone</label>
             <input

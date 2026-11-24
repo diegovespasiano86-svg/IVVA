@@ -51,7 +51,7 @@ export async function simularResposta(historico: MensagemSimulada[]): Promise<Re
 
   const [{ data: profissionais }, { data: cfg }] = await Promise.all([
     supabase.from("professionals").select("id, nome"),
-    supabase.from("bot_settings").select("indicacao_recompensa_ativo, indicacao_recompensa_texto").maybeSingle(),
+    supabase.from("bot_settings").select("indicacao_recompensa_ativo, indicacao_recompensa_texto, usa_empresa").maybeSingle(),
   ]);
 
   const secret = process.env.WHATSAPP_WEBHOOK_INTERNAL_SECRET;
@@ -75,6 +75,7 @@ export async function simularResposta(historico: MensagemSimulada[]): Promise<Re
     horarioAbertura: tenant.horario_abertura,
     horarioFechamento: tenant.horario_fechamento,
     horarioTexto: typeof horarioTexto === "string" ? horarioTexto : null,
+    usaEmpresa: cfg?.usa_empresa ?? false,
     indicacaoRecompensaAtiva: cfg?.indicacao_recompensa_ativo ?? false,
     indicacaoRecompensaTexto: cfg?.indicacao_recompensa_texto ?? null,
     simulacao: true,

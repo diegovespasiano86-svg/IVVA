@@ -945,6 +945,7 @@ async function processarMensagem(params: {
   }
 
   const { data: horarioTexto } = await supabase.rpc("ia_horario_texto", { p_secret: internalSecret, p_tenant_id: resultado.tenant_id });
+  const { data: usaEmpresa } = await supabase.rpc("ia_usa_empresa", { p_secret: internalSecret, p_tenant_id: resultado.tenant_id });
 
   const ctx: ContextoConversa = {
     tenantId: resultado.tenant_id,
@@ -955,6 +956,7 @@ async function processarMensagem(params: {
     contactNome: resultado.contact_nome,
     contactIsNovo: resultado.contact_is_novo,
     contactComoConheceu: resultado.contact_como_conheceu ?? null,
+    usaEmpresa: usaEmpresa === true,
     historico: resultado.historico,
     profissionais: resultado.profissionais ?? [],
     horarioAbertura: resultado.horario_abertura,

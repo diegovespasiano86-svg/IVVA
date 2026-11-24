@@ -48,6 +48,8 @@ export default async function CrmPage({
         .maybeSingle()
     : { data: null };
   const souDono = perfil?.role === "dono";
+  const { data: cfgEmpresa } = await supabase.from("bot_settings").select("usa_empresa").maybeSingle();
+  const usaEmpresa = Boolean(cfgEmpresa?.usa_empresa);
   // Duas telas: Funil e Tarefas. A revisão do histórico do WhatsApp (só do administrador) é aberta
   // pelo aviso que aparece no Funil quando há sugestões esperando, e não ocupa uma aba fixa.
   const aba = view === "tarefas" || view === "dashboard" ? "tarefas" : view === "historico" && souDono ? "historico" : "funil";
@@ -190,7 +192,8 @@ export default async function CrmPage({
         <CrmBoard
           key={`${listaContatos.length}-${listaContatos[0]?.id ?? ""}`}
           estagios={listaEstagios}
-          contatosIniciais={listaContatos}
+          contatosIniciais={usaEmpresa ? listaContatos : listaContatos.map((c) => ({ ...c, empresa: null }))}
+          usaEmpresa={usaEmpresa}
         />
       )}
       {aba === "tarefas" && (
