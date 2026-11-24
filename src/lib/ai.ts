@@ -52,6 +52,8 @@ export type ContextoConversa = {
   contactId: string;
   contactNome: string;
   contactIsNovo: boolean;
+  /** Como a pessoa chegou até o negócio, se já está no cadastro (vazio = ainda não sabemos). */
+  contactComoConheceu?: string | null;
   historico: HistoricoItem[];
   profissionais: Profissional[];
   horarioAbertura: string | null;
@@ -105,6 +107,7 @@ function montarSystemPrompt(ctx: ContextoConversa) {
   // Nome que veio do perfil do WhatsApp (ou já salvo no CRM). Só vale se parece nome de gente, não número.
   const nomeConhecido = /[a-zà-ú]/i.test(ctx.contactNome ?? "") && !/\d{4,}/.test(ctx.contactNome ?? "") ? ctx.contactNome.trim() : "";
   const primeiroNome = nomeConhecido.split(/\s+/)[0] ?? "";
+  const faltaSobrenome = !!nomeConhecido && nomeConhecido.split(/\s+/).length < 2;
   const { visitaAtual, houveVisitaAnterior, ultimaAnterior } = separarVisitas(ctx.historico);
   const ehPrimeiraResposta = !visitaAtual.some((m) => m.remetente !== "contato");
   const quandoUltimaVisita = ultimaAnterior
@@ -127,7 +130,16 @@ function montarSystemPrompt(ctx: ContextoConversa) {
       ? `Trate a pessoa pelo primeiro nome (${primeiroNome}) ao longo da conversa, com naturalidade, sem repetir em toda frase.`
       : `Assim que a pessoa disser o nome, passe a chamá-la por ele e registre com atualizar_contato.`,
     `Sempre que confirmar ou descobrir o nome, o e-mail, se é a primeira vez ou como conheceu ${ctx.tenantNome}, chame atualizar_contato na hora. Esses dados vão para o cadastro do cliente e para o funil de vendas.`,
-  ].join("\n\n");
+    !nomeConhecido || faltaSobrenome
+      ? `CADASTRO: ${nomeConhecido ? `você só tem o primeiro nome (${primeiroNome})` : "você ainda não sabe o nome"}. Peça o NOME E SOBRENOME para deixar o cadastro completo, de forma leve e uma única vez (ex.: "Pra deixar seu cadastro certinho, qual é o seu nome e sobrenome?"). Se a pessoa não quiser dizer, siga a conversa sem insistir. Quando responder, chame atualizar_contato com o nome completo.`
+      : "",
+    ctx.contactComoConheceu?.trim()
+      ? ""
+      : `ORIGEM: você ainda não sabe como a pessoa chegou até ${ctx.tenantNome}. Depois de resolver o primeiro pedido dela (nunca antes, e sem parecer formulário), pergunte uma única vez como ficou sabendo, por exemplo: "E me conta, como você conheceu a gente? Foi indicação, Instagram, site...?". Se for indicação, pergunte quem indicou. Registre com atualizar_contato (como_conheceu e, se houver, indicado_por).`,
+    `ANOTAÇÕES: quando aparecer algo importante para quem gerencia o negócio, chame anotar_no_contato com UMA frase curta e objetiva. Vale anotar: o que a pessoa quer (produto/serviço, para quando, orçamento), de onde veio, uma objeção (achou caro, sem horário), uma preferência ou um prazo. Exemplo: "Veio pelo Instagram e quer arranjo para casamento em 12/12, orçamento até R$ 400". Não anote dados que já vão em atualizar_contato (nome, e-mail), nem cada mensagem, nem o que for banal.`,
+  ]
+    .filter(Boolean)
+    .join("\n\n");
 
   const linhasQualificacao = ctx.contactIsNovo
     ? `Esse é o primeiro contato de ${ctx.contactNome || "essa pessoa"} com ${ctx.tenantNome}. ` +
@@ -228,6 +240,18 @@ const TOOLS = [
         como_conheceu: { type: "string", description: "Como a pessoa chegou até o negócio" },
         indicado_por: { type: "string", description: "Nome de quem indicou, se o cliente disse que veio por indicação de alguém" },
       },
+    },
+  },
+  {
+    name: "anotar_no_contato",
+    description:
+      "Deixa uma anotação curta no cadastro do contato, para quem gerencia o negócio ler depois (o que a pessoa quer, de onde veio, objeção, prazo). Uma frase objetiva, só quando for informação relevante.",
+    input_schema: {
+      type: "object",
+      properties: {
+        texto: { type: "string", description: "Uma frase curta e objetiva, ex.: 'Veio pelo Instagram e quer arranjo para casamento em 12/12'" },
+      },
+      required: ["texto"],
     },
   },
   {
@@ -464,6 +488,19 @@ async function executarFerramenta(
       p_como_conheceu: input.como_conheceu ?? null,
       p_indicado_por: input.indicado_por ?? null,
     });
+    return { resultado: "ok", handoff: false };
+  }
+
+  if (nome === "anotar_no_contato") {
+    const texto = typeof input.texto === "string" ? input.texto.trim() : "";
+    if (texto) {
+      await supabase.rpc("ia_anotar_contato", {
+        p_secret: secret,
+        p_contact_id: ctx.contactId,
+        p_tenant_id: ctx.tenantId,
+        p_texto: texto,
+      });
+    }
     return { resultado: "ok", handoff: false };
   }
 

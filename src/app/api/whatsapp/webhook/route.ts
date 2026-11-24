@@ -524,6 +524,7 @@ type ResultadoInbound = {
   contact_id: string;
   contact_nome: string;
   contact_is_novo: boolean;
+  contact_como_conheceu?: string | null;
   whatsapp_phone_number_id: string;
   whatsapp_access_token: string;
   historico: { remetente: "contato" | "bot" | "humano"; conteudo: string; created_at?: string }[];
@@ -953,6 +954,7 @@ async function processarMensagem(params: {
     contactId: resultado.contact_id,
     contactNome: resultado.contact_nome,
     contactIsNovo: resultado.contact_is_novo,
+    contactComoConheceu: resultado.contact_como_conheceu ?? null,
     historico: resultado.historico,
     profissionais: resultado.profissionais ?? [],
     horarioAbertura: resultado.horario_abertura,
