@@ -64,9 +64,12 @@ export default function AppShell({
   roboStatus,
   termos,
   suporte,
+  admin = false,
   children,
 }: {
   role: Role;
+  /** administrador da plataforma ivva: mostra o grupo "Administração ivva" */
+  admin?: boolean;
   negocio: string;
   nome: string;
   /** hrefs com algo pedindo atenção (ponto vermelho) */
@@ -82,7 +85,7 @@ export default function AppShell({
   const pathname = usePathname();
   const [suporteAberto, setSuporteAberto] = useState(false);
   const router = useRouter();
-  const groups = useMemo(() => navGroupsForRole(role, termos), [role, termos]);
+  const groups = useMemo(() => navGroupsForRole(role, termos, admin), [role, termos, admin]);
 
   const [hovered, setHovered] = useState(false);
   const pinned = useSyncExternalStore(subscribePin, readPin, () => false);

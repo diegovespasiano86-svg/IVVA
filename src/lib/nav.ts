@@ -10,6 +10,7 @@ import {
   Package,
   Plug,
   Settings,
+  ShieldCheck,
   Users,
   Wallet,
   type LucideIcon,
@@ -158,9 +159,23 @@ export const NAV_GROUPS: NavGroup[] = [
   },
 ];
 
+/** Menu do administrador da plataforma (só aparece para quem tem is_platform_admin; as páginas também se protegem sozinhas). */
+const GRUPO_ADMIN: NavGroup = {
+  id: "admin-ivva",
+  label: "Administração ivva",
+  icon: ShieldCheck,
+  bottom: true,
+  items: [
+    { href: "/admin/clientes", label: "Clientes (implantação)", roles: DONO },
+    { href: "/admin", label: "Visão geral", roles: DONO },
+    { href: "/admin/estudio", label: "Pedidos do Estúdio", roles: DONO },
+  ],
+};
+
 /** Grupos com só os itens que o perfil pode ver (grupos vazios somem). */
-export function navGroupsForRole(role: Role, termos?: Termos): NavGroup[] {
-  return NAV_GROUPS.map((g) => ({
+export function navGroupsForRole(role: Role, termos?: Termos, admin = false): NavGroup[] {
+  const base = admin && role === "dono" ? [...NAV_GROUPS, GRUPO_ADMIN] : NAV_GROUPS;
+  return base.map((g) => ({
     ...g,
     label: termos ? rotuloDoMenu(g.label, termos) : g.label,
     items: g.items.filter((i) => i.roles.includes(role)).map((i) => ({ ...i, label: termos ? rotuloDoMenu(i.label, termos) : i.label })),

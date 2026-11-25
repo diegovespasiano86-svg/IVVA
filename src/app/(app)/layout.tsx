@@ -32,7 +32,7 @@ export default async function AppLayout({
 
   const { data: perfil } = await supabase
     .from("users")
-    .select("nome, role, tenant_id, tenants(nome, segmento, termos, plano)")
+    .select("nome, role, tenant_id, is_platform_admin, tenants(nome, segmento, termos, plano)")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -187,6 +187,7 @@ export default async function AppLayout({
   return (
     <AppShell
       role={role}
+      admin={Boolean((perfil as { is_platform_admin?: boolean | null }).is_platform_admin)}
       negocio={tenantNome}
       nome={perfil.nome}
       alertHrefs={alertHrefs}
