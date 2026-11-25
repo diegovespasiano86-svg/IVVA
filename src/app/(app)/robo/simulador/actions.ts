@@ -5,7 +5,16 @@ import { gerarRespostaWhatsApp, type ContextoConversa } from "@/lib/ai";
 import { buscarFontesDaResposta } from "@/lib/fontes-resposta";
 
 export type MensagemSimulada = { remetente: "contato" | "bot"; conteudo: string };
-export type RespostaSimulada = { resposta?: string; erro?: string; pediuHumano?: boolean; fontes?: string[] };
+export type RespostaSimulada = { resposta?: string; erro?: string; pediuHumano?: boolean; fontes?: string[]; opcoesHorario?: string[] };
+
+// Mesmo formato da caixa de seleção do WhatsApp ("sex 27/11 10:00 Diego").
+function rotuloHorario(s: { professional_nome: string; data_hora: string }): string {
+  const primeiro = s.professional_nome.trim().split(/\s+/)[0] ?? s.professional_nome;
+  const d = new Date(s.data_hora);
+  const f = (o: Intl.DateTimeFormatOptions) => d.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", ...o });
+  const base = `${f({ weekday: "short" }).replace(".", "")} ${f({ day: "2-digit", month: "2-digit" })} ${f({ hour: "2-digit", minute: "2-digit" })}`;
+  return `${base} ${primeiro}`.length <= 24 ? `${base} ${primeiro}` : base.slice(0, 24);
+}
 
 const MAX_MENSAGENS = 24;
 const MAX_CARACTERES = 600;
@@ -89,7 +98,7 @@ export async function simularResposta(historico: MensagemSimulada[]): Promise<Re
     const r = await gerarRespostaWhatsApp(ctx, secret, url, anon);
     // "Base consultada": os itens da base mais ligados à pergunta (mesma busca que o robô usa). Aproximado; falha aqui não atrapalha.
     const fontes = await buscarFontesDaResposta({ url, anon, secret, tenantId: perfil.tenant_id, pergunta: limpo[limpo.length - 1].conteudo });
-    return { resposta: r.resposta, pediuHumano: r.handoffSolicitado, fontes };
+    return { resposta: r.resposta, pediuHumano: r.handoffSolicitado, fontes, opcoesHorario: (r.opcoesHorario ?? []).map(rotuloHorario) };
   } catch (e) {
     console.error("[simulador] falha ao gerar resposta de teste", e);
     return { erro: "Não foi possível gerar a resposta de teste agora. Tente de novo em instantes." };

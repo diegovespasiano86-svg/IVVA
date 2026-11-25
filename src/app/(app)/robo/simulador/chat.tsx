@@ -19,6 +19,7 @@ export default function SimuladorChat({ nomeAssistente }: { nomeAssistente: stri
   const [pediuHumano, setPediuHumano] = useState(false);
   const [pendente, iniciar] = useTransition();
   const [fontes, setFontes] = useState<Record<number, string[]>>({});
+  const [opcoes, setOpcoes] = useState<string[]>([]);
   const fim = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -32,6 +33,7 @@ export default function SimuladorChat({ nomeAssistente }: { nomeAssistente: stri
     setMsgs(proximo);
     setTexto("");
     setErro(null);
+    setOpcoes([]);
     iniciar(async () => {
       let r: Awaited<ReturnType<typeof simularResposta>>;
       try {
@@ -44,6 +46,7 @@ export default function SimuladorChat({ nomeAssistente }: { nomeAssistente: stri
       if (r.resposta) setMsgs((atual) => [...atual, { remetente: "bot", conteudo: r.resposta! }]);
       if (r.resposta && r.fontes?.length) setFontes((f) => ({ ...f, [proximo.length]: r.fontes! }));
       if (r.pediuHumano) setPediuHumano(true);
+      setOpcoes(r.opcoesHorario ?? []);
     });
   }
 
@@ -53,6 +56,7 @@ export default function SimuladorChat({ nomeAssistente }: { nomeAssistente: stri
     setPediuHumano(false);
     setTexto("");
     setFontes({});
+    setOpcoes([]);
   }
 
   return (
@@ -114,6 +118,19 @@ export default function SimuladorChat({ nomeAssistente }: { nomeAssistente: stri
             </Fragment>
           );
         })}
+
+        {!pendente && opcoes.length > 0 && (
+          <div className="ml-9 rounded-xl border border-border bg-surface px-3 py-2.5">
+            <p className="mb-2 text-[11.5px] font-semibold text-ink-soft">Caixa de seleção que o cliente recebe no WhatsApp (toque para escolher):</p>
+            <div className="flex flex-wrap gap-2">
+              {opcoes.map((o) => (
+                <button key={o} type="button" onClick={() => enviar(`Escolho: ${o}`)} className="btn btn-secondary btn-sm">
+                  {o}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {pendente && (
           <div className="flex items-center gap-2">
