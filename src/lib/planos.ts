@@ -111,8 +111,14 @@ export const BLACK_FRIDAY = { inicio: Date.parse("2026-11-13T00:00:00-03:00"), f
 export function emBlackFriday(agora = Date.now()): boolean {
   return agora >= BLACK_FRIDAY.inicio && agora < BLACK_FRIDAY.fim;
 }
+// IVVA BLACK prorrogada: 60 dias grátis no cartão para quem assina de 13/11 até 31/12/2026 (só paga em 2027).
+// Vale só para o teste grátis; o desconto de 40% no anual continua preso a emBlackFriday() (até 30/11).
+export const BLACK_60 = { inicio: BLACK_FRIDAY.inicio, fim: Date.parse("2027-01-01T00:00:00-03:00"), dias: 60 } as const;
+export function emBlack60(agora = Date.now()): boolean {
+  return agora >= BLACK_60.inicio && agora < BLACK_60.fim;
+}
 export function diasDeTeste(agora = Date.now()): number {
-  return emBlackFriday(agora) ? 30 : 14;
+  return emBlack60(agora) ? BLACK_60.dias : 14;
 }
 
 // Convite IVVA BLACK (lista /60-dias do site): link app.ivva.app.br/planos?convite=black60, mandado depois do bate-papo.
