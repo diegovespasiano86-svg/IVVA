@@ -46,7 +46,7 @@ const PRESETS_TOM = [
 const TOM_PADRAO = "cordial, direto e natural — nada robótico";
 const EXEMPLO_PADRAO = "Oi! Tudo bem? Me conta o que você precisa que eu já vejo os horários 🙂";
 
-export default function AssistantForm({ identidade }: { identidade: Identidade }) {
+export default function AssistantForm({ identidade, antecedenciaHoras = 0 }: { identidade: Identidade; antecedenciaHoras?: number }) {
   const [error, formAction, pending] = useActionState(
     atualizarIdentidadeAssistente,
     undefined,
@@ -139,6 +139,26 @@ export default function AssistantForm({ identidade }: { identidade: Identidade }
           placeholder="Ex: seg-sáb 9h-19h"
           className="input"
         />
+      </div>
+
+      <div>
+        <label htmlFor="antecedencia_minima_horas" className="!mb-1">
+          Antecedência mínima para agendar (em horas)
+        </label>
+        <input
+          id="antecedencia_minima_horas"
+          name="antecedencia_minima_horas"
+          type="number"
+          min={0}
+          max={720}
+          defaultValue={antecedenciaHoras}
+          placeholder="0"
+          className="input"
+        />
+        <p className="mt-1 text-[11.5px] text-ink-faint">
+          A ivva só oferece e só marca horários a partir de tantas horas depois da conversa. Ex.: 24 = nada antes de 24 horas.
+          0 = sem antecedência mínima.
+        </p>
       </div>
 
       <div>

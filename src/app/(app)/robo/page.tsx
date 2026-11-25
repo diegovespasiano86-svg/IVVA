@@ -17,7 +17,7 @@ export default async function RoboPage() {
 
   const { data: perfil } = await supabase
     .from("users")
-    .select("role, tenants(identidade_assistente, plano)")
+    .select("role, tenants(identidade_assistente, plano, antecedencia_minima_horas)")
     .eq("id", user?.id ?? "")
     .maybeSingle();
 
@@ -32,6 +32,7 @@ export default async function RoboPage() {
       voz?: string;
     } | null;
     plano: string;
+    antecedencia_minima_horas?: number | null;
   } | null;
 
   const audioLiberado = temRecurso(tenant?.plano, "resposta_por_audio");
@@ -131,7 +132,7 @@ export default async function RoboPage() {
             Como a ivva se apresenta e conversa com seus clientes no
             WhatsApp.
           </p>
-          <AssistantForm identidade={tenant?.identidade_assistente ?? null} />
+          <AssistantForm identidade={tenant?.identidade_assistente ?? null} antecedenciaHoras={tenant?.antecedencia_minima_horas ?? 0} />
         </div>
 
         <div className="card px-5 py-4">

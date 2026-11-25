@@ -12,6 +12,8 @@ export async function atualizarIdentidadeAssistente(
   const nomeAssistente = String(formData.get("nome_assistente") ?? "").trim();
   const tom = String(formData.get("tom") ?? "").trim();
   const horarioAtendimento = String(formData.get("horario_atendimento") ?? "").trim();
+  const antecedenciaBruta = Number(String(formData.get("antecedencia_minima_horas") ?? "0").replace(",", "."));
+  const antecedenciaHoras = Number.isFinite(antecedenciaBruta) ? Math.min(720, Math.max(0, Math.round(antecedenciaBruta))) : 0;
   const vozInformada = String(formData.get("voz") ?? "").trim();
   const voz = vozInformada === "masculina" ? "masculina" : "feminina";
   const regrasTexto = String(formData.get("regras") ?? "");
@@ -40,6 +42,7 @@ export async function atualizarIdentidadeAssistente(
   const { error } = await supabase
     .from("tenants")
     .update({
+      antecedencia_minima_horas: antecedenciaHoras,
       identidade_assistente: {
         nome_assistente: nomeAssistente || undefined,
         tom: tom || undefined,
