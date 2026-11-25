@@ -22,6 +22,9 @@ import { parseHistoricoPayload, parseContatoSyncPayload } from "@/lib/whatsapp-h
 
 // Verificação inicial do webhook — a Meta chama essa rota com um GET pra
 // confirmar que o endpoint é nosso antes de ativar o recebimento de eventos.
+// O atendimento pode encadear várias consultas e chamadas à IA; garante o tempo máximo permitido no plano.
+export const maxDuration = 60;
+
 export async function GET(request: NextRequest) {
   const mode = request.nextUrl.searchParams.get("hub.mode");
   const token = request.nextUrl.searchParams.get("hub.verify_token");

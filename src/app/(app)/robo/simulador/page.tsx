@@ -4,6 +4,9 @@ import { FlaskConical, ShieldCheck } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import SimuladorChat from "./chat";
 
+// A resposta do robô pode encadear várias consultas (agenda, catálogo) e chamadas à IA; sem isto o limite padrão corta no meio.
+export const maxDuration = 60;
+
 export default async function SimuladorPage() {
   const supabase = await createClient();
   const { data: tenant } = await supabase.from("tenants").select("nome, identidade_assistente").maybeSingle();

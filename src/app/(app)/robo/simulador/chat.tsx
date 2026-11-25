@@ -33,7 +33,13 @@ export default function SimuladorChat({ nomeAssistente }: { nomeAssistente: stri
     setTexto("");
     setErro(null);
     iniciar(async () => {
-      const r = await simularResposta(proximo);
+      let r: Awaited<ReturnType<typeof simularResposta>>;
+      try {
+        r = await simularResposta(proximo);
+      } catch {
+        setErro("A resposta demorou demais ou falhou. Tente enviar a mesma mensagem de novo.");
+        return;
+      }
       if (r.erro) setErro(r.erro);
       if (r.resposta) setMsgs((atual) => [...atual, { remetente: "bot", conteudo: r.resposta! }]);
       if (r.resposta && r.fontes?.length) setFontes((f) => ({ ...f, [proximo.length]: r.fontes! }));
