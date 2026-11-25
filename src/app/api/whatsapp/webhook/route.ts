@@ -618,14 +618,11 @@ async function enviarRespostaEregistrar(params: {
 
 function formatarSlot(slot: { professional_id: string; professional_nome: string; data_hora: string }): string {
   const primeiroNome = slot.professional_nome.trim().split(/\s+/)[0] ?? slot.professional_nome;
-  const dataFmt = new Date(slot.data_hora).toLocaleString("pt-BR", {
-    timeZone: "America/Sao_Paulo",
-    day: "2-digit",
-    month: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-  return `${primeiroNome} ${dataFmt}`.slice(0, 24);
+  const quando = new Date(slot.data_hora);
+  const fmt = (o: Intl.DateTimeFormatOptions) => quando.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", ...o });
+  // Ex.: "sex 27/11 10:00" (cabe no limite de 24 caracteres do WhatsApp; com o profissional, se houver espaço).
+  const base = `${fmt({ weekday: "short" }).replace(".", "")} ${fmt({ day: "2-digit", month: "2-digit" })} ${fmt({ hour: "2-digit", minute: "2-digit" })}`;
+  return `${base} ${primeiroNome}`.length <= 24 ? `${base} ${primeiroNome}` : base.slice(0, 24);
 }
 
 type AdminIdentificado = {
