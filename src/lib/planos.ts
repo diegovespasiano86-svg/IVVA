@@ -106,13 +106,15 @@ export function precoMensal(plano: string | null | undefined): number {
   return PRECO_MENSAL[(plano ?? "essencial") as PlanoId] ?? PRECO_MENSAL.essencial;
 }
 
-// Lançamento + Black Friday 2026: teste grátis de 30 dias (em vez de 14) para quem assina no cartão de 13/11 a 30/11 (horário de Brasília).
+// Janela da Black Friday 2026 (13/11 a 30/11). Hoje só serve para o desconto do anual, que está desligado.
 export const BLACK_FRIDAY = { inicio: Date.parse("2026-11-13T00:00:00-03:00"), fim: Date.parse("2026-12-01T00:00:00-03:00") };
+/** Desconto de 40% no plano anual da Black Friday. Desligado em 24/11/2026; religar numa campanha de 2027. */
+export const DESCONTO_ANUAL_BF_ATIVO = false;
 export function emBlackFriday(agora = Date.now()): boolean {
   return agora >= BLACK_FRIDAY.inicio && agora < BLACK_FRIDAY.fim;
 }
 // IVVA BLACK prorrogada: 60 dias grátis no cartão para quem assina de 13/11 até 31/12/2026 (só paga em 2027).
-// Vale só para o teste grátis; o desconto de 40% no anual continua preso a emBlackFriday() (até 30/11).
+// Vale só para o teste grátis. O desconto de 40% no anual está desligado (DESCONTO_ANUAL_BF_ATIVO).
 export const BLACK_60 = { inicio: BLACK_FRIDAY.inicio, fim: Date.parse("2027-01-01T00:00:00-03:00"), dias: 60 } as const;
 export function emBlack60(agora = Date.now()): boolean {
   return agora >= BLACK_60.inicio && agora < BLACK_60.fim;

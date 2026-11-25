@@ -5,7 +5,7 @@ import { origemDoApp } from "@/lib/origem";
 import { createClient } from "@supabase/supabase-js";
 import { createCheckoutSession, garantirCupomBfAnual, garantirCupomIndicado, garantirCupomSaida } from "@/lib/stripe";
 import { getSegmento } from "@/lib/segmentos";
-import { CONVITE_60, emBlackFriday, fimDoConvite60, PRECO_MENSAL, type PlanoId } from "@/lib/planos";
+import { CONVITE_60, DESCONTO_ANUAL_BF_ATIVO, emBlackFriday, fimDoConvite60, PRECO_MENSAL, type PlanoId } from "@/lib/planos";
 import {
   cobrancaPaga,
   cpfCnpjValido,
@@ -131,8 +131,8 @@ export async function iniciarCadastro(_prev: CadastroState, formData: FormData):
     }
   }
 
-  // Black Friday: plano anual no cartão ganha 40% durante a campanha.
-  if (anual && !cupom && emBlackFriday()) {
+  // Desconto de 40% no anual: DESLIGADO em 24/11 (decisão do Vespa; volta em campanha de 2027).
+  if (anual && !cupom && DESCONTO_ANUAL_BF_ATIVO && emBlackFriday()) {
     try {
       cupom = await garantirCupomBfAnual();
     } catch (e) {
