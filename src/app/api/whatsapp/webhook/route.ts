@@ -625,7 +625,9 @@ function formatarSlot(slot: { professional_id: string; professional_nome: string
   const fmt = (o: Intl.DateTimeFormatOptions) => quando.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", ...o });
   // Ex.: "sex 27/11 10:00" (cabe no limite de 24 caracteres do WhatsApp; com o profissional, se houver espaço).
   const base = `${fmt({ weekday: "short" }).replace(".", "")} ${fmt({ day: "2-digit", month: "2-digit" })} ${fmt({ hour: "2-digit", minute: "2-digit" })}`;
-  return `${base} ${primeiroNome}`.length <= 24 ? `${base} ${primeiroNome}` : base.slice(0, 24);
+  // Negócio que não mostra o profissional manda o nome vazio.
+  const comNome = `${base} ${primeiroNome}`.trim();
+  return comNome.length <= 24 ? comNome : base.slice(0, 24);
 }
 
 type AdminIdentificado = {

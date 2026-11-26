@@ -13,7 +13,8 @@ function rotuloHorario(s: { professional_nome: string; data_hora: string }): str
   const d = new Date(s.data_hora);
   const f = (o: Intl.DateTimeFormatOptions) => d.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", ...o });
   const base = `${f({ weekday: "short" }).replace(".", "")} ${f({ day: "2-digit", month: "2-digit" })} ${f({ hour: "2-digit", minute: "2-digit" })}`;
-  return `${base} ${primeiro}`.length <= 24 ? `${base} ${primeiro}` : base.slice(0, 24);
+  const comNome = `${base} ${primeiro}`.trim();
+  return comNome.length <= 24 ? comNome : base.slice(0, 24);
 }
 
 const MAX_MENSAGENS = 24;
