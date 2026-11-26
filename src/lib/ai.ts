@@ -6,6 +6,7 @@ import { sendWhatsAppText } from "@/lib/whatsapp";
 import { podeEnviarAutomatico } from "@/lib/automacao";
 import { temRecurso } from "@/lib/planos";
 import { linkAdicionarAgenda } from "@/lib/google-agenda";
+import { calendarioProximosDias, lerDataHora, retornoEmBrasilia } from "@/lib/horario-brasilia";
 
 const ANTHROPIC_API = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_VERSION = "2023-06-01";
@@ -173,6 +174,9 @@ function montarSystemPrompt(ctx: ContextoConversa) {
 
   const linhasAgenda = [
     `Agora é ${agora} (horário de Brasília).`,
+    `Calendário dos próximos dias (use SEMPRE esta tabela para saber a data de "sábado", "amanhã", "semana que vem"; não calcule de cabeça):
+${calendarioProximosDias()}`,
+    `Todos os horários que as ferramentas recebem e devolvem são de Brasília. Ao falar com o cliente, repita exatamente o dia e a hora do campo "quando", sem somar nem subtrair horas.`,
     // Horário só entra no prompt se o próprio negócio cadastrou. O padrão técnico do banco (09h–19h) nunca é dito ao cliente final.
     ctx.horarioTexto ? `Funcionamento (agenda deste negócio): ${ctx.horarioTexto}.` : "",
     listaProfissionais ? `Profissionais desse negócio:\n${listaProfissionais}` : "",
@@ -296,7 +300,7 @@ const TOOLS = [
       properties: {
         profissional_id: { type: "string", description: "ID do profissional escolhido" },
         servico: { type: "string", description: "O que vai ser feito, em texto (ex: 'corte e barba')" },
-        data_hora: { type: "string", description: "Data/hora ISO exata confirmada pelo cliente" },
+        data_hora: { type: "string", description: "Data/hora ISO exata confirmada pelo cliente, em horário de Brasília (ex: 2026-11-28T10:00:00-03:00)" },
         duracao_minutos: { type: "integer", description: "Duração em minutos (padrão 30)" },
       },
       required: ["profissional_id", "servico", "data_hora"],
@@ -311,7 +315,7 @@ const TOOLS = [
       properties: {
         acao: { type: "string", enum: ["remarcar", "cancelar"] },
         appointment_id: { type: "string", description: "ID do agendamento, se conhecido" },
-        nova_data_hora: { type: "string", description: "Nova data/hora ISO confirmada pelo cliente (obrigatório se acao=remarcar)" },
+        nova_data_hora: { type: "string", description: "Nova data/hora ISO confirmada pelo cliente, em horário de Brasília (ex: 2026-11-28T10:00:00-03:00). Obrigatório se acao=remarcar" },
       },
       required: ["acao"],
     },
@@ -451,15 +455,6 @@ const FERRAMENTAS_SOMENTE_LEITURA = new Set([
   "consultar_avisos_ativos",
 ]);
 
-/** Data/hora sem fuso vira horário de Brasília (-03:00). Sem isso o banco lê como UTC e a busca começa 3h antes do pedido. */
-function normalizarAPartirDe(valor: unknown): string | null {
-  if (typeof valor !== "string" || !valor.trim()) return null;
-  let v = valor.trim().replace(" ", "T");
-  if (/^\d{4}-\d{2}-\d{2}$/.test(v)) v += "T00:00:00";
-  if (!/(Z|[+-]\d{2}:?\d{2})$/i.test(v)) v += "-03:00";
-  return Number.isNaN(new Date(v).getTime()) ? null : v;
-}
-
 async function executarFerramenta(
   nome: string,
   input: Record<string, unknown>,
@@ -545,28 +540,31 @@ async function executarFerramenta(
       p_tenant_id: ctx.tenantId,
       p_duracao_minutos: input.duracao_minutos ?? 30,
       p_professional_id: input.profissional_id ?? null,
-      p_a_partir_de: normalizarAPartirDe(input.a_partir_de),
+      p_a_partir_de: lerDataHora(input.a_partir_de),
     });
     if (error) return { resultado: JSON.stringify({ erro: error.message }), handoff: false };
     const slots = (data as { slots?: Slot[] } | null)?.slots ?? [];
     // Essas opções também vão sair como lista clicável no WhatsApp (ver
     // route.ts) — avisa o modelo pra não precisar enumerar cada uma em
     // texto corrido, só confirmar que vai mandar as opções.
+    const emBrasilia = retornoEmBrasilia(data);
     const resultadoComDica =
       slots.length > 0
-        ? { ...(data as object), aviso_para_voce: "Essas opções também aparecerão como lista clicável pro cliente. Sua resposta em texto pode ser curta, tipo 'Encontrei esses horários, escolhe um aí 👇' — sem precisar listar cada um por escrito." }
-        : data;
+        ? { ...(emBrasilia as object), aviso_para_voce: "Essas opções também aparecerão como lista clicável pro cliente. Sua resposta em texto pode ser curta, tipo 'Encontrei esses horários, escolhe um aí 👇' — sem precisar listar cada um por escrito." }
+        : emBrasilia;
     return { resultado: JSON.stringify(resultadoComDica), handoff: false, slots };
   }
 
   if (nome === "criar_agendamento") {
+    const dataHora = lerDataHora(input.data_hora);
+    if (!dataHora) return { resultado: JSON.stringify({ erro: "data_hora_invalida" }), handoff: false };
     const { data, error } = await supabase.rpc("ia_criar_agendamento", {
       p_secret: secret,
       p_tenant_id: ctx.tenantId,
       p_contact_id: ctx.contactId,
       p_professional_id: input.profissional_id,
       p_servico: input.servico,
-      p_data_hora: input.data_hora,
+      p_data_hora: dataHora,
       p_duracao_minutos: input.duracao_minutos ?? 30,
     });
     if (error) return { resultado: JSON.stringify({ erro: error.message }), handoff: false };
@@ -575,16 +573,16 @@ async function executarFerramenta(
     // Cliente que quiser levar o horário para a própria agenda: o robô oferece este link (só envia se ele aceitar).
     const comLink = reservaFeita
       ? {
-          ...(data as object),
+          ...(retornoEmBrasilia(data) as object),
           link_google_agenda_cliente: linkAdicionarAgenda({
             titulo: `${String(input.servico ?? "Atendimento")} · ${ctx.tenantNome}`,
-            inicioIso: new Date(String(input.data_hora)).toISOString(),
+            inicioIso: new Date(dataHora).toISOString(),
             duracaoMin: Number(input.duracao_minutos ?? 30),
             detalhes: "Agendado pela ivva",
           }),
           aviso_para_voce: "Depois de confirmar o horário, pergunte em uma frase se o cliente quer colocar na agenda dele. Só se disser que sim, envie link_google_agenda_cliente. Não envie o link sem ele pedir.",
         }
-      : data;
+      : retornoEmBrasilia(data);
     return { resultado: JSON.stringify(comLink), handoff: false, reservaFeita };
   }
 
@@ -595,7 +593,7 @@ async function executarFerramenta(
       p_contact_id: ctx.contactId,
       p_acao: input.acao,
       p_appointment_id: input.appointment_id ?? null,
-      p_nova_data_hora: input.nova_data_hora ?? null,
+      p_nova_data_hora: lerDataHora(input.nova_data_hora),
     });
     if (error) return { resultado: JSON.stringify({ erro: error.message }), handoff: false };
 
@@ -645,7 +643,7 @@ async function executarFerramenta(
       }
     }
 
-    return { resultado: JSON.stringify(data), handoff: false, reservaFeita: Boolean(resultado?.ok) };
+    return { resultado: JSON.stringify(retornoEmBrasilia(data)), handoff: false, reservaFeita: Boolean(resultado?.ok) };
   }
 
   if (nome === "entrar_lista_espera") {
