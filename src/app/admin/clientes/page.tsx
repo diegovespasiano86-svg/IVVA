@@ -80,11 +80,11 @@ export default async function QuadroImplantacao() {
         )}
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-          <Coluna titulo="Na lista (sem conta)" dica="Recebeu o e-mail com o convite; ainda não cadastrou o cartão." total={quadro.leads.length}>
+          <Coluna titulo="Na lista (sem conta)" dica="Entrou na lista e ainda não criou o acesso." total={quadro.leads.length}>
             {quadro.leads.map((l) => {
               const zap = linkWhatsapp(
                 l.telefone,
-                `Oi, ${l.nome.split(" ")[0]}! Aqui é o Diego, fundador da ivva 👋 Vi que você garantiu sua vaga nos 60 dias grátis da IVVA BLACK. Te mandei o convite por e-mail. Quer ajuda para ativar? Leva 2 minutos.`,
+                `Oi, ${l.nome.split(" ")[0]}! Aqui é o Diego, fundador da ivva 👋 Os 60 dias grátis da IVVA BLACK estão liberados, sem cartão para começar: https://ivva.app.br/60-dias?f=convite-diego Preencha e confirme pelo e-mail (veja também o spam).`,
               );
               return (
                 <div key={l.id} className="card px-3.5 py-3">

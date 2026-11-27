@@ -525,29 +525,29 @@ export function emailTesteAcabando(params: { nome: string | null; negocio: strin
   return { assunto, html, texto };
 }
 
-/** IVVA BLACK: enviado na hora em que a pessoa entra na lista /60-dias, com o convite para cadastrar o cartão. */
+/** IVVA BLACK: convite da lista para criar o acesso pela página /60-dias (60 dias grátis, sem cartão). */
 export function emailParabensLista60(params: { nome: string | null }) {
   const primeiroNome = (params.nome ?? "").trim().split(/\s+/)[0] || "";
   return emailCampanha({
-    assunto: "PARABÉNS! Sua vaga na IVVA BLACK está garantida 🎉",
-    previa: "Conclua o cadastro e tenha acesso ao sistema: 60 dias grátis, hoje R$ 0.",
+    assunto: `${primeiroNome ? `${primeiroNome}, seu` : "Seu"} acesso de 60 dias grátis na ivva está pronto`,
+    previa: "60 dias grátis no plano Essencial, sem cartão para começar.",
     banner: "",
-    bannerAlt: "Seus 60 dias grátis estão garantidos",
-    titulo: "Parabéns! Sua vaga está garantida",
+    bannerAlt: "60 dias grátis na ivva",
+    titulo: "Seu acesso de 60 dias grátis está pronto",
     ola: primeiroNome ? `Olá, ${primeiroNome}!` : "Olá!",
     paragrafos: [
-      "Você garantiu uma das vagas da <strong>IVVA BLACK</strong>: <strong>60 dias grátis</strong> com a atendente de IA que responde, agenda e vende no WhatsApp do seu negócio, de dia e de noite.",
-      "Para ter acesso, falta só <strong>concluir o cadastro</strong>: escolha o plano e cadastre o cartão. Hoje você paga <strong>R$ 0</strong>, e a primeira cobrança só acontece daqui a 60 dias. Use <strong>este mesmo e-mail</strong> ou o mesmo WhatsApp da lista, que é assim que o sistema reconhece o seu convite.",
-      "Ao entrar, você responde um diagnóstico rápido do seu negócio (uns 4 minutos). Apesar do sistema ter vídeos que explicam tudo, <strong>nosso time de implantação vai entrar em contato</strong> para te apoiar na implantação, já sabendo do que você precisa.",
+      "Você entrou na lista da <strong>IVVA BLACK</strong>, e agora ficou mais simples: <strong>60 dias grátis no plano Essencial, sem cartão para começar</strong>, com a atendente de IA que responde, agenda e vende no WhatsApp do seu negócio.",
+      "Preencha um formulário, confirme o seu e-mail e já entre no sistema. Se o e-mail de confirmação não aparecer, procure em <strong>Spam</strong> ou <strong>Lixo Eletrônico</strong>.",
+      "Se você recebeu um link nosso antes, use este.",
     ],
     itens: [
-      "60 dias grátis: hoje R$ 0",
-      "Cancele quando quiser, sem multa e sem custo",
+      "60 dias grátis, sem cartão para começar",
+      "Depois, R$ 297 por mês, só se você quiser continuar",
       "Time de implantação te ajudando a deixar tudo pronto",
-      "Vagas limitadas da IVVA BLACK, até 31/12: você só paga em 2027",
+      "IVVA BLACK até 31/12",
     ],
-    botao: { rotulo: "Concluir cadastro e ter acesso", link: `${URL_APP}/planos?convite=black60&utm_source=email&utm_medium=lista60&utm_campaign=ivva-black` },
-    prazo: "Convite pessoal, válido para o e-mail ou WhatsApp cadastrado na lista da IVVA BLACK.",
+    botao: { rotulo: "Criar meu acesso", link: `${URL_SITE}/60-dias?f=convite-email#acesso` },
+    prazo: "Inscrições até 31/12/2026.",
   });
 }
 
