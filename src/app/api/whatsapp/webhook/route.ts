@@ -1,3 +1,4 @@
+import { ehNumeroDaIvva, pediuAcessoBlack, respostaAcessoBlack } from "@/lib/acesso-black";
 import { createHmac, timingSafeEqual } from "crypto";
 import { type NextRequest, NextResponse } from "next/server";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
@@ -808,7 +809,8 @@ async function processarMensagem(params: {
     p_phone_number_id: phoneNumberId,
     p_wa_id: waId,
   });
-  if ((adminData as { eh_admin?: boolean } | null)?.eh_admin) {
+  // O pedido de acesso da IVVA BLACK segue como cliente, mesmo vindo de um número de administrador (dá para testar).
+  if ((adminData as { eh_admin?: boolean } | null)?.eh_admin && !pediuAcessoBlack(content)) {
     await processarMensagemAdmin({
       supabase,
       internalSecret,
@@ -861,6 +863,19 @@ async function processarMensagem(params: {
       return;
     }
     console.error("[whatsapp webhook] falha ao registrar opt-out", optErr);
+  }
+
+  // IVVA BLACK: link do cadastro na hora, mesmo que a conversa esteja com uma pessoa.
+  if (ehNumeroDaIvva(resultado.tenant_id) && pediuAcessoBlack(content)) {
+    await enviarRespostaEregistrar({
+      supabase,
+      internalSecret,
+      creds: { phoneNumberId: resultado.whatsapp_phone_number_id, token: resultado.whatsapp_access_token },
+      waId,
+      resposta: respostaAcessoBlack(resultado.contact_nome),
+      resultado,
+    });
+    return;
   }
 
   // Conversa já está com um humano — a IA não responde, o dono/equipe
