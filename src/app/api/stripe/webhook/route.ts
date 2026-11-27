@@ -1,3 +1,4 @@
+import { confirmarCartao } from "@/lib/teste-gratis";
 import { createHmac, timingSafeEqual } from "crypto";
 import { type NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
@@ -137,6 +138,16 @@ export async function POST(request: NextRequest) {
 
 async function tratarCheckoutConcluido(event: StripeEvent) {
   const s = event.data.object;
+  // Cartão cadastrado durante o período grátis: o negócio já existe, só liga o cliente da Stripe a ele.
+  if (s.metadata?.tipo === "cartao_teste") {
+    try {
+      if (s.id) await confirmarCartao(s.id);
+    } catch (err) {
+      console.error("[stripe webhook] falha ao ligar o cartão do período grátis", err instanceof Error ? err.message : err);
+      return new NextResponse("Internal Server Error", { status: 500 });
+    }
+    return NextResponse.json({ received: true });
+  }
   // Compra avulsa de créditos usa outro caminho; aqui só entra assinatura nova.
   if (s.mode !== "subscription" || s.metadata?.tipo === "creditos") {
     return NextResponse.json({ received: true });

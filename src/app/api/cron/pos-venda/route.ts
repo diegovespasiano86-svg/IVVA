@@ -1,3 +1,4 @@
+import { enviarAvisosDoTeste } from "@/lib/teste-gratis-avisos";
 import { sincronizarGoogleAgenda } from "@/lib/google-agenda";
 import { type NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
@@ -328,8 +329,17 @@ export async function GET(request: NextRequest) {
     console.error("[cron pos-venda] falha ao bloquear assinaturas Pix vencidas", err);
   }
 
+  // IVVA BLACK sem cartão: relatório no dia 30, lembretes do cartão (45, 52, 57) e o aviso do fim.
+  let avisosTeste = 0;
+  try {
+    avisosTeste = await enviarAvisosDoTeste(supabase, secret);
+  } catch (err) {
+    console.error("[cron pos-venda] falha nos avisos do período grátis", err);
+  }
+
   return NextResponse.json({
     ok: true,
+    avisosTeste,
     cobrancasExpiradas,
     pixBloqueados,
     recuperacoes,

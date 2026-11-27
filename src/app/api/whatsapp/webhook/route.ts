@@ -941,7 +941,9 @@ async function processarMensagem(params: {
   }
   if (!uso.permitido) {
     const motivoHandoff =
-      uso.motivo === "limite_respostas_conversa"
+      uso.motivo === "teste_encerrado"
+        ? "Período grátis encerrado: cadastre o cartão em Minha assinatura para a IA voltar a atender"
+        : uso.motivo === "limite_respostas_conversa"
         ? "Conversa muito longa: a IA passou o atendimento para a equipe"
         : "Conversas da IA do mês esgotadas: compre créditos em Conta para a IA voltar a atender";
     await supabase.rpc("ia_solicitar_handoff", {

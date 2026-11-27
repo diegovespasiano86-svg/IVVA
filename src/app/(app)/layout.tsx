@@ -13,6 +13,7 @@ import type { Role } from "@/lib/nav";
 import { termosDoNegocio } from "@/lib/termos";
 import { logout } from "./actions";
 import DiagnosticoObrigatorio from "@/components/diagnostico-obrigatorio";
+import { TESTE_GRATIS, dataBr, lerTesteGratis, type TesteGratis } from "@/lib/teste-gratis";
 import type { Respostas } from "@/lib/diagnostico";
 
 export default async function AppLayout({
@@ -37,6 +38,8 @@ export default async function AppLayout({
     .maybeSingle();
 
   if (!perfil) {
+    // Confirmou o e-mail do cadastro sem cartão e entrou pelo login: monta o negócio agora.
+    if (user.user_metadata?.entrada === TESTE_GRATIS.origem) redirect("/bem-vindo/gratis");
     // Pagou e confirmou o e-mail, mas entrou direto pelo login: termina o cadastro sozinho, com o pagamento dela.
     let sessaoPaga: string | null = null;
     try {
@@ -78,6 +81,7 @@ export default async function AppLayout({
   let automacoesPausadasAte: string | null = null;
   let chamadosAbertos = 0;
   let sugestoesPendentes = 0;
+  let testeSemCartao = null as TesteGratis | null;
   let roboStatus: "ativo" | "pausado" | "sem-whatsapp" | null = null;
   let resumoUso: ResumoUso | null = null;
   let diasDeTeste: number | null = null;
@@ -112,14 +116,17 @@ export default async function AppLayout({
     }
     chamadosAbertos = count ?? 0;
 
-    // Dias que faltam do teste grátis (14 dias a partir da criação da assinatura). Falha aqui nunca derruba a tela.
+    // Dias que faltam do teste grátis. Falha aqui nunca derruba a tela.
     try {
+      testeSemCartao = await lerTesteGratis(supabase, perfil.tenant_id);
       const { data: assinatura } = await supabase
         .from("subscriptions")
         .select("status, created_at, stripe_customer_id")
         .eq("tenant_id", perfil.tenant_id)
         .maybeSingle();
-      if (assinatura && (assinatura.status === "trial" || assinatura.status === "trialing") && assinatura.created_at) {
+      if (!testeSemCartao?.cartao_em && testeSemCartao) {
+        // Sem cartão: o aviso próprio, logo abaixo, cuida da contagem.
+      } else if (assinatura && (assinatura.status === "trial" || assinatura.status === "trialing") && assinatura.created_at) {
         let fim = new Date(assinatura.created_at).getTime() + 14 * 24 * 60 * 60 * 1000;
         // Data real da Stripe (vale também para teste estendido); se falhar, fica a conta de 14 dias.
         try {
@@ -177,6 +184,8 @@ export default async function AppLayout({
     }
   }
 
+  const diasSemCartao = testeSemCartao ? Math.max(0, Math.ceil((Date.parse(testeSemCartao.fim) - Date.now()) / 86400000)) : 0;
+
   const alertHrefs = [
     ...(chamadosAbertos > 0 ? ["/conta"] : []),
     ...(aguardandoHumano > 0 ? ["/conversas"] : []),
@@ -206,6 +215,17 @@ export default async function AppLayout({
                 ? "Falta 1 dia para acabar o seu teste grátis."
                 : `Faltam ${diasDeTeste} dias para acabar o seu teste grátis.`}{" "}
             Depois dele, a cobrança do plano segue normalmente. Você pode cancelar quando quiser.
+          </Alert>
+        )}
+        {testeSemCartao && !testeSemCartao.cartao_em && (
+          <Alert
+            tone={diasSemCartao <= 0 ? "danger" : diasSemCartao <= 15 ? "warn" : "info"}
+            icon={Clock}
+            action={{ href: "/assinatura", label: "Cadastrar cartão (R$ 0)" }}
+          >
+            {diasSemCartao <= 0
+              ? "Seu período grátis terminou e o robô está pausado. Cadastre o cartão para ele voltar a atender. Seus dados estão guardados."
+              : `Período grátis até ${dataBr(testeSemCartao.fim)} (${diasSemCartao} ${diasSemCartao === 1 ? "dia" : "dias"}). Cadastre o cartão para o robô não parar: nada é cobrado antes dessa data.`}
           </Alert>
         )}
         {resumoUso && <UsoIaAviso resumo={resumoUso} />}

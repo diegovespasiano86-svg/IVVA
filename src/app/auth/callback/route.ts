@@ -19,5 +19,8 @@ export async function GET(request: NextRequest) {
     }
   }
 
+  // Confirmação do cadastro sem cartão: a sessão vem depois do "#", que o navegador leva junto no redirecionamento.
+  if (!code && next === "/bem-vindo/gratis") return NextResponse.redirect(`${origin}${next}`);
+
   return NextResponse.redirect(`${origin}/login?erro=link_invalido`);
 }

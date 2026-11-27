@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { sincronizarPlanoTenant } from "@/lib/sincronizar-plano";
 import { cancelamentoAgendado } from "@/lib/stripe";
 import { CONVERSAS_POR_PLANO, POLITICA_CANCELAMENTO, formatarNumero } from "@/lib/planos";
+import { dataBr, lerTesteGratis } from "@/lib/teste-gratis";
 
 const PLANOS: Record<string, { nome: string; preco: string }> = {
   essencial: { nome: "Essencial", preco: "R$ 297" },
@@ -24,10 +25,12 @@ const AVISOS: Record<string, string> = {
   dono: "Só o dono do negócio pode gerenciar a assinatura.",
   "sem-assinatura": "Ainda não encontramos a sua cobrança. Fale com o suporte no WhatsApp (11) 92740-9320 ou em contato@ivva.app.br.",
   portal: "Não conseguimos abrir o portal agora. Tente de novo em instantes.",
+  cartao: "Não conseguimos cadastrar o cartão agora. Tente de novo ou fale com a gente no WhatsApp (11) 92740-9320.",
   ficar: "Não conseguimos manter a assinatura agora. Tente de novo ou fale com a gente no WhatsApp (11) 92740-9320.",
 };
 
 const CONFIRMACOES: Record<string, string> = {
+  cartao: "Cartão cadastrado. Nada é cobrado antes do fim do período grátis e o robô continua atendendo.",
   ficou: "Pronto: o cancelamento foi desfeito e a sua assinatura continua normalmente.",
   ficou30: "Pronto: o cancelamento foi desfeito e as 2 próximas mensalidades vêm com 30% de desconto.",
 };
@@ -73,6 +76,42 @@ export default async function AssinaturaPage(props: { searchParams: Promise<{ er
   }
 
   const info = PLANOS[plano] ?? PLANOS.essencial;
+
+
+
+  // IVVA BLACK sem cartão: enquanto não houver cartão, a tela é o convite para cadastrar (hoje R$ 0).
+  const teste = perfil?.tenant_id ? await lerTesteGratis(supabase, perfil.tenant_id) : null;
+  if (teste && !teste.cartao_em) {
+    const acabou = Date.parse(teste.fim) <= Date.now();
+    return (
+      <div className="mx-auto max-w-[640px]">
+        <h1 className="font-display text-[22px] font-bold">Minha assinatura</h1>
+        <p className="mb-5 text-[13px] text-ink-soft">IVVA BLACK: plano Essencial com 60 dias grátis.</p>
+        {erro && AVISOS[erro] && (
+          <p role="alert" className="mb-4 rounded-xl bg-coral/10 px-4 py-3 text-[13px] font-semibold text-coral">
+            {AVISOS[erro]}
+          </p>
+        )}
+        <div className="card px-5 py-5">
+          <p className="text-[11px] font-extrabold uppercase tracking-wide text-ink-faint">Plano Essencial</p>
+          <p className="font-display text-[22px] font-extrabold">
+            {acabou ? "Período grátis encerrado" : `Grátis até ${dataBr(teste.fim)}`}
+          </p>
+          <p className="mt-1 text-[13px] text-ink-soft">
+            {acabou
+              ? "O robô está pausado e os seus dados continuam guardados. Cadastre o cartão para voltar a atender: a cobrança de R$ 297 por mês começa no cadastro."
+              : `Cadastre o cartão para o robô não parar. Hoje você paga R$ 0; a primeira cobrança de R$ 297 só acontece em ${dataBr(Math.max(Date.parse(teste.fim), Date.now() + 50 * 3600000))}. Cancele antes e não paga nada.`}
+          </p>
+          <p className="mt-1 text-[12.5px] text-ink-soft">{formatarNumero(CONVERSAS_POR_PLANO.essencial)} conversas por mês com a IA.</p>
+          <a href="/assinatura/cartao" className="btn btn-primary btn-md mt-4 inline-flex">
+            {acabou ? "Cadastrar cartão" : "Cadastrar cartão (R$ 0 hoje)"}
+          </a>
+        </div>
+        <p className="mt-4 text-[12px] text-ink-faint">O cartão é digitado na página segura de pagamentos. A ivva nunca guarda os dados dele.</p>
+        <p className="mt-2 text-[12px] text-ink-faint">{POLITICA_CANCELAMENTO}</p>
+      </div>
+    );
+  }
 
   // Quem assinou no Pix não tem portal da Stripe: mostra o período pago e a cobrança em aberto do Asaas.
   const { data: pixDados } = await supabase.rpc("assinatura_pix_do_tenant");

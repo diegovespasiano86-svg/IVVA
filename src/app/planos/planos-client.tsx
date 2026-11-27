@@ -153,16 +153,6 @@ function CadastroPanel({
   const [origem] = useState(lerOrigem);
   const dias = convite60 ? CONVITE_60.dias : diasDeTeste();
   const [v, setV] = useState({ nome: "", email: "", telefone: "", nome_negocio: "", segmento: "", cpf_cnpj: "", aceite: false, whatsapp: false });
-  const [preenchido, setPreenchido] = useState(false);
-  useEffect(() => {
-    const p = new URLSearchParams(window.location.hash.slice(1));
-    if (!p.get("email")) return;
-    const pega = (k: string) => (p.get(k) ?? "").slice(0, 120);
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- lê o endereço só no navegador
-    setV((x) => ({ ...x, nome: pega("nome"), email: pega("email"), telefone: pega("tel"), nome_negocio: pega("negocio") }));
-    setPreenchido(true);
-    window.history.replaceState(null, "", window.location.pathname + window.location.search);
-  }, []);
   const set = (k: keyof typeof v) => (e: { target: { value: string; checked?: boolean; type?: string } }) =>
     setV((x) => ({ ...x, [k]: k === "aceite" || k === "whatsapp" ? Boolean(e.target.checked) : e.target.value }));
 
@@ -176,20 +166,11 @@ function CadastroPanel({
 
   return (
     <div className="mx-auto max-w-[560px]">
-      {convite60 && !pix ? (
-        <div className="mb-5 text-center">
-          <p className="text-[26px] font-extrabold tracking-[-0.02em] text-[#f7f6f2]">{dias} dias grátis. Hoje R$ 0.</p>
-          <p className="mt-1 text-[12.5px] text-[#a5a3b0]">
-            Plano {plano.nome}: R$ {plano.preco}/mês só depois dos {dias} dias. Cancele antes e não paga nada.
-          </p>
-        </div>
-      ) : (
-        <p className="mb-4 text-center text-[13px] text-[#a5a3b0]">
-          Assinando <strong className="text-[#f7f6f2]">{plano.nome}</strong> ·{" "}
-          {anual ? `R$ ${fmt(totalAnual(plano))}/ano (2 meses grátis)` : `R$ ${plano.preco}/mês`} ·{" "}
-          {pix ? "pagamento no Pix, acesso na hora" : `${dias} dias grátis`}
-        </p>
-      )}
+      <p className="mb-4 text-center text-[13px] text-[#a5a3b0]">
+        Assinando <strong className="text-[#f7f6f2]">{plano.nome}</strong> ·{" "}
+        {anual ? `R$ ${fmt(totalAnual(plano))}/ano (2 meses grátis)` : `R$ ${plano.preco}/mês`} ·{" "}
+        {pix ? "pagamento no Pix, acesso na hora" : `${dias} dias grátis${convite60 ? " (convite IVVA BLACK)" : ""}`}
+      </p>
       {PRESENTES[presenteDaOrigem(origem)] && (
         <p className="-mt-2 mb-4 rounded-xl bg-[#2fbf9f]/10 px-3 py-2 text-center text-[12.5px] font-semibold text-[#2fbf9f]">🎁 {PRESENTES[presenteDaOrigem(origem)]}</p>
       )}
@@ -208,7 +189,7 @@ function CadastroPanel({
               : `Leva 1 minuto. Em seguida vem o pagamento, com ${dias} dias grátis.`}
         </p>
 
-        <form key={preenchido ? "preenchido" : "vazio"} action={formAction} className="mt-5 flex flex-col gap-3.5">
+        <form action={formAction} className="mt-5 flex flex-col gap-3.5">
           <input type="hidden" name="plano" value={plano.key} />
           <input type="hidden" name="ciclo" value={anual ? "anual" : "mensal"} />
           <input type="hidden" name="ref" value={refCodigo} />
@@ -282,7 +263,7 @@ function CadastroPanel({
         </form>
       </div>
       <button onClick={onVoltar} className="mx-auto mt-6 block text-[13px] text-[#a5a3b0] hover:text-[#f7f6f2]">
-        {convite60 ? "Ver ou trocar de plano" : "← Voltar pros planos"}
+        ← Voltar pros planos
       </button>
     </div>
   );
@@ -394,7 +375,7 @@ export default function PlanosClient({
   convite60?: boolean;
 }) {
   const [checkout, setCheckout] = useState<{ clientSecret: string; plano: Plano } | null>(null);
-  const [escolhido, setEscolhido] = useState<Plano | null>(() => (convite60 ? (planos.find((p) => p.destaque) ?? null) : null));
+  const [escolhido, setEscolhido] = useState<Plano | null>(null);
   const [comPix, setComPix] = useState(false);
   const [pixPronto, setPixPronto] = useState<{ pix: PixPronto; plano: Plano } | null>(null);
   const [volume, setVolume] = useState<number | null>(null);

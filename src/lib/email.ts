@@ -550,3 +550,40 @@ export function emailParabensLista60(params: { nome: string | null }) {
     prazo: "Convite pessoal, válido para o e-mail ou WhatsApp cadastrado na lista da IVVA BLACK.",
   });
 }
+
+export type AvisoTeste = {
+  tenant_id: string;
+  email: string;
+  nome: string | null;
+  negocio: string;
+  etapa: "dia30" | "dia45" | "dia52" | "dia57" | "fim";
+  fim: string;
+  tem_cartao: boolean;
+  conversas: number;
+  agendamentos: number;
+};
+
+/** IVVA BLACK sem cartão: relatório do dia 30, lembretes do cartão e aviso de que o robô pausou. */
+export function emailTesteSemCartao(a: AvisoTeste) {
+  const primeiro = (a.nome ?? "").trim().split(/\s+/)[0];
+  const data = new Date(a.fim).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
+  const link = `${URL_APP}/assinatura`;
+  const resumo = `Até agora, a ivva registrou ${a.conversas} conversa(s) e ${a.agendamentos} agendamento(s) em ${a.negocio}.`;
+  const assunto =
+    a.etapa === "fim"
+      ? "Seu robô está pausado: cadastre o cartão para voltar"
+      : a.etapa === "dia30"
+        ? "30 dias de ivva: veja o seu resumo"
+        : `Cadastre o cartão até ${data} para o robô não parar`;
+  const corpo =
+    a.etapa === "fim"
+      ? `O período grátis terminou em ${data} e o robô parou de responder. Os seus dados continuam guardados. Cadastrando o cartão, ele volta na hora, no plano Essencial (R$ 297 por mês).`
+      : a.tem_cartao
+        ? `Você está na metade do período grátis, que vai até ${data}. O seu cartão já está cadastrado.`
+        : `O seu período grátis vai até ${data}. Cadastre o cartão para o robô não parar: nada é cobrado antes dessa data, e cancelando antes você não paga nada.`;
+  const rotulo = a.tem_cartao ? "Ver minha assinatura" : a.etapa === "fim" ? "Cadastrar cartão" : "Cadastrar cartão (R$ 0)";
+  const ola = primeiro ? `Olá, ${primeiro}!` : "Olá!";
+  const texto = [ola, "", resumo, "", corpo, "", link].join("\n");
+  const html = moldura(assunto, par(esc(ola)) + par(esc(resumo)) + par(esc(corpo)) + botao(link, rotulo) + nota("Dúvidas? Responda este e-mail."));
+  return { assunto, html, texto };
+}

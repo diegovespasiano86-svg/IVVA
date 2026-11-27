@@ -1,10 +1,11 @@
 import { GlowBackdrop } from "./brand-fx";
+import { redirect } from "next/navigation";
 import MetaSelo from "@/components/meta-seal";
 import IvvaLogo from "./logo";
 import PlanosClient from "./planos-client";
 import DemoViva from "./demo-viva";
 import { pixAssinaturaConfigurada, pixAssinaturaLiberada } from "@/lib/asaas-ivva";
-import { CONVITE_60, POLITICA_CANCELAMENTO, diasDeTeste } from "@/lib/planos";
+import { CONVITE_60, POLITICA_CANCELAMENTO, diasDeTeste, fimDoConvite60 } from "@/lib/planos";
 import {
   CONVERSAS_POR_PLANO,
   PACOTE_AVULSO,
@@ -69,9 +70,12 @@ const PLANOS = [
 
 export default async function PlanosPage(props: { searchParams: Promise<{ pix?: string; convite?: string }> }) {
   const { pix, convite } = await props.searchParams;
+  // IVVA BLACK tem uma entrada só: o formulário da página de vendas (links antigos de convite também caem nele).
+  if (convite === CONVITE_60.codigo) redirect("https://ivva.app.br/60-dias?f=convite#acesso");
   // Convite IVVA BLACK (lista /60-dias): mostra 60 dias em vez dos dias normais. A conferência da lista é no servidor, ao assinar.
   const convite60 = convite === CONVITE_60.codigo;
   const dias = convite60 ? CONVITE_60.dias : diasDeTeste();
+  const primeiraCobranca = new Date(fimDoConvite60() * 1000).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
   // Assinar no Pix: aparece para todos com ASAAS_IVVA_LIBERADO=1; antes disso, só em /planos?pix=teste.
   const pixVisivel = pixAssinaturaLiberada() || (pixAssinaturaConfigurada() && pix === "teste");
 
@@ -90,9 +94,18 @@ export default async function PlanosPage(props: { searchParams: Promise<{ pix?: 
           </a>
         </div>
 
-        {/* Convite IVVA BLACK: sem título de planos nem demonstração; a pessoa cai direto no cadastro. */}
-        {!convite60 && (
         <div className="mb-12 text-center">
+          {convite60 && (
+            <div className="mx-auto mb-6 max-w-[640px] rounded-2xl border border-[#2fbf9f]/40 bg-[#2fbf9f]/10 px-5 py-4 text-left">
+              <p className="text-[12px] font-bold uppercase tracking-[0.12em] text-[#2fbf9f]">Convite IVVA BLACK</p>
+              <p className="mt-1 text-[16px] font-extrabold text-[#f7f6f2]">Seus 60 dias grátis estão garantidos 🎉</p>
+              <p className="mt-1 text-[13.5px] leading-relaxed text-[#c7c5d1]">
+                Escolha o plano e cadastre o cartão: hoje você paga <strong className="text-[#f7f6f2]">R$ 0</strong>, e a
+                primeira cobrança só acontece em <strong className="text-[#f7f6f2]">{primeiraCobranca}</strong>. Cancelando
+                antes, nada é cobrado. Use o mesmo e-mail ou WhatsApp do seu cadastro na lista.
+              </p>
+            </div>
+          )}
           <h1 className="text-[30px] font-extrabold tracking-[-0.02em] text-balance sm:text-[36px]">
             Escolha o{" "}
             <span
@@ -108,13 +121,11 @@ export default async function PlanosPage(props: { searchParams: Promise<{ pix?: 
             {pixVisivel && !convite60 ? " ou assinatura direto no Pix" : ""}, cancela quando quiser.
           </p>
         </div>
-        )}
 
-        {!convite60 && <DemoViva />}
+        <DemoViva />
 
         <PlanosClient planos={PLANOS} pixDisponivel={pixVisivel && !convite60} convite60={convite60} />
 
-        {!convite60 && (
         <p className="mx-auto mt-8 max-w-[720px] text-center text-[12.5px] leading-relaxed text-[#8a8896]">
           Conversa = todas as respostas da IA para um mesmo cliente seu em até 24 horas (em média{" "}
           {RESPOSTAS_POR_CONVERSA_MEDIA} respostas). O limite renova todo mês, no dia 1º. Se ultrapassar o limite
@@ -124,7 +135,6 @@ export default async function PlanosPage(props: { searchParams: Promise<{ pix?: 
           {formatarNumero(CONVERSAS_POR_PLANO.profissional)} / {formatarNumero(CONVERSAS_POR_PLANO.completo)}{" "}
           conversas por mês nos planos Essencial / Profissional / Completo.
         </p>
-        )}
 
         <p className="mx-auto mt-4 max-w-[720px] text-center text-[12.5px] leading-relaxed text-[#8a8896]">
           {POLITICA_CANCELAMENTO}
