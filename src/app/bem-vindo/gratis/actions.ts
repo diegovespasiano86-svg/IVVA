@@ -6,7 +6,7 @@ import { CONTRATO_VERSAO } from "@/lib/contrato";
 import { getSegmento } from "@/lib/segmentos";
 import { TESTE_GRATIS } from "@/lib/teste-gratis";
 
-export type Ativacao = { ok: true; novo: boolean; id: string } | { ok: false; erro: string; entrar?: boolean };
+export type Ativacao = { ok: true; novo: boolean; email: string } | { ok: false; erro: string; entrar?: boolean };
 
 /** Quem confirmou o e-mail já chega logado: monta o negócio no plano Essencial, sem cartão. */
 export async function ativarTesteGratis(): Promise<Ativacao> {
@@ -17,7 +17,7 @@ export async function ativarTesteGratis(): Promise<Ativacao> {
   if (!user) return { ok: false, erro: "Entre com o e-mail e a senha que você criou.", entrar: true };
 
   const { data: perfil } = await supabase.from("users").select("id").eq("id", user.id).maybeSingle();
-  if (perfil) return { ok: true, novo: false, id: user.id };
+  if (perfil) return { ok: true, novo: false, email: user.email ?? "" };
 
   const m = (user.user_metadata ?? {}) as { nome?: string; negocio?: string; telefone?: string; segmento?: string; entrada?: string; aceite_em?: string };
   if (m.entrada !== TESTE_GRATIS.origem) return { ok: false, erro: "Este acesso não veio da página da IVVA BLACK. Fale com a gente no (11) 92740-9320." };
@@ -54,5 +54,5 @@ export async function ativarTesteGratis(): Promise<Ativacao> {
   });
   if (errAceite && errAceite.code !== "23505") console.error("[teste-gratis] aceite do contrato", errAceite.message);
 
-  return { ok: true, novo: true, id: user.id };
+  return { ok: true, novo: true, email: user.email ?? "" };
 }

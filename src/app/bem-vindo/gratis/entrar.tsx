@@ -12,6 +12,7 @@ type W = Window & { __ivvaAuth?: string; gtag?: (...a: unknown[]) => void; fbq?:
 
 export default function Entrar() {
   const [falha, setFalha] = useState<{ erro: string; entrar?: boolean } | null>(null);
+  const [pronto, setPronto] = useState<{ email: string; novo: boolean } | null>(null);
   const feito = useRef(false);
 
   useEffect(() => {
@@ -25,9 +26,17 @@ export default function Entrar() {
         if (window.location.hash) window.history.replaceState(null, "", window.location.pathname);
         const access_token = p.get("access_token");
         const refresh_token = p.get("refresh_token");
+        // Link vencido ou já usado: o Supabase devolve o erro no endereço.
+        if (p.get("error")) {
+          return setFalha({ erro: "Esse link expirou ou já foi usado. Se você já confirmou, entre com o seu e-mail e a senha.", entrar: true });
+        }
         if (access_token && refresh_token) {
           const { error } = await createClient().auth.setSession({ access_token, refresh_token });
-          if (error) console.error("[teste-gratis] sessão", error.message);
+          // Sem a sessão do link não dá para seguir (e não vale usar outra conta aberta neste aparelho).
+          if (error) {
+            console.error("[teste-gratis] sessão", error.message);
+            return setFalha({ erro: "Não conseguimos abrir pelo link. Entre com o seu e-mail e a senha.", entrar: true });
+          }
         }
         const r = await ativarTesteGratis();
         if (!r.ok) return setFalha(r);
@@ -36,7 +45,7 @@ export default function Entrar() {
           w.fbq?.("track", "CompleteRegistration");
           w.fbq?.("track", "StartTrial");
         }
-        window.location.assign(r.novo ? "/dashboard?boas-vindas=1" : "/dashboard");
+        setPronto({ email: r.email, novo: r.novo });
       } catch (err) {
         console.error("[teste-gratis]", err);
         setFalha({ erro: "Não conseguimos abrir o seu acesso agora. Atualize a página.", entrar: true });
@@ -44,6 +53,25 @@ export default function Entrar() {
     })();
   }, []);
 
+  if (pronto) {
+    return (
+      <div className={CARTAO} role="status">
+        <p className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#2fbf9f]/15 text-[28px] font-bold text-[#1f9a80]">✓</p>
+        <h1 className="mt-3 text-[22px] font-extrabold">Deu tudo certo!</h1>
+        <p className="mt-2 text-[14px] text-[#5d5770]">
+          E-mail confirmado e acesso liberado. <strong className="text-[#0e0e13]">Você já pode fechar esta página.</strong>
+        </p>
+        <p className="mt-3 rounded-xl bg-[#f3f1fb] px-4 py-3 text-[13px] text-[#4a4458]">
+          Para entrar quando quiser: <strong>app.ivva.app.br/login</strong>
+          <br />
+          com <strong>{pronto.email}</strong> e a senha que você criou.
+        </p>
+        <a href={pronto.novo ? "/dashboard?boas-vindas=1" : "/dashboard"} className={BOTAO}>
+          Entrar agora
+        </a>
+      </div>
+    );
+  }
   if (!falha) {
     return (
       <div className={CARTAO} role="status">
